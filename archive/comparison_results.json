@@ -1,0 +1,282 @@
+{
+    "Changements climatiques et énergie": [
+        {
+            "title": "Publication du rapport annuel au Parlement portant sur l'application de Loi sur la tarification de la pollution causée par les gaz à effet de serre",
+            "most_similar_category": "Changements climatiques et énergie",
+            "similarity_score": 0.6591035701882532
+        },
+        {
+            "title": "Adoption d'un règlement de la CMM portant sur la réduction des émissions de GES des bâtiments résidentiels, commerciaux et institutionnels",
+            "most_similar_category": "Acceptabilité sociale, bruit et troubles de voisinage",
+            "similarity_score": 0.5747822138880995
+        }
+    ],
+    "Acceptabilité sociale, bruit et troubles de voisinage": [
+        {
+            "title": "Publication d'une étude portant sur les nuisances sonores et atmosphériques dans l'arrondissement de Mercier-Hochelaga-Maisonneuve",
+            "most_similar_category": "Acceptabilité sociale, bruit et troubles de voisinage",
+            "similarity_score": 0.6443806141040873
+        }
+    ],
+    "Aménagement du territoire et urbanisme": [
+        {
+            "title": "Octroi d'une somme de 425 000 dollars afin de favoriser la mise en œuvre de mesures visant à améliorer la résilience du territoire de la Ville de la Tuque aux incendies de forêt",
+            "most_similar_category": "Aménagement du territoire et urbanisme",
+            "similarity_score": 0.6831268023540443
+        },
+        {
+            "title": "Octroi d'une somme de 268 000 dollars afin de favoriser la mise en œuvre de mesures visant à améliorer la résilience du territoire de la Municipalité de Ferland-et-Boileau aux incendies de forêt",
+            "most_similar_category": "Aménagement du territoire et urbanisme",
+            "similarity_score": 0.6860159711282783
+        }
+    ],
+    "Application de la loi et affaires juridiques": [
+        {
+            "title": "Ordonnance à l'endroit d'une entreprise visant à faire cesser le rejet de contaminants dans l'environnement",
+            "most_similar_category": "Acceptabilité sociale, bruit et troubles de voisinage",
+            "similarity_score": 0.6423273584026412
+        },
+        {
+            "title": "Publication d'une position administrative sur le RAMHHS",
+            "most_similar_category": "Application de la loi et affaires juridiques",
+            "similarity_score": 0.5423733701874672
+        }
+    ],
+    "Biodiversité, milieux humides et espèces en péril": [
+        {
+            "title": "Mise à jour du registre des aires protégées au Québec. ",
+            "most_similar_category": "Biodiversité, milieux humides et espèces en péril",
+            "similarity_score": 0.5600375382136487
+        },
+        {
+            "title": "Octroi d'une somme de 8 millions de dollars à la Ville de Montréal afin de favoriser la protection d'espaces verts dans l'est de la Ville",
+            "most_similar_category": "Aménagement du territoire et urbanisme",
+            "similarity_score": 0.6369641190553048
+        }
+    ],
+    "Carrières et sablières": [
+        {
+            "title": "Octroi de plus de 300 000 dollars afin de favoriser la réalisation de 12 projets de restauration de sablières",
+            "most_similar_category": "Carrières et sablières",
+            "similarity_score": 0.9999996137546692
+        }
+    ],
+    "Développement durable, RSE et critères ESG": [
+        {
+            "title": "Lancement d'un appel à projets dans le cadre du Programme de contributions financières pour la transition écologique",
+            "most_similar_category": "Transport et mobilité durable",
+            "similarity_score": 0.6438688818722008
+        },
+        {
+            "title": "Lancement d'un projet pilote visant à favoriser la déminéralisation des sites privés et institutionnels à Montréal",
+            "most_similar_category": "Aménagement du territoire et urbanisme",
+            "similarity_score": 0.628397693210119
+        }
+    ],
+    "Développement nordique": [
+        {
+            "title": "Publication du Plan d'action nordique 2023-2028",
+            "most_similar_category": "Développement nordique",
+            "similarity_score": 0.7319893781781286
+        }
+    ],
+    "Domaine aérospatial": [
+        {
+            "title": "Octroi de plus de 1 milliard de dollars afin d'assurer un accès de qualité à des données d'observation de la Terre par satellite",
+            "most_similar_category": "Domaine agricole",
+            "similarity_score": 0.6043550508008241
+        }
+    ],
+    "Domaine agricole": [
+        {
+            "title": "Octroi de près de 7 millions de dollars afin de favoriser la réalisation de projets de recherche portant sur le bétail et les plantes fourragères.",
+            "most_similar_category": "Domaine agricole",
+            "similarity_score": 0.8172470070854124
+        },
+        {
+            "title": "Adoption du Projet de loi 28 - Loi modifiant la Loi sur la mise en marché des produits agricoles, alimentaires et de la pêche et la Loi sur les producteurs agricoles",
+            "most_similar_category": "Application de la loi et affaires juridiques",
+            "similarity_score": 0.5110124776438625
+        }
+    ],
+    "Eau et domaine maritime": [
+        {
+            "title": "Mise à jour du Guide pour l'étude des technologies conventionnelles de traitement des eaux usées d'origine domestique",
+            "most_similar_category": "Matières dangereuses et pesticides",
+            "similarity_score": 0.5411233656336798
+        },
+        {
+            "title": "Octroi d'une somme de près de 230 000 dollars à 4 municipalités afin de favoriser l'élaboration de leur plan de protection des sources d'eau potable",
+            "most_similar_category": "Aménagement du territoire et urbanisme",
+            "similarity_score": 0.6926491674864063
+        }
+    ],
+    "Évaluations environnementales": [
+        {
+            "title": "Octroi d'un mandat au BAPE pour la tenue d'une audience publique portant sur le projet de création du parc national des Dunes-de-Tadoussac",
+            "most_similar_category": "Évaluations environnementales",
+            "similarity_score": 0.6209148504759688
+        },
+        {
+            "title": "Publication du « Cadre stratégique sur le savoir autochtone dans le contexte des examens de projets et des décisions réglementaires »",
+            "most_similar_category": "Matières dangereuses et pesticides",
+            "similarity_score": 0.5479006452047981
+        }
+    ],
+    "Matières dangereuses et pesticides": [
+        {
+            "title": "Publication du Cadre d'évaluation des risques microbiens",
+            "most_similar_category": "Matières dangereuses et pesticides",
+            "similarity_score": 0.5686198903525618
+        },
+        {
+            "title": "Amende de 500 000 dollars à une entreprise de cosmétique pour avoir mis sur le marché, sans en avoir obtenu l'autorisation préalable, des produits contenant du Perfluorononyl Diméthicone",
+            "most_similar_category": "Application de la loi et affaires juridiques",
+            "similarity_score": 0.5353360903920824
+        }
+    ],
+    "Matières organiques, matières résiduelles, Écologie industrielle et économie circulaire": [
+        {
+            "title": "Mise à jour des indicateurs environnementaux portant sur le réacheminement et l'élimination des déchets solides",
+            "most_similar_category": "Matières organiques, matières résiduelles, Écologie industrielle et économie circulaire",
+            "similarity_score": 0.6611834724795419
+        },
+        {
+            "title": "Lancement d'un appel à projet dans le cadre du Programme Écoemballage+",
+            "most_similar_category": "Transport et mobilité durable",
+            "similarity_score": 0.6150127569282543
+        }
+    ],
+    "Nouvelles administratives": [
+        {
+            "title": "Nouvel épisode du Balado du CPEQ",
+            "most_similar_category": "Nouvelles administratives",
+            "similarity_score": 0.4861034313294033
+        },
+        {
+            "title": "Publication d'un nouveau billet sur le blogue « Le Pupitre du CPEQ »",
+            "most_similar_category": "Changements climatiques et énergie",
+            "similarity_score": 0.5592303744977072
+        }
+    ],
+    "Pêcheries": [
+        {
+            "title": "Octroi d'une somme de 5,8 millions de dollars afin de favoriser la réalisation de 35 projets visant à améliorer l'efficacité, la qualité, et la durabilité du secteur des pêches au Québec",
+            "most_similar_category": "Pêcheries",
+            "similarity_score": 0.7132326543336488
+        },
+        {
+            "title": "Publication du Règlement modifiant certains règlements pris en vertu de la Loi sur les pêches",
+            "most_similar_category": "Matières dangereuses et pesticides",
+            "similarity_score": 0.6382595359791577
+        }
+    ],
+    "Politiques publiques et gouvernementales": [
+        {
+            "title": "Publication d'une note sur l'évaluation des coûts liés au Projet de loi C-234 visant à élargir l'exemption qui s'applique au combustible agricole admissible pour inclure le gaz naturel commercialisable et le propane",
+            "most_similar_category": "Politiques publiques et gouvernementales",
+            "similarity_score": 0.6900144264063633
+        },
+        {
+            "title": "Comparution du PDG d'Hydro-Québec devant la Commission de l'agriculture, des pêcheries, de l'énergie et des ressources naturelles",
+            "most_similar_category": "Évaluations environnementales",
+            "similarity_score": 0.5485875430646527
+        }
+    ],
+    "Qualité de l’air": [
+        {
+            "title": "Publication du Rapport d'avancement 2022 par rapport aux normes canadiennes de la qualité de l'air ambiant",
+            "most_similar_category": "Qualité de l’air",
+            "similarity_score": 0.7206485590919711
+        },
+        {
+            "title": "Publication d'une mise à jour des indicateurs environnementaux portant sur les émissions de polluants atmosphériques à l'échelle internationale",
+            "most_similar_category": "Changements climatiques et énergie",
+            "similarity_score": 0.5777069213808702
+        }
+    ],
+    "Ressources naturelles": [
+        {
+            "title": "Lancement d'un processus de consultation portant sur l'avenir de la forêt",
+            "most_similar_category": "Biodiversité, milieux humides et espèces en péril",
+            "similarity_score": 0.5425540818574109
+        },
+        {
+            "title": "Ontario : Octroi de près 4 millions afin de favoriser le développement de la filière des minéraux stratégiques",
+            "most_similar_category": "Transport et mobilité durable",
+            "similarity_score": 0.6367157203150438
+        }
+    ],
+    "Secteur manufacturier et PME": [
+        {
+            "title": "Publication du Projet de Règlement établissant la formule de la déclaration d'intégrité devant être produite par une entreprise en vue de la réalisation d'un contrat public",
+            "most_similar_category": "Application de la loi et affaires juridiques",
+            "similarity_score": 0.5776406987043398
+        },
+        {
+            "title": "Investissement dans une jeune pousse dans le secteur de la transition énergétique et des technologies climatiques",
+            "most_similar_category": "Technologies propres",
+            "similarity_score": 0.65144974106374
+        }
+    ],
+    "Sols et terrains contaminés": [
+        {
+            "title": "Mise à jour du Guide de caractérisation des terrains",
+            "most_similar_category": "Ressources naturelles",
+            "similarity_score": 0.5828199034342976
+        },
+        {
+            "title": "Début de la première partie de l'audience publique sur un projet d'optimisation et d'ajout d'un procédé thermique de traitement de sols et d'autres matières contaminées",
+            "most_similar_category": "Évaluations environnementales",
+            "similarity_score": 0.6369254553537921
+        }
+    ],
+    "Substances chimiques": [
+        {
+            "title": "Publication de l'arrêté 2024-87-01-01 modifiant la Liste intérieure",
+            "most_similar_category": "Substances chimiques",
+            "similarity_score": 0.6770101467277432
+        },
+        {
+            "title": "Publication de l'arrêté 2024-66-03-01 modifiant la Liste intérieure",
+            "most_similar_category": "Substances chimiques",
+            "similarity_score": 0.6295786830178431
+        }
+    ],
+    "Technologies propres": [
+        {
+            "title": "Octroi d'une somme 50 millions de dollars afin de favoriser la commercialisation de technologies propres et de produits et services nécessaires à la transition énergétique",
+            "most_similar_category": "Technologies propres",
+            "similarity_score": 0.7469712919627244
+        },
+        {
+            "title": "Lancement d'une campagne publicitaire visant à faire la promotion du potentiel du Grand Montréal en matière de technologies propres et de décarbonation",
+            "most_similar_category": "Technologies propres",
+            "similarity_score": 0.5369585161600066
+        }
+    ],
+    "Transport et mobilité durable": [
+        {
+            "title": "Mise à jour de la liste des véhicules automobiles neufs ou remis en état admissibles à des crédits",
+            "most_similar_category": "Changements climatiques et énergie",
+            "similarity_score": 0.5710242471380269
+        },
+        {
+            "title": "Rappel : entrée en vigueur prochaine du Règlement concernant la taxe sur l'immatriculation de tout véhicule de promenade",
+            "most_similar_category": "Transport et mobilité durable",
+            "similarity_score": 0.5018123287166195
+        }
+    ],
+    "Modifications législatives et réglementaires en bref": [
+        {
+            "title": "Dépôt du Projet de loi C-372 – Loi concernant la publicité relative aux combustibles fossiles",
+            "most_similar_category": "Politiques publiques et gouvernementales",
+            "similarity_score": 0.5276519642575281
+        },
+        {
+            "title": "Dépôt du Projet de loi 44 – Loi modifiant principalement le ministère de l'Économie, de l'Innovation et de l'Énergie",
+            "most_similar_category": "Politiques publiques et gouvernementales",
+            "similarity_score": 0.5473929235281036
+        }
+    ]
+}
