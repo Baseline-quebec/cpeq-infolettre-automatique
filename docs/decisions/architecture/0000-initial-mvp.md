@@ -14,15 +14,7 @@ L'objectif est de réduire à un seul jour le temps de création de cette vigie 
 
 ### État actuel du développement
 Le projet a commencé le ___.
-Le projet a été pensé en quatre livrables selon [l'offre de service](https://drive.google.com/file/d/1CXcWgHzNSVqqh-7YNDEFkvVNWOD3L7zY/view?usp=drive_link):
-  1. Démonstration technique du modèle d'outil
-    * Démonstration du prototype initial à l'équipe afin de recueillir des commentaires. Aucune utilisation possible de leur part jusqu'à présent.
-  2. Déploiement de la version alpha
-    * Mise dans les mains des utilisateurs d'une première version de la solution pendant un mois afin de recueillir des commentaires.
-  3. Déploiement de la version beta
-    * Mise dans les mains des utilisateurs d'une seconde version de la solution pendant un mois. Accès client au code source et aux diverses technologies utilisées.
-  4. Déploiement de la version release
-    * Relâche de la solution (?)
+Le projet a été pensé en quatre livrables selon [l'offre de service](https://drive.google.com/file/d/1CXcWgHzNSVqqh-7YNDEFkvVNWOD3L7zY/view?usp=drive_link). Ces livrables furent amendés par la suite, tel que l'explicite [le document suivant](https://docs.google.com/document/d/1MWF9x4-uGAP0Mth6wslMwZEJ7uKoYREk1f1EagN3_xc/edit?pli=1). 
 
 Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après avoir rencontré plusieurs limitations, cette technologie fut abandonnée au profit d'un API en python avec une interface Web avec Vue.js. La pertinence d'une interface web est présentement remise en question.
 
@@ -31,23 +23,54 @@ La technologie de Webscrapping choisie est [Webscraper.io](https://webscraper.io
 ## Decision Drivers
 
 * Le CPEQ utilise déjà une suite de logiciels à l'interne avec lesquels nous pourrions nous intégrer pour ne pas les dépayser.
-* Les fonctionnalités visées pour la prochaine itération du développement sont :
-  1. Scrapping des sources
-     * Sources sans API
-     * Sources avec API (en quoi consistent-elles?)
-  2. Stockage des sources dans une base de données
-     * Sharepoint sert-il seulement à l'archivage?
-     * Ça nous prendrait donc une BD en plus de Sharepoint?
-  1. Indexation des articles en fonction de la date (du scraping ou des articles?).
-  2. Catégorisation des articles via Embeddings d'OpenAI.
-  3. Ajout dynamique de nouvelles sources d'information par le juriste sans passer par le code.
-  4. Génération d'une synthèse de chaque article via ChatGPT.
-  5. Génération d'un rapport complet (*À VALIDER*)
-  5. Présentation centralisée des choses suivantes:
-     * Synthèses d'articles sous le format XXX (*À VALIDER*)
-     * Problèmes de scrapping d'une ou de certaines sources.
-     * 
-  6. 
+
+* Sources ponctuelles : des sources connues du juriste qui ne sont pas hebdomadaires
+  * Le juriste sait quelles elles sont, il va les ajouter à un folder et va ensuite launch la génération du rapport manuellement avec la synthèse du scraping et des sources ponctuelles.
+
+* À faire : connecteur Sharepoint
+  * Microsoft Dev Program + Microsoft Graph
+* Aussi : Utiliser ChatGPT pour synthétiser les articles
+* Oli : Vector Store avec embedding
+
+* Deadline : Août-septembre 2024 pour livrer. Tout doit être fait pour le mois d'octobre, mais pour les subventions 
+  
+* Dans un deuxième temps, job de catégorisation et de synthèse.
+* Il faut filtrer les dates des trucs qu'on scrape pour pas ajouter des articles des semaines passées.
+  * Voir aussi le scraping avec pagination, s'il faut scrape plus loin que la première page.
+  * Éliminer les articles non pertinents (avec le vectorstore). Valider si l'embedding est similaire à celui des catégories.
+
+* Le flow d'exécution du programme ira comme suit :
+  1. Une fois par semaine à un temps déterminé, une routine cédulée va activer le travail d'obtention des sources.
+    * Pour les sources Web :
+      - Webscraper.io va exécuter son travail préalablement déterminé et stocker le résultat sur sa plateforme.
+      - Quand Webscraper a terminé son travail, il va faire un appel POST sur notre service pour l'informer qu'il a terminé.
+      - Notre service ayant reçu la notification, il va appeller Webscraper pour obtenir les données et les stocker dans Sharepoint.
+    * Pour les sources API : 
+      - À définir
+    * Pour les sources ponctuelles :
+      - Le matin où le juriste voudra 
+  5. Le juriste pourra
+
+* Les fonctionnalités de la solution finale sont :
+  1. Collecte des sources d'information
+     * Sources Web (obtenues par Webscraper.io)
+     * Sources avec API (à confirmer avec le client en quoi ça consiste)
+     * Sources ponctuelles (sources non-hebdomadaires ajoutées manuellement par le juriste)
+     * Il faut valider la date de publication des sources pour ne pas collecter des données de la semaine précédente.
+  2. Stockage des sources
+     * Stockage des sources brutes dans le Sharepoint.
+     * Le juriste va ajouter ses sources ponctuelles manuellement dans le bon dossier avant de lancer la génération du rapport.
+       * Il faudra valider comment on gère le format des données pour que ce soit traitable.
+     * Le Vector Store peut rouler en mémoire.
+  3. Catégorisation des articles et filtrage des sources non pertinentes.
+     * S'assurer que les embeddings correspondent suffisamment. Le travail de paufinage va devoir être fait manuellement.
+     * Utilisation des Embeddings d'OpenAI.
+  6. Ajout dynamique de nouvelles sources d'information par le juriste sans passer par le code.
+  7. Génération d'une synthèse de chaque article via ChatGPT.
+  8. Génération d'un rapport complet des nouvelles, catégorisé par rubrique, qui regroupe le résumé de chaque article.
+  9. Présentation du rapport au juriste.
+  
+* Les fonctionnalités de la prochaine itération sont : 
 
 ## Considered Options
 
