@@ -1,24 +1,53 @@
 ---
-# These are optional elements. Feel free to remove any of them.
 status: "{proposed | rejected | accepted | deprecated | … | superseded by [ADR-0005](0005-example.md)}"
-date: {YYYY-MM-DD when the decision was last updated}
-deciders: {list everyone involved in the decision}
-consulted: {list everyone whose opinions are sought (typically subject-matter experts); and with whom there is a two-way communication}
-informed: {list everyone who is kept up-to-date on progress; and with whom there is a one-way communication}
+date: 2024-06-04
+deciders: Jean-Samuel Leboeuf (@jsleb333), Olivier Belhumeur (@GameSetAndMatch), Emile Turcotte (@emileturcotte)
+consulted: 
+informed: 
 ---
-# {short title of solved problem and solution}
+# ADR 0000 - MVP Architecture Design
 
 ## Context and Problem Statement
+Le Conseil Patronal de l'Environnement du Québec [(CPEQ)](https://www.cpeq.org/fr/) procède à une activité hebdomadaire de vigie juridique en matière d'environnement. Cette vigie est propulsée par plus de 100 sources d'informations (journalistiques, données probantes, communiqués de presse, etc.). Ces sources d'informations demandent à être collectées, lues et synthétisées, ce qui exige beaucoup de travail routinier pouvant aisément être automatisé et traité via intelligence artificielle. Actuellement, il faut à un juriste trois jours par semaine pour faire cette tâche.
 
-{Describe the context and problem statement, e.g., in free form using two to three sentences or in the form of an illustrative story.
- You may want to articulate the problem in form of a question and add links to collaboration boards or issue management systems.}
+L'objectif est de réduire à un seul jour le temps de création de cette vigie tout en maintenant sa qualité et son exhaustivité.
 
-<!-- This is an optional element. Feel free to remove. -->
+### État actuel du développement
+Le projet a commencé le ___.
+Le projet a été pensé en quatre livrables selon [l'offre de service](https://drive.google.com/file/d/1CXcWgHzNSVqqh-7YNDEFkvVNWOD3L7zY/view?usp=drive_link):
+  1. Démonstration technique du modèle d'outil
+    * Démonstration du prototype initial à l'équipe afin de recueillir des commentaires. Aucune utilisation possible de leur part jusqu'à présent.
+  2. Déploiement de la version alpha
+    * Mise dans les mains des utilisateurs d'une première version de la solution pendant un mois afin de recueillir des commentaires.
+  3. Déploiement de la version beta
+    * Mise dans les mains des utilisateurs d'une seconde version de la solution pendant un mois. Accès client au code source et aux diverses technologies utilisées.
+  4. Déploiement de la version release
+    * Relâche de la solution (?)
+
+Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après avoir rencontré plusieurs limitations, cette technologie fut abandonnée au profit d'un API en python avec une interface Web avec Vue.js. La pertinence d'une interface web est présentement remise en question.
+
+La technologie de Webscrapping choisie est [Webscraper.io](https://webscraper.io). Le produit de ce scrapping devra être mis dans le Sharepoint du CPEQ.
+
 ## Decision Drivers
 
-* {decision driver 1, e.g., a force, facing concern, …}
-* {decision driver 2, e.g., a force, facing concern, …}
-* … <!-- numbers of drivers can vary -->
+* Le CPEQ utilise déjà une suite de logiciels à l'interne avec lesquels nous pourrions nous intégrer pour ne pas les dépayser.
+* Les fonctionnalités visées pour la prochaine itération du développement sont :
+  1. Scrapping des sources
+     * Sources sans API
+     * Sources avec API (en quoi consistent-elles?)
+  2. Stockage des sources dans une base de données
+     * Sharepoint sert-il seulement à l'archivage?
+     * Ça nous prendrait donc une BD en plus de Sharepoint?
+  1. Indexation des articles en fonction de la date (du scraping ou des articles?).
+  2. Catégorisation des articles via Embeddings d'OpenAI.
+  3. Ajout dynamique de nouvelles sources d'information par le juriste sans passer par le code.
+  4. Génération d'une synthèse de chaque article via ChatGPT.
+  5. Génération d'un rapport complet (*À VALIDER*)
+  5. Présentation centralisée des choses suivantes:
+     * Synthèses d'articles sous le format XXX (*À VALIDER*)
+     * Problèmes de scrapping d'une ou de certaines sources.
+     * 
+  6. 
 
 ## Considered Options
 
@@ -30,7 +59,7 @@ informed: {list everyone who is kept up-to-date on progress; and with whom there
 ## Decision Outcome
 
 Chosen option: "{title of option 1}", because
-{justification. e.g., only option, which meets k.o. criterion decision driver | which resolves force {force} | … | comes out best (see below)}.
+  * [ ] {justification. e.g., only option, which meets k.o. criterion decision driver | which resolves force {force} | … | comes out best (see below)}.
 
 <!-- This is an optional element. Feel free to remove. -->
 ### Consequences
