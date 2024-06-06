@@ -54,17 +54,37 @@ Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après
        * S'assurer que les embeddings correspondent suffisamment. Le travail de paufinage va devoir être fait manuellement.
        * Utilisation des Embeddings d'OpenAI.
      * Les articles qui ne correspondent pas suffisamment à une ou l'autre des catégories doit être classé comme non pertinent et retiré du rapport.
-  6. Ajout dynamique de nouvelles sources d'information par le juriste sans passer par le code.
+  4. Ajout dynamique de nouvelles sources d'information par le juriste sans passer par le code.
      * Le juriste doit être capable de modifier la liste de ses sources sans avoir à faire appel à l'équipe de développement.
-  7. Génération d'une synthèse de chaque article via ChatGPT.
+  5. Génération d'un résumé de chaque article via ChatGPT.
      * Chaque article préalablement catégorisé devra être sommarisé par ChatGPT de sorte à le rendre plus digeste pour le rapport.
-  8. Génération d'un rapport complet des nouvelles, catégorisé par rubrique, qui regroupe le résumé de chaque article.
+  6. Génération d'un rapport complet des nouvelles, catégorisé par rubrique, qui regroupe le résumé de chaque article.
      * Un document synthétique regroupant 
-  9. Présentation du rapport au juriste.
-     * Le rapport doit être présenté au juriste via un visuel quelconque.
+  7. Présentation du rapport au juriste.
+     * Le rapport doit être présenté visuellement au juriste.
+  8. Notification de la génération du rapport.
+     * Le juriste doit être notifié de la génération complétée du rapport.
   
 * Les fonctionnalités de la prochaine itération sont : 
-  1. 
+  1. Collecte des sources d'information
+     * Seulement quelques sources Web choisies sont collectés pour l'instant.
+     * Les sources sont filtrées par date de publication.
+  2. Stockage des sources
+     * Intégration avec Sharepoint fonctionnelle.
+     * Les sources sont stockées dans Sharepoint dans un nouveau dossier pour la semaine en cours.
+  3. Catégorisation des articles
+     * Pas de catégorisation des articles pour l'instant.
+  4. Ajout dynamique de nouvelles sources d'information par le juriste sans passer par le code.
+     * Pas d'ajout dynamique des sources pour l'instant.
+  5. Génération d'un résumé de chaque article via ChatGPT.
+     * Les articles sont adéquatement sommarisés selon un modèle fourni à ChatGPT.
+  6. Génération d'un rapport complet des sources d'information, catégorisé par rubrique, qui regroupe le résumé de chaque article.
+     * Les résumés des sources d'information sont publiés dans un document de synthèse.
+     * Pas de catégorisation dans le rapport.
+  7. Présentation du rapport au juriste.
+     * Le rapport est stocké dans le Sharepoint.
+  8. Notification de la génération du rapport.
+     * Pas de notification pour l'instant.
 
 ## Considered Options
 
