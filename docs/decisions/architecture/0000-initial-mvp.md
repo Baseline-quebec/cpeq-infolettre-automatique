@@ -12,18 +12,13 @@ Le Conseil Patronal de l'Environnement du Québec [(CPEQ)](https://www.cpeq.org/
 
 L'objectif est de réduire à un seul jour le temps de création de cette vigie tout en maintenant sa qualité et son exhaustivité.
 
-### État actuel du développement
+### État actuel du projet
 Le projet a commencé le ___.
-Le projet a été pensé en quatre livrables selon [l'offre de service](https://drive.google.com/file/d/1CXcWgHzNSVqqh-7YNDEFkvVNWOD3L7zY/view?usp=drive_link). Ces livrables furent amendés par la suite, tel que l'explicite [le document suivant](https://docs.google.com/document/d/1MWF9x4-uGAP0Mth6wslMwZEJ7uKoYREk1f1EagN3_xc/edit?pli=1). 
+Il a été pensé en quatre livrables selon [l'offre de service](https://drive.google.com/file/d/1CXcWgHzNSVqqh-7YNDEFkvVNWOD3L7zY/view?usp=drive_link). Ces livrables furent amendés par la suite, tel que l'explicite [le document suivant](https://docs.google.com/document/d/1MWF9x4-uGAP0Mth6wslMwZEJ7uKoYREk1f1EagN3_xc/edit?pli=1). 
 
 Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après avoir rencontré plusieurs limitations, cette technologie fut abandonnée au profit d'un API en python avec une interface Web avec Vue.js. La pertinence d'une interface web est présentement remise en question.
 
-## Decision Drivers
-
-* Le CPEQ utilise déjà une suite de logiciels à l'interne avec lesquels nous pourrions nous intégrer pour ne pas les dépayser.
-* Deadline : Août-septembre 2024 pour livrer. Tout doit être fait pour le mois d'octobre, mais pour les subventions, il faut que certains livrables soient rendus avant une certaine date. *À confirmer avec David*.
-
-* Le flow d'exécution du programme ira comme suit :
+Le flow d'exécution du programme ira comme suit :
   1. Une fois par semaine à un temps déterminé, une routine cédulée va activer le travail d'obtention des sources.
     * Pour les sources Web :
       - Webscraper.io va exécuter son travail préalablement déterminé et stocker le résultat sur sa plateforme.
@@ -38,6 +33,16 @@ Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après
   4. Le juriste est avertis de la génération complétée du rapport.
   4. Le juriste va chercher le rapport dans le Sharepoint.
 
+Le présent document cherche à définir les choses suivantes :
+* Le livrable final
+* Les livrables intermédiaires
+* Les techniques et technologies utilisées
+
+## Decision Drivers
+
+* Le CPEQ utilise déjà une suite de logiciels à l'interne avec lesquels nous pourrions nous intégrer pour ne pas les dépayser.
+* Deadline : Août-septembre 2024 pour livrer. Tout doit être fait pour le mois d'octobre, mais pour les subventions, il faut que certains livrables soient rendus avant une certaine date. *À confirmer avec David*.
+
 * Les fonctionnalités de la solution finale sont :
   1. Collecte des sources d'information.
      * Sources Web (obtenues par Webscraper.io)
@@ -48,7 +53,7 @@ Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après
      * Stockage des sources brutes dans le Sharepoint.
      * Le juriste va ajouter ses sources ponctuelles manuellement dans le bon dossier avant de lancer la génération du rapport.
        * Il faudra valider comment on gère le format des données pour que ce soit traitable.
-     * Le Vector Store peut rouler en mémoire.
+     * Le Vector Store peut rouler en mémoire dans le service.
   3. Catégorisation des articles.
      * Chaque article doit être automatiquement catégorisé à partir d'une liste de catégories préalablement déterminée.
        * S'assurer que les embeddings correspondent suffisamment. Le travail de paufinage va devoir être fait manuellement.
@@ -59,7 +64,7 @@ Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après
   5. Génération d'un résumé de chaque article via ChatGPT.
      * Chaque article préalablement catégorisé devra être sommarisé par ChatGPT de sorte à le rendre plus digeste pour le rapport.
   6. Génération d'un rapport complet des nouvelles, catégorisé par rubrique, qui regroupe le résumé de chaque article.
-     * Un document synthétique regroupant 
+     * Un rapport regroupant tous les résumés d'articles catégorisés par rubrique est produit et stocké dans le Sharepoint. 
   7. Présentation du rapport au juriste.
      * Le rapport doit être présenté visuellement au juriste.
   8. Notification de la génération du rapport.
