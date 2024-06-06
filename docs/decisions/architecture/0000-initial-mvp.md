@@ -18,26 +18,10 @@ Le projet a été pensé en quatre livrables selon [l'offre de service](https://
 
 Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après avoir rencontré plusieurs limitations, cette technologie fut abandonnée au profit d'un API en python avec une interface Web avec Vue.js. La pertinence d'une interface web est présentement remise en question.
 
-La technologie de Webscrapping choisie est [Webscraper.io](https://webscraper.io). Le produit de ce scrapping devra être mis dans le Sharepoint du CPEQ.
-
 ## Decision Drivers
 
 * Le CPEQ utilise déjà une suite de logiciels à l'interne avec lesquels nous pourrions nous intégrer pour ne pas les dépayser.
-
-* Sources ponctuelles : des sources connues du juriste qui ne sont pas hebdomadaires
-  * Le juriste sait quelles elles sont, il va les ajouter à un folder et va ensuite launch la génération du rapport manuellement avec la synthèse du scraping et des sources ponctuelles.
-
-* À faire : connecteur Sharepoint
-  * Microsoft Dev Program + Microsoft Graph
-* Aussi : Utiliser ChatGPT pour synthétiser les articles
-* Oli : Vector Store avec embedding
-
-* Deadline : Août-septembre 2024 pour livrer. Tout doit être fait pour le mois d'octobre, mais pour les subventions 
-  
-* Dans un deuxième temps, job de catégorisation et de synthèse.
-* Il faut filtrer les dates des trucs qu'on scrape pour pas ajouter des articles des semaines passées.
-  * Voir aussi le scraping avec pagination, s'il faut scrape plus loin que la première page.
-  * Éliminer les articles non pertinents (avec le vectorstore). Valider si l'embedding est similaire à celui des catégories.
+* Deadline : Août-septembre 2024 pour livrer. Tout doit être fait pour le mois d'octobre, mais pour les subventions, il faut que certains livrables soient rendus avant une certaine date. *À confirmer avec David*.
 
 * Le flow d'exécution du programme ira comme suit :
   1. Une fois par semaine à un temps déterminé, une routine cédulée va activer le travail d'obtention des sources.
@@ -46,31 +30,41 @@ La technologie de Webscrapping choisie est [Webscraper.io](https://webscraper.io
       - Quand Webscraper a terminé son travail, il va faire un appel POST sur notre service pour l'informer qu'il a terminé.
       - Notre service ayant reçu la notification, il va appeller Webscraper pour obtenir les données et les stocker dans Sharepoint.
     * Pour les sources API : 
-      - À définir
+      - En même temps que les sources Web, probablement qu'on va devoir faire un programme custom.
     * Pour les sources ponctuelles :
-      - Le matin où le juriste voudra 
-  5. Le juriste pourra
+      - Le matin où le juriste voudra faire son rapport, il ira chercher manuellement les sources ponctuelles et les déposera dans le bon dossier Sharepoint.
+  2. Le juriste pourra ensuite lancer la routine de catégorisation et de synthèse des articles. 
+  3. Lorsque la génération du rapport sera complétée, ce dernier sera déposé dans le Sharepoint. 
+  4. Le juriste est avertis de la génération complétée du rapport.
+  4. Le juriste va chercher le rapport dans le Sharepoint.
 
 * Les fonctionnalités de la solution finale sont :
-  1. Collecte des sources d'information
+  1. Collecte des sources d'information.
      * Sources Web (obtenues par Webscraper.io)
-     * Sources avec API (à confirmer avec le client en quoi ça consiste)
+     * Sources avec API (à confirmer avec le client en quoi ça consiste, obtenues via un programme custom?)
      * Sources ponctuelles (sources non-hebdomadaires ajoutées manuellement par le juriste)
      * Il faut valider la date de publication des sources pour ne pas collecter des données de la semaine précédente.
-  2. Stockage des sources
+  2. Stockage des sources.
      * Stockage des sources brutes dans le Sharepoint.
      * Le juriste va ajouter ses sources ponctuelles manuellement dans le bon dossier avant de lancer la génération du rapport.
        * Il faudra valider comment on gère le format des données pour que ce soit traitable.
      * Le Vector Store peut rouler en mémoire.
-  3. Catégorisation des articles et filtrage des sources non pertinentes.
-     * S'assurer que les embeddings correspondent suffisamment. Le travail de paufinage va devoir être fait manuellement.
-     * Utilisation des Embeddings d'OpenAI.
+  3. Catégorisation des articles.
+     * Chaque article doit être automatiquement catégorisé à partir d'une liste de catégories préalablement déterminée.
+       * S'assurer que les embeddings correspondent suffisamment. Le travail de paufinage va devoir être fait manuellement.
+       * Utilisation des Embeddings d'OpenAI.
+     * Les articles qui ne correspondent pas suffisamment à une ou l'autre des catégories doit être classé comme non pertinent et retiré du rapport.
   6. Ajout dynamique de nouvelles sources d'information par le juriste sans passer par le code.
+     * Le juriste doit être capable de modifier la liste de ses sources sans avoir à faire appel à l'équipe de développement.
   7. Génération d'une synthèse de chaque article via ChatGPT.
+     * Chaque article préalablement catégorisé devra être sommarisé par ChatGPT de sorte à le rendre plus digeste pour le rapport.
   8. Génération d'un rapport complet des nouvelles, catégorisé par rubrique, qui regroupe le résumé de chaque article.
+     * Un document synthétique regroupant 
   9. Présentation du rapport au juriste.
+     * Le rapport doit être présenté au juriste via un visuel quelconque.
   
 * Les fonctionnalités de la prochaine itération sont : 
+  1. 
 
 ## Considered Options
 
