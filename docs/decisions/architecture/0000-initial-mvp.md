@@ -148,3 +148,12 @@ Chosen option: "{title of option 1}", because
  document the team agreement on the decision and/or
  define when/how this decision the decision should be realized and if/when it should be re-visited.
 Links to other decisions and resources might appear here as well.}
+
+Python SDK
+https://github.com/microsoftgraph/msgraph-sdk-python?tab=readme-ov-file
+
+learn.microsoft.com
+https://learn.microsoft.com/en-us/graph/
+
+Notes J-S
+https://docs.google.com/document/d/16FJA-Or74lJYYYPjg_nwpufY8-kRqEMg/edit?usp=sharing&ouid=101339555305018475722&rtpof=true&sd=true
