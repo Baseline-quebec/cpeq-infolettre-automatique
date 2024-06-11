@@ -34,12 +34,14 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform Format
+        if: ${{ !env.IS_MAIN }}
         id: fmt
         run: terraform fmt -check
 
       - run: terraform init
 
       - run: terraform validate -no-color
+        if: ${{ !env.IS_MAIN }}
 
       - id: plan
         run: terraform plan -no-color
@@ -101,3 +103,6 @@ jobs:
                 body: output
               })
             }
+
+      - run: ${{ env.PLAN }} | terraform apply -auto-approve -no-color -lock-timeout=10s
+        if: ${{ env.IS_MAIN }}
