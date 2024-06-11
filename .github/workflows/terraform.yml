@@ -17,6 +17,8 @@ on:
 env:
   IS_MAIN: ${{ github.head_ref == refs/heads/main }}
   ENVIRONMENT: dev
+  KEYVAULT_NAME: "baselinecore"
+  TERRAFORM_SECRET_NAME: "Terraform--Dev--Password"
 
 jobs:
   validate:
@@ -28,6 +30,19 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Fetch secret
+        uses: azure/cli@v2
+        with:
+          azcliversion: 2.61.0
+          inlineScript: |
+            export TERRAFORM_CLIENT_SECRET=$(az keyvault secret show --vault-name ${{ env.KEYVAULT_NAME }} --name ${{ env.TERRAFORM_SECRET_NAME }} --query "value" | tr -d \")
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.8.0"
@@ -44,7 +59,7 @@ jobs:
         if: ${{ !env.IS_MAIN }}
 
       - id: plan
-        run: terraform plan -no-color
+        run: terraform plan -no-color -var-file=variables/${{ var.ENVIRONMENT }}.tfvars
 
       - uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
@@ -104,5 +119,5 @@ jobs:
               })
             }
 
-      - run: ${{ env.PLAN }} | terraform apply -auto-approve -no-color -lock-timeout=10s
+      - run: ${{ env.PLAN }} | terraform apply -auto-approve -no-color -lock-timeout=30s
         if: ${{ env.IS_MAIN }}
