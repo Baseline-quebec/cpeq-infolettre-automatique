@@ -24,7 +24,7 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
 jobs:
-  validate:
+  terraform:
     runs-on: ubuntu-latest
     defaults:
       run:
