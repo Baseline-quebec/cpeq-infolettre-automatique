@@ -28,13 +28,16 @@ jobs:
         working-directory: iac
     permissions:
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Azure login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.TERRAFORM_CLIENT_ID }}
+          tenant-id: ${{ secrets.TERRAFORM_TENANT_ID }}
+          subscription-id: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
       - name: Fetch secret
         uses: azure/cli@v2
