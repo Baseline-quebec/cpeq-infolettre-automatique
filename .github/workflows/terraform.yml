@@ -19,6 +19,9 @@ env:
   ENVIRONMENT: dev
   KEYVAULT_NAME: "baselinecore"
   TERRAFORM_SECRET_NAME: "Terraform--Dev--Password"
+  ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
 jobs:
   validate:
