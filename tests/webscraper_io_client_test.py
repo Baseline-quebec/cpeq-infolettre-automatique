@@ -1,6 +1,7 @@
 """Tests for the WebScraperIOClient and related functions."""
 
 import logging
+from unittest.mock import MagicMock
 
 import pytest
 from decouple import config
@@ -53,17 +54,20 @@ processed_scraping_job_id = 21398005  # unique scraping job test
 processed_scraping_jobs_ids = ["21417285", "21416924", "21398005"]  # multiple scraping job test
 
 
+@pytest.fixture()
+def client() -> WebScraperIoClient:
+    """Fixture to initialize WebScraperIoClient with API key from environment."""
+    try:
+        return WebScraperIoClient(api_token=config("WEBSCRAPER_IO_API_KEY"))
+    except HTTPStatusError:
+        return MagicMock(spec=WebScraperIoClient)
+
+
 class TestWebscraperIoClient:
     """Test Webscraper.io client."""
 
-    @pytest.fixture()
     @staticmethod
-    def client() -> WebScraperIoClient:
-        """Fixture to initialize WebScraperIoClient with API key from environment."""
-        return WebScraperIoClient(api_token=config("WEBSCRAPER_IO_API_KEY"))
-
-    @pytest.skip("Not mocked yet")
-    @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_create_scraping_jobs(client: WebScraperIoClient) -> None:
         """Test creating scraping jobs using WebScraperIOClient.
 
@@ -78,20 +82,20 @@ class TestWebscraperIoClient:
             raise TypeError(error_message)
         logging.info("test_create_scraping_jobs passed")
 
-    @pytest.skip("Not mocked yet")
     @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_get_scraping_job_details_sucess(client: WebScraperIoClient) -> None:
         """Test retrieving details of a scraping job."""
         if not sitemaps:
-            pytest.skip("No sitemaps available for testing.")
+            pytest.skip(reason="No sitemaps available for testing.")
         details = client.get_scraping_job_details(all_scraping_jobs)
         if not isinstance(details, dict):
             error_message = "Job details should be a dictionary"
             raise TypeError(error_message)
         logging.info("Job details retrieved successfully: %s", details)
 
-    @pytest.skip("Not mocked yet")
     @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_create_scraping_jobs_failure(
         client: WebScraperIoClient, mocker: MockerFixture
     ) -> None:
@@ -102,8 +106,8 @@ class TestWebscraperIoClient:
         with pytest.raises(HTTPStatusError):
             client.create_scraping_jobs(sitemaps)
 
-    @pytest.skip("Not mocked yet")
     @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_get_scraping_job_details_failure(client: WebScraperIoClient) -> None:
         """Test retrieval of details for a non-existent job to simulate failure."""
         job_id = "non_existent_job_id"
@@ -113,8 +117,8 @@ class TestWebscraperIoClient:
             raise AssertionError(error_message)
         logging.info("test_get_scraping_job_details for non-existent job passed")
 
-    @pytest.skip("Not mocked yet")
     @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_download_scraping_job_data_sucess(client: WebScraperIoClient) -> None:
         """Test downloading and processing data from a scraping job."""
         data = client.download_scraping_job_data(scraping_job_id)
@@ -123,8 +127,8 @@ class TestWebscraperIoClient:
             raise TypeError(error_message)
         logging.info("Data downloaded and processed successfully: %s", data)
 
-    @pytest.skip("Not mocked yet")
     @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_download_scraping_job_data_failure(client: WebScraperIoClient) -> None:
         """Testing with an invalid job ID."""
         result = client.download_scraping_job_data("invalid_job_id")
@@ -133,8 +137,8 @@ class TestWebscraperIoClient:
             raise AssertionError(error_message)
         logging.info("Handled invalid job ID correctly with error message: %s", result)
 
-    @pytest.skip("Not mocked yet")
     @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_download_and_process_multiple_jobs_success(client: WebScraperIoClient) -> None:
         """Test downloading and processing multiple scraping jobs successfully."""
         valid_job_ids = ["21417285", "21416924", "21398005"]
@@ -149,8 +153,8 @@ class TestWebscraperIoClient:
             "Data from multiple jobs downloaded and processed successfully: %s", combined_data
         )
 
-    @pytest.skip("Not mocked yet")
     @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     @pytest.mark.parametrize("invalid_id", ["invalid_id1", "invalid_id2", "invalid_id3"])
     def test_download_and_process_multiple_jobs_failure(
         client: WebScraperIoClient, invalid_id: str
@@ -166,9 +170,10 @@ class TestWebscraperIoClient:
         logging.info("Error processing detected correctly for %s: %s", invalid_id, results)
 
     # Tests créer par Chat GPT avec MonkeyPatch (Src: https://docs.pytest.org/en/latest/how-to/monkeypatch.html)
-    @pytest.skip("Not mocked yet")
+    @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_create_scraping_jobs_failure_gpt(
-        self: WebScraperIoClient, monkeypatch: pytest.MonkeyPatch
+        client: WebScraperIoClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test failure in creating scraping jobs due to API errors."""
 
@@ -179,11 +184,12 @@ class TestWebscraperIoClient:
         monkeypatch.setattr("httpx.post", mock_post)
 
         with pytest.raises(HTTPStatusError):
-            self.create_scraping_jobs(sitemaps)
+            client.create_scraping_jobs(sitemaps)
 
-    @pytest.skip("Not mocked yet")
+    @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_get_scraping_job_details_failure_gpt(
-        self: WebScraperIoClient, monkeypatch: pytest.MonkeyPatch
+        client: WebScraperIoClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test failure in retrieving scraping job details due to network issues."""
 
@@ -194,11 +200,12 @@ class TestWebscraperIoClient:
         monkeypatch.setattr("httpx.get", mock_get)
 
         with pytest.raises(RequestError):
-            self.get_scraping_job_details(new_scraping_job)
+            client.get_scraping_job_details(new_scraping_job)
 
-    @pytest.skip("Not mocked yet")
+    @staticmethod
+    @pytest.mark.skip(reason="Not mocked yet")
     def test_download_scraping_job_data_failure_gpt(
-        self: WebScraperIoClient, monkeypatch: pytest.MonkeyPatch
+        client: WebScraperIoClient, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test failure in downloading scraping job data due to server issues."""
 
@@ -209,4 +216,4 @@ class TestWebscraperIoClient:
         monkeypatch.setattr("httpx.get", mock_get)
 
         with pytest.raises(HTTPStatusError):
-            self.download_scraping_job_data(scraping_job_id)
+            client.download_scraping_job_data(scraping_job_id)
