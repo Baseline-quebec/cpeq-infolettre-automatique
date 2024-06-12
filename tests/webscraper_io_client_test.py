@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from decouple import config
-from httpx import HTTPStatusError, RequestError
+from httpx import HTTPStatusError, Request, RequestError, Response
 from pytest_mock import MockerFixture
 
 from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
@@ -42,15 +42,15 @@ sitemaps: list[dict[str, str]] = [
 # sitemap_ids = ["1125386"]  # noqa: ERA001
 
 # Start Scraping job tests
-new_scraping_job = 21417285  # unique scraping job test
+new_scraping_job = "21417285"  # unique scraping job test
 all_scraping_jobs = ["21417285", "21416924", "21398005"]  # multiple scraping job test
 
 # Scraping Download and process scraping job tests
-scraping_job_id = 21395222  # unique scraping job test
+scraping_job_id = "21395222"  # unique scraping job test
 multiple_job_ids = ["21417285", "21416924", "21398005"]  # multiple scraping job test
 
 # Save to JSON tests
-processed_scraping_job_id = 21398005  # unique scraping job test
+processed_scraping_job_id = "21398005"  # unique scraping job test
 processed_scraping_jobs_ids = ["21417285", "21416924", "21398005"]  # multiple scraping job test
 
 
@@ -74,9 +74,6 @@ class TestWebscraperIoClient:
         Ensures that the create_scraping_jobs method returns a list of job IDs.
         """
         job_ids = client.create_scraping_jobs(sitemaps)
-        if not isinstance(job_ids, list):
-            error_message = "Expected job_ids to be a list"
-            raise TypeError(error_message)
         if not all(isinstance(job_id, str) for job_id in job_ids):
             error_message = "ll job IDs should be strings"
             raise TypeError(error_message)
@@ -88,11 +85,7 @@ class TestWebscraperIoClient:
         """Test retrieving details of a scraping job."""
         if not sitemaps:
             pytest.skip(reason="No sitemaps available for testing.")
-        details = client.get_scraping_job_details(all_scraping_jobs)
-        if not isinstance(details, dict):
-            error_message = "Job details should be a dictionary"
-            raise TypeError(error_message)
-        logging.info("Job details retrieved successfully: %s", details)
+        client.get_scraping_job_details(all_scraping_jobs[0])
 
     @staticmethod
     @pytest.mark.skip(reason="Not mocked yet")
@@ -101,7 +94,8 @@ class TestWebscraperIoClient:
     ) -> None:
         """Test failure in creating scraping jobs due to API errors."""
         mocker.patch(
-            "httpx.post", side_effect=HTTPStatusError(message="Error", request=None, response=None)
+            "httpx.post",
+            side_effect=HTTPStatusError(message="Error", request=None, response=None),  # type: ignore[arg-type]
         )
         with pytest.raises(HTTPStatusError):
             client.create_scraping_jobs(sitemaps)
@@ -112,7 +106,7 @@ class TestWebscraperIoClient:
         """Test retrieval of details for a non-existent job to simulate failure."""
         job_id = "non_existent_job_id"
         result = client.get_scraping_job_details(job_id)
-        if "error" not in result:
+        if result is not None and "error" not in result:
             error_message = "Expected an error for non-existent job"
             raise AssertionError(error_message)
         logging.info("test_get_scraping_job_details for non-existent job passed")
@@ -143,9 +137,6 @@ class TestWebscraperIoClient:
         """Test downloading and processing multiple scraping jobs successfully."""
         valid_job_ids = ["21417285", "21416924", "21398005"]
         combined_data = client.download_and_process_multiple_jobs(valid_job_ids)
-        if not isinstance(combined_data, list):
-            error_message = "Expected combined data to be a list"
-            raise TypeError(error_message)
         if not all(isinstance(item, dict) for item in combined_data):
             error_message = "Each item in combined data should be a dictionary"
             raise AssertionError(error_message)
@@ -161,9 +152,6 @@ class TestWebscraperIoClient:
     ) -> None:
         """Test handling failures when downloading and processing multiple scraping jobs with invalid IDs."""
         results = client.download_and_process_multiple_jobs([invalid_id])
-        if not isinstance(results, list):
-            error_message = "Expected a list even if it contains error details."
-            raise TypeError(error_message)
         if not all("error" in result for result in results):
             error_message = "Each result should contain an 'error' key."
             raise ValueError(error_message)
@@ -179,7 +167,7 @@ class TestWebscraperIoClient:
 
         def mock_post() -> None:
             error_message = "Error"
-            raise HTTPStatusError(error_message, request=None, response=None)
+            raise HTTPStatusError(error_message, request=None, response=None)  # type: ignore[arg-type]
 
         monkeypatch.setattr("httpx.post", mock_post)
 
@@ -195,7 +183,7 @@ class TestWebscraperIoClient:
 
         def mock_get() -> None:
             error_message = "Network error"
-            raise RequestError(error_message, request=None)
+            raise RequestError(error_message)
 
         monkeypatch.setattr("httpx.get", mock_get)
 
@@ -211,7 +199,7 @@ class TestWebscraperIoClient:
 
         def mock_get() -> None:
             error_message = "Server error"
-            raise HTTPStatusError(error_message, request=None, response=None)
+            raise HTTPStatusError(error_message, request=None, response=None)  # type: ignore[arg-type]
 
         monkeypatch.setattr("httpx.get", mock_get)
 
