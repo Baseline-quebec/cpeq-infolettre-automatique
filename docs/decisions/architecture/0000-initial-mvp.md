@@ -42,6 +42,9 @@ Le présent document cherche à définir les choses suivantes :
 
 * Le CPEQ utilise déjà une suite de logiciels à l'interne avec lesquels nous pourrions nous intégrer pour ne pas les dépayser.
 * Deadline : Août-septembre 2024 pour livrer. Tout doit être fait pour le mois d'octobre, mais pour les subventions, il faut que certains livrables soient rendus avant une certaine date. *À confirmer avec David*.
+* 9 juillet : première démo cliente avec le MVP
+* 21 juin : Émile
+* Oli embarque le 25 juin.
 
 * Les fonctionnalités de la solution finale sont :
   1. Collecte des sources d'information.
