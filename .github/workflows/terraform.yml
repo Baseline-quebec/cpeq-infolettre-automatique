@@ -17,8 +17,6 @@ on:
 env:
   IS_MAIN: ${{ github.head_ref == refs/heads/main }}
   ENVIRONMENT: dev
-  KEYVAULT_NAME: "baselinecore"
-  TERRAFORM_SECRET_NAME: "Terraform--Dev--Password"
   ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
@@ -41,13 +39,6 @@ jobs:
           client-id: ${{ secrets.TERRAFORM_CLIENT_ID }}
           tenant-id: ${{ secrets.TERRAFORM_TENANT_ID }}
           subscription-id: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
-
-      - name: Fetch secret
-        uses: azure/cli@v2
-        with:
-          azcliversion: 2.61.0
-          inlineScript: |
-            export TERRAFORM_CLIENT_SECRET=$(az keyvault secret show --vault-name ${{ env.KEYVAULT_NAME }} --name ${{ env.TERRAFORM_SECRET_NAME }} --query "value" | tr -d \")
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -126,4 +117,3 @@ jobs:
             }
 
       - run: ${{ env.PLAN }} | terraform apply -auto-approve -no-color -lock-timeout=30s
-        if: ${{ env.IS_MAIN }}
