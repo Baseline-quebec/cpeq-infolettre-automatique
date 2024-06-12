@@ -13,12 +13,7 @@ def process_raw_response(raw_response: str) -> list[dict[str, str]]:
     Returns:
         list[dict[str, str]]: A list of dictionaries or a list with an error message.
     """
-    try:
-        data = [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
-    except json.JSONDecodeError as error:
-        return {"error": "Failed to decode JSON", "details": str(error)}
-    else:
-        return data
+    return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
 
 
 def save_data_to_json(data: list[dict[str, str]], file_path: str = "output.json") -> str:
@@ -31,10 +26,6 @@ def save_data_to_json(data: list[dict[str, str]], file_path: str = "output.json"
     Returns:
         str: A success message or an error message.
     """
-    try:
-        with Path.open(file_path, "w", encoding="utf-8") as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
-    except OSError as error:
-        return {"error": "Failed to write to file", "details": str(error)}
-    else:
-        return f"Data successfully saved to {file_path}"
+    with Path(file_path).open("w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+    return f"Data successfully saved to {file_path}"

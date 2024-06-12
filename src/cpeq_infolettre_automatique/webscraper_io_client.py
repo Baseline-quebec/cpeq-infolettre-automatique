@@ -1,6 +1,7 @@
 """Client module for WebScraper.io API interaction."""
 
 import logging
+from typing import Any
 
 import httpx
 from decouple import config
@@ -28,20 +29,22 @@ class WebscraperIoClientTest:
         return self._handle_response(response)
 
     @staticmethod
-    def _handle_response(response: httpx.Response) -> dict[str, str] | None:
+    def _handle_response(response: httpx.Response) -> dict[str, Any]:
         """Process and parse the response from an HTTP request.
 
         Args:
             response (httpx.Response): The HTTP response to handle.
 
         Returns:
-            dict[str, str] | None: The parsed response or None if an error occurs.
+            dict[str, str]: The parsed response or None if an error occurs.
         """
         try:
-            return response.json()
-        except httpx.JSONDecodeError:
+            output: dict[str, Any] = response.json()
+        except:
             logger.exception("Failed to parse JSON from the response")
-            return None
+            raise
+        else:
+            return output
 
 
 class WebScraperIoClient:
@@ -61,7 +64,7 @@ class WebScraperIoClient:
         self.base_url: str = "https://api.webscraper.io/api/v1"
         self.headers: dict[str, str] = {"Content-Type": "application/json"}
 
-    def create_scraping_jobs(self, sitemaps: list[dict[str, str]]) -> list[str]:
+    def create_scraping_jobs(self, sitemaps: list[str]) -> list[str]:
         """Starts scraping jobs for multiple sitemap IDs and returns their job IDs.
 
         Args:
@@ -71,8 +74,7 @@ class WebScraperIoClient:
             list[str]: List of job IDs created.
         """
         job_ids = []
-        for sitemap in sitemaps:
-            sitemap_id = sitemap["sitemap_id"]
+        for sitemap_id in sitemaps:
             url = f"{self.base_url}/scraping-job"
             data = {
                 "sitemap_id": sitemap_id,
@@ -98,11 +100,9 @@ class WebScraperIoClient:
     @staticmethod
     def get_scraping_jobs() -> None:
         """Unimplemented method to get scraping jobs."""
-        return NotImplemented
+        raise NotImplementedError
 
-    def get_scraping_job_details(
-        self, scraping_job_id: str
-    ) -> dict[str, str] | dict[str, int] | None:
+    def get_scraping_job_details(self, scraping_job_id: str) -> dict[str, Any]:
         """Retrieves details of a specific scraping job.
 
         Args:
@@ -119,37 +119,34 @@ class WebScraperIoClient:
                 params={"api_token": self.api_token},
             )
             response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as error:
+            output: dict[str, Any] = response.json()
+        except httpx.HTTPStatusError:
             logger.exception("HTTP error while fetching details for job %s", scraping_job_id)
-            return {
-                "error": "HTTP error",
-                "status_code": error.response.status_code,
-                "details": str(error),
-            }
-        except httpx.RequestError as error:
+            raise
+        except httpx.RequestError:
             logger.exception("Request error while fetching details for job %s", scraping_job_id)
-            return {"error": "Request error", "details": str(error)}
+            raise
+        else:
+            return output
 
-    def download_scraping_job_data(
-        self, scraping_job_id: str
-    ) -> list[dict[str, str]] | dict[str, str]:
+    def download_scraping_job_data(self, scraping_job_id: str) -> str:
         """Fetches raw JSON data for a scraping job and processes it into a structured format.
 
         Args:
             scraping_job_id (str): The job ID whose data is to be fetched.
 
         Returns:
-            list[dict[str, str]] | dict[str, str]: The processed job data or an error message.
+            str: The processed job data or an error message.
         """
         url = f"{self.base_url}/scraping-job/{scraping_job_id}/json?api_token={self.api_token}"
         try:
             response = httpx.get(url)
             response.raise_for_status()
-            return process_raw_response(response.text)
-        except Exception as error:
+        except:
             logger.exception("Failed to process data for job %s", scraping_job_id)
-            return {"error": "Failed to process data", "details": str(error)}
+            raise
+        else:
+            return response.text
 
     def download_and_process_multiple_jobs(self, job_ids: list[str]) -> list[dict[str, str]]:
         """Converts raw JSON lines into a list of dictionaries (valid JSON array) and saves it into a dictionary.
@@ -164,16 +161,14 @@ class WebScraperIoClient:
 
         for job_id in job_ids:
             logger.info("Starting download for Job ID: %s", job_id)
-            data = self.download_scraping_job_data(job_id)
-            if isinstance(data, list):  # Check if data retrieval was successful
-                combined_data.extend(data)  # Add processed data to the combined list
-                preview_limit = 2
-                logger.info(
-                    "Processed data for job %s: %s",
-                    job_id,
-                    data[:2] if len(data) > preview_limit else data,
-                )
-            else:
-                logger.warning("Error processing data for Job ID %s: %s", job_id, data)
+            raw_data = self.download_scraping_job_data(job_id)
+            data = process_raw_response(raw_data)
+            combined_data.extend(data)  # Add processed data to the combined list
+            preview_limit = 2
+            logger.info(
+                "Processed data for job %s: %s",
+                job_id,
+                data[:2] if len(data) > preview_limit else data,
+            )
 
         return combined_data

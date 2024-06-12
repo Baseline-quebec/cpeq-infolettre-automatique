@@ -3,12 +3,14 @@
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import openai
 import tiktoken
-from config import EMBEDDING_MODEL, MAX_TOKENS, TOKEN_ENCODING
 from openai import OpenAI
+
+from cpeq_infolettre_automatique.config import EMBEDDING_MODEL, MAX_TOKENS, TOKEN_ENCODING
 
 
 logger = logging.getLogger(__name__)
@@ -26,41 +28,45 @@ class VectorStore:
             filepath (str): The path to the JSON file containing embedded data.
         """
         self.client = client
-        self.data = self.load_embedded_data(filepath)
+        self.data = self._load_embedded_data(filepath)
         if self.data:
-            self.global_mean_embedding = self.calculate_global_mean_embedding()
+            self.global_mean_embedding = self._calculate_global_mean_embedding()
 
     @staticmethod
-    def _load_embedded_data(filepath: str) -> dict | None:
+    def _load_embedded_data(filepath: str) -> Any | None:
         """Load embedded data from a JSON file.
 
         Args:
             filepath (str): The path to the JSON file.
 
         Returns:
-            Union[dict, None]: The data loaded from the JSON file, or None if an error occurs.
+            dict | None: The data loaded from the JSON file, or None if an error occurs.
         """
         try:
-            with Path.open(filepath) as file:
+            with Path(filepath).open() as file:
                 return json.load(file)
         except Exception:
             logger.exception("Error loading embedded data from %s", filepath)
             return None
 
-    def _calculate_global_mean_embedding(self) -> np.ndarray:
+    def _calculate_global_mean_embedding(self) -> np.ndarray[Any, Any] | None:
         """Calculate the global mean embedding from all embeddings in the dataset.
 
         Returns:
             np.ndarray: A numpy array representing the global mean embedding.
         """
+        if not self.data:
+            return None
+
         embeddings = [
             np.array(ex["embedding"]) for section in self.data for ex in section["examples"]
         ]
-        return np.mean(embeddings, axis=0) if embeddings else np.zeros_like(embeddings[0])
+        mean_embedding = np.mean(embeddings, axis=0) if embeddings else np.zeros_like(embeddings[0])
+        return np.array(mean_embedding)
 
     def get_category_embeddings(
         self, exclude_rubric: str | None = None, exclude_title: str | None = None
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray[Any, Any]]:
         """Retrieve embeddings for each category, optionally excluding a specific example, and adjust by the global mean embedding.
 
         Args:
@@ -71,7 +77,7 @@ class VectorStore:
             dict[str, np.ndarray]: A dictionary of category names to their mean adjusted embeddings.
         """
         category_embeddings = {}
-        for section in self.data:
+        for section in self.data or []:
             embeddings = [
                 np.array(ex["embedding"]) - self.global_mean_embedding
                 for ex in section["examples"]
@@ -82,7 +88,7 @@ class VectorStore:
         return category_embeddings
 
     @staticmethod
-    def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+    def cosine_similarity(vec1: np.ndarray[Any, Any], vec2: np.ndarray[Any, Any]) -> float:
         """Calculates the cosine similarity between two vectors.
 
         Args:
@@ -92,7 +98,7 @@ class VectorStore:
         Returns:
             float: The cosine similarity score, between -1 (opposite) and 1 (identical).
         """
-        return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+        return float(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
 
     @staticmethod
     def get_average_embeddings(
@@ -110,8 +116,8 @@ class VectorStore:
         rubric_embeddings = {}
 
         for rubric_section in rubrics_data:
-            rubric_name = rubric_section["rubric"]
-            articles = rubric_section["examples"]
+            rubric_name: str = rubric_section["rubric"]  # type: ignore[assignment]
+            articles: list[dict[str, str]] = rubric_section["examples"]  # type: ignore[assignment]
             all_embeddings = []
 
             for article in articles:
@@ -158,7 +164,7 @@ class VectorStore:
 
     def get_embedding(
         self, text: str, model: str = EMBEDDING_MODEL, max_tokens: int = MAX_TOKENS
-    ) -> list[float] | None:
+    ) -> np.ndarray[Any, Any] | None:
         """Retrieve the embedding vector for a given text, optionally truncating the text to a maximum token count. This function integrates token truncation and embedding generation, providing a single method to handle text inputs for embeddings, especially useful for long texts.
 
         Args:
@@ -172,23 +178,23 @@ class VectorStore:
         truncated_text, token_count = self.encode_with_truncation(text, max_tokens)
         logger.info("Processing text with %d tokens.", token_count)
         response = openai.embeddings.create(input=truncated_text, model=model)
-        return response.data[0].embedding
+        return np.array(response.data[0].embedding)
 
     def get_and_save_embeddings(
         self,
-        data: any,
+        data: Any,
         model: str = EMBEDDING_MODEL,
         max_tokens: int = MAX_TOKENS,
-        output_file: json = "embedded_rubrics.json",
+        output_file: str = "embedded_rubrics.json",
     ) -> None:
         """Retrieve and save embeddings for each article in the data."""
         for rubric_section in data:
             for article in rubric_section["examples"]:
                 text = article["summary"]
-                truncated_text = self.encode_with_truncation(text, max_tokens)
+                truncated_text, _ = self.encode_with_truncation(text, max_tokens)
                 response = openai.embeddings.create(input=truncated_text, model=model)
                 article["embedding"] = response.data[0].embedding
-        with Path.open(output_file, "w", encoding="utf-8") as file:
+        with Path(output_file).open("w", encoding="utf-8") as file:
             json.dump(data, file, indent=4)
 
     def find_most_similar_category(
@@ -213,6 +219,6 @@ class VectorStore:
                 article_embedding, np.array(avg_embedding)
             )
 
-        most_similar_category = max(similarity_scores, key=similarity_scores.get)
+        most_similar_category = max(similarity_scores, key=similarity_scores.get)  # type: ignore[arg-type]
         highest_similarity_score = similarity_scores[most_similar_category]
         return most_similar_category, highest_similarity_score
