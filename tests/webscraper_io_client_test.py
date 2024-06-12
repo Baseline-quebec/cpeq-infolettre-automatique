@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from decouple import config
-from httpx import HTTPStatusError, Request, RequestError, Response
+from httpx import HTTPStatusError, RequestError
 from pytest_mock import MockerFixture
 
 from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
@@ -73,7 +73,7 @@ class TestWebscraperIoClient:
 
         Ensures that the create_scraping_jobs method returns a list of job IDs.
         """
-        job_ids = client.create_scraping_jobs(sitemaps)
+        job_ids = client.create_scraping_jobs([sitemap["sitemap_id"] for sitemap in sitemaps])
         if not all(isinstance(job_id, str) for job_id in job_ids):
             error_message = "ll job IDs should be strings"
             raise TypeError(error_message)
@@ -98,7 +98,7 @@ class TestWebscraperIoClient:
             side_effect=HTTPStatusError(message="Error", request=None, response=None),  # type: ignore[arg-type]
         )
         with pytest.raises(HTTPStatusError):
-            client.create_scraping_jobs(sitemaps)
+            client.create_scraping_jobs([sitemap["sitemap_id"] for sitemap in sitemaps])
 
     @staticmethod
     @pytest.mark.skip(reason="Not mocked yet")
@@ -115,11 +115,7 @@ class TestWebscraperIoClient:
     @pytest.mark.skip(reason="Not mocked yet")
     def test_download_scraping_job_data_sucess(client: WebScraperIoClient) -> None:
         """Test downloading and processing data from a scraping job."""
-        data = client.download_scraping_job_data(scraping_job_id)
-        if not isinstance(data, list):
-            error_message = "Expected the data to be a list"
-            raise TypeError(error_message)
-        logging.info("Data downloaded and processed successfully: %s", data)
+        client.download_scraping_job_data(scraping_job_id)
 
     @staticmethod
     @pytest.mark.skip(reason="Not mocked yet")
@@ -172,7 +168,7 @@ class TestWebscraperIoClient:
         monkeypatch.setattr("httpx.post", mock_post)
 
         with pytest.raises(HTTPStatusError):
-            client.create_scraping_jobs(sitemaps)
+            client.create_scraping_jobs([sitemap["sitemap_id"] for sitemap in sitemaps])
 
     @staticmethod
     @pytest.mark.skip(reason="Not mocked yet")

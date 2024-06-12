@@ -61,7 +61,9 @@ class VectorStore:
         embeddings = [
             np.array(ex["embedding"]) for section in self.data for ex in section["examples"]
         ]
-        mean_embedding = np.mean(embeddings, axis=0) if embeddings else np.zeros_like(embeddings[0])
+        mean_embedding = (
+            np.mean(embeddings, axis=0) if embeddings else np.zeros_like(embeddings[0])
+        )
         return np.array(mean_embedding)
 
     def get_category_embeddings(
