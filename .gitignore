@@ -62,3 +62,6 @@ __pycache__/
 
 # VS Code
 .vscode/
+
+# Remove any file including local in its name
+**local**
