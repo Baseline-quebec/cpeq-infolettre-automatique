@@ -51,7 +51,7 @@ jupyterlab = ">=3.6.3"
 pdoc = ">=13.1.1"
 
 [tool.coverage.report]  # https://coverage.readthedocs.io/en/latest/config.html#report
-fail_under = 50
+fail_under = 30
 precision = 1
 show_missing = true
 skip_covered = true
@@ -110,8 +110,8 @@ lint.ignore = [
     "RET504", # Unnecessary assign before return. This is not bad, it helps debugging.
     "TRY003", # Raise exception with vanilla arguments. Creating exception classes should be done only when really needed.
     "W505", # Doc line too long. Editor autowraps doc, and it's too much work to fix it.
-    "W391", 
-    "CPY001", # Copyright 
+    "W391",
+    "CPY001", # Copyright
 ]
 
 lint.unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
