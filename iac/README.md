@@ -23,4 +23,3 @@ ARM_TENANT_ID : The ID of the Tenant (i.e. Microsoft Entra ID) in which the Serv
 ARM_SUBSCRIPTION_ID : The ID of the Azure subscription where the Terraform will deploy resources.
 
 Those values are currently stored as Github repository secrets. In the [pipeline](../.github/workflows/terraform.yml), we obtain those values and map them to environment variables which are automatically looked up by the AzureRM Terraform provider. This is why we don't see any provider configuration inside the Terraform code.
-
