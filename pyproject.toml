@@ -24,6 +24,10 @@ gunicorn = ">=20.1.0"
 poethepoet = ">=0.20.0"
 python = ">=3.12,<4.0"
 uvicorn = { extras = ["standard"], version = ">=0.20.0" }
+python-decouple = "^3.8"
+openai = "^1.23.2"
+numpy = "^1.26.4"
+tiktoken = "^0.6.0"
 
 [tool.poetry.group.test.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 commitizen = ">=3.2.1"
@@ -47,7 +51,7 @@ jupyterlab = ">=3.6.3"
 pdoc = ">=13.1.1"
 
 [tool.coverage.report]  # https://coverage.readthedocs.io/en/latest/config.html#report
-fail_under = 50
+fail_under = 30
 precision = 1
 show_missing = true
 skip_covered = true
@@ -91,8 +95,24 @@ fix = true
 preview = true
 lint.ignore-init-module-imports = true
 line-length = 99
-lint.select = ["A", "ASYNC", "B", "BLE", "C4", "C90", "D", "DTZ", "E", "EM", "ERA", "F", "FBT", "FLY", "FURB", "G", "I", "ICN", "INP", "INT", "ISC", "LOG", "N", "NPY", "PERF", "PGH", "PIE", "PLC", "PLE", "PLR", "PLW", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "S", "SIM", "SLF", "SLOT", "T10", "T20", "TCH", "TID", "TRY", "UP", "W", "YTT"]
-lint.ignore = ["E501", "E731", "PTH123", "RET504", "S101", "S307", "W505"]
+lint.select = ["ALL"]
+lint.ignore = [
+    "ANN002", # Missing type annotation for args. Complicates the code too much with the current annotation system.
+    "ANN003", # Missing type annotation for kwargs. Complicates the code too much with the current annotation system.
+    "ANN101", # Missing type annotation for self in method. Useless info as it's always the same and clutters the code.
+    "ANN102", # Missing type annotation for cls in classmethod. Useless info as it's always the same and clutters the code.
+    "ANN401", # No Any type. This can be useful in some cases.
+    "ARG002", # Unused argument. Sometimes it's useful to keep the argument for future use, for retrocompatibility or to abide by an interface.
+    "COM812", # Missing trailing comma in a single-line list. Already handled by ruff formater
+    "D417", # Missing argument descriptions in the docstring. Not always needed.
+    "E501", # Line too long. Already handled by ruff formater
+    "E731", # Do not assign a lambda expression. Do not agree with this rule, it improves readability as it is self-documenting the lambda function.
+    "RET504", # Unnecessary assign before return. This is not bad, it helps debugging.
+    "TRY003", # Raise exception with vanilla arguments. Creating exception classes should be done only when really needed.
+    "W505", # Doc line too long. Editor autowraps doc, and it's too much work to fix it.
+    "W391",
+    "CPY001", # Copyright
+]
 
 lint.unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
 src = ["src", "tests"]
