@@ -15,7 +15,7 @@ on:
       - "iac/**"
 
 env:
-  IS_MAIN: ${{ github.head_ref == refs/heads/main }}
+  IS_MAIN: ${{ github.head_ref == 'refs/heads/main' }}
   ENVIRONMENT: dev
   ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
@@ -56,7 +56,7 @@ jobs:
         if: ${{ !env.IS_MAIN }}
 
       - id: plan
-        run: terraform plan -no-color -var-file=variables/${{ var.ENVIRONMENT }}.tfvars
+        run: terraform plan -no-color -var-file=variables/${{ env.ENVIRONMENT }}.tfvars
 
       - uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
