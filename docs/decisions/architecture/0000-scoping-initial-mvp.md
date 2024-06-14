@@ -1,5 +1,5 @@
 ---
-status: "{proposed | rejected | accepted | deprecated | … | superseded by [ADR-0005](0005-example.md)}"
+status: "accepted"
 date: 2024-06-04
 deciders: Jean-Samuel Leboeuf (@jsleb333), Olivier Belhumeur (@GameSetAndMatch), Emile Turcotte (@emileturcotte)
 consulted: 
