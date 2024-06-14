@@ -5,7 +5,7 @@ deciders: Jean-Samuel Leboeuf (@jsleb333), Olivier Belhumeur (@GameSetAndMatch),
 consulted: 
 informed: 
 ---
-# ADR 0000 - MVP Architecture Design
+# ADR 0000 - Scoping initial de la version alpha
 
 ## Context and Problem Statement
 Le Conseil Patronal de l'Environnement du Québec [(CPEQ)](https://www.cpeq.org/fr/) procède à une activité hebdomadaire de vigie juridique en matière d'environnement. Cette vigie est propulsée par plus de 100 sources d'informations (journalistiques, données probantes, communiqués de presse, etc.). Ces sources d'informations demandent à être collectées, lues et synthétisées, ce qui exige beaucoup de travail routinier pouvant aisément être automatisé et traité via intelligence artificielle. Actuellement, il faut à un juriste trois jours par semaine pour faire cette tâche.
@@ -13,42 +13,19 @@ Le Conseil Patronal de l'Environnement du Québec [(CPEQ)](https://www.cpeq.org/
 L'objectif est de réduire à un seul jour le temps de création de cette vigie tout en maintenant sa qualité et son exhaustivité.
 
 ### État actuel du projet
-Le projet a commencé le ___.
+Le projet a commencé le 18 mars.
 Il a été pensé en quatre livrables selon [l'offre de service](https://drive.google.com/file/d/1CXcWgHzNSVqqh-7YNDEFkvVNWOD3L7zY/view?usp=drive_link). Ces livrables furent amendés par la suite, tel que l'explicite [le document suivant](https://docs.google.com/document/d/1MWF9x4-uGAP0Mth6wslMwZEJ7uKoYREk1f1EagN3_xc/edit?pli=1). 
 
 Une Powerapp avait initialement été utilisée pour réaliser ce projet. Après avoir rencontré plusieurs limitations, cette technologie fut abandonnée au profit d'un API en python avec une interface Web avec Vue.js. La pertinence d'une interface web est présentement remise en question.
 
-Le flow d'exécution du programme ira comme suit :
-  1. Une fois par semaine à un temps déterminé, une routine cédulée va activer le travail d'obtention des sources.
-    * Pendant la nuit la veille du rapport, Webscraper initie le scraping. Il sera assurément complété au matin.
-  
-    * Pour les sources Web :
-      - Webscraper.io va exécuter son travail préalablement déterminé et stocker le résultat sur sa plateforme.
-      - Quand Webscraper a terminé son travail, il va faire un appel POST sur notre service pour l'informer qu'il a terminé.
-      - Notre service ayant reçu la notification, il va appeller Webscraper pour obtenir les données et les stocker dans Sharepoint.
-    * Pour les sources API : 
-      - En même temps que les sources Web, probablement qu'on va devoir faire un programme custom.
-    * Pour les sources ponctuelles :
-      - Le matin où le juriste voudra faire son rapport, il ira chercher manuellement les sources ponctuelles et les déposera dans le bon dossier Sharepoint.
-  2. Le juriste pourra ensuite lancer la routine de catégorisation et de synthèse des articles. 
-  3. Lorsque la génération du rapport sera complétée, ce dernier sera déposé dans le Sharepoint. 
-  4. Le juriste est avertis de la génération complétée du rapport.
-  4. Le juriste va chercher le rapport dans le Sharepoint.
-
 Le présent document cherche à définir les choses suivantes :
-* Le livrable final
-* Les livrables intermédiaires
-* Les techniques et technologies utilisées
+* Les fonctionnalités finales de la solution;
+* Les fonctionnalités de la version alpha;
+* Le flot d'exécution du service.
 
-## Decision Drivers
+## Fonctionnalités de la solution finale
 
-* Le CPEQ utilise déjà une suite de logiciels à l'interne avec lesquels nous pourrions nous intégrer pour ne pas les dépayser.
-* Deadline : Août-septembre 2024 pour livrer. Tout doit être fait pour le mois d'octobre, mais pour les subventions, il faut que certains livrables soient rendus avant une certaine date. *À confirmer avec David*.
-* 9 juillet : première démo cliente avec le MVP
-* 21 juin : Émile
-* Oli embarque le 25 juin.
-
-* Les fonctionnalités de la solution finale sont :
+Les fonctionnalités de la solution finale sont :
   1. Collecte des sources d'information.
      * Sources Web (obtenues par Webscraper.io)
      * Sources avec API (à confirmer avec le client en quoi ça consiste, obtenues via un programme custom?)
@@ -91,7 +68,8 @@ Le présent document cherche à définir les choses suivantes :
   8. Notification de la génération du rapport.
      * Le juriste doit être notifié de la génération complétée du rapport.
      * Pas obligé d'être une notification Push, ça peut juste être un visuel quelconque, un email, etc.
-  
+
+## Fonctionnalités de la version alpha
 * Les fonctionnalités de la première itération sont : 
   1. Collecte des sources d'information
      * Seulement quelques sources Web choisies sont collectés pour l'instant. Pas de sources par API, pas de sources ponctuelles.
@@ -116,7 +94,8 @@ Le présent document cherche à définir les choses suivantes :
   8. Notification de la génération du rapport.
      * Pas de notification pour l'instant.
 
-Le flow d'exécution du programme ira comme suit :
+## Flot d'exécution de la version alpha
+Le flot d'exécution du programme ira comme suit :
   1. Une fois par semaine à un temps déterminé, une routine cédulée va activer le travail d'obtention des sources.
     * Pendant la nuit la veille du rapport, Webscraper initie le scraping. Il sera assurément complété au matin.
   2. Le juriste pourra ensuite lancer la génération du rapport.
@@ -133,70 +112,3 @@ Le flow d'exécution du programme ira comme suit :
     * À partir du CSV, on génère le newsletter et on le persiste dans le Sharepoint.
       * Pour la démo, on persiste la newsletter en Markdown.
   3. Le juriste va chercher le rapport dans le Sharepoint.
-
-## Considered Options
-
-* {title of option 1}
-* {title of option 2}
-* {title of option 3}
-* … <!-- numbers of options can vary -->
-
-## Decision Outcome
-
-Chosen option: "{title of option 1}", because
-  * [ ] {justification. e.g., only option, which meets k.o. criterion decision driver | which resolves force {force} | … | comes out best (see below)}.
-
-<!-- This is an optional element. Feel free to remove. -->
-### Consequences
-
-* Good, because {positive consequence, e.g., improvement of one or more desired qualities, …}
-* Bad, because {negative consequence, e.g., compromising one or more desired qualities, …}
-* … <!-- numbers of consequences can vary -->
-
-<!-- This is an optional element. Feel free to remove. -->
-### Confirmation
-
-{Describe how the implementation of/compliance with the ADR is confirmed. E.g., by a review or an ArchUnit test.
- Although we classify this element as optional, it is included in most ADRs.}
-
-<!-- This is an optional element. Feel free to remove. -->
-## Pros and Cons of the Options
-
-### {title of option 1}
-
-<!-- This is an optional element. Feel free to remove. -->
-{example | description | pointer to more information | …}
-
-* Good, because {argument a}
-* Good, because {argument b}
-<!-- use "neutral" if the given argument weights neither for good nor bad -->
-* Neutral, because {argument c}
-* Bad, because {argument d}
-* … <!-- numbers of pros and cons can vary -->
-
-### {title of other option}
-
-{example | description | pointer to more information | …}
-
-* Good, because {argument a}
-* Good, because {argument b}
-* Neutral, because {argument c}
-* Bad, because {argument d}
-* …
-
-<!-- This is an optional element. Feel free to remove. -->
-## More Information
-
-{You might want to provide additional evidence/confidence for the decision outcome here and/or
- document the team agreement on the decision and/or
- define when/how this decision the decision should be realized and if/when it should be re-visited.
-Links to other decisions and resources might appear here as well.}
-
-Python SDK
-https://github.com/microsoftgraph/msgraph-sdk-python?tab=readme-ov-file
-
-learn.microsoft.com
-https://learn.microsoft.com/en-us/graph/
-
-Notes J-S
-https://docs.google.com/document/d/16FJA-Or74lJYYYPjg_nwpufY8-kRqEMg/edit?usp=sharing&ouid=101339555305018475722&rtpof=true&sd=true
