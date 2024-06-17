@@ -97,18 +97,18 @@ Les fonctionnalités de la solution finale sont :
 ## Flot d'exécution de la version alpha
 Le flot d'exécution du programme ira comme suit :
   1. Une fois par semaine à un temps déterminé, une routine cédulée va activer le travail d'obtention des sources.
-    * Pendant la nuit la veille du rapport, Webscraper initie le scraping. Il sera assurément complété au matin.
+     * Pendant la nuit la veille du rapport, Webscraper initie le scraping. Il sera assurément complété au matin.
   2. Le juriste pourra ensuite lancer la génération du rapport.
-    * On initialise le VectorStore en mémoire. On va garder un fichier json dans le repository pour commencer. À terme, on pourrait le persister quelque part et le mettre à jour à chaque fois.
-    * Le service va chercher toutes les scraping jobs de la veille et récupère leurs IDs.
-    * Un par un, il va downloader le JSON du contenu de la job. 
-    * On va parse la date et éliminer les résultats trop vieux.
-    * On catégorise l'article selon les rubriques.
-    * On envoie le corps de l'article à ChatGPT pour qu'il le résume avec des exemples de résumés tirer du VectorStore pour informer sa réponse.
-      * On pourrait générer les résumés en Markdown afin de faciliter la génération de la Newsletter.
-    * Lorsque tous les résumés nous sont parvenus, on va assembler un fichier CSV d'un coup avec tous les résumés en mémoire. Cet fichier va être conservé en mémoire jusqu'à ce que toutes les jobs aient été downloadées.
-      * On pourrait adjoindre le texte complet de l'article avec le résumé pour bâtir un meilleur VectorStore dans le futur.
-    * Lorsque le fichier est complet, on persiste le CSV dans le Sharepoint.
-    * À partir du CSV, on génère le newsletter et on le persiste dans le Sharepoint.
-      * Pour la démo, on persiste la newsletter en Markdown.
+     * On initialise le VectorStore en mémoire. On va garder un fichier json dans le repository pour commencer. À terme, on pourrait le persister quelque part et le mettre à jour à chaque fois.
+     * Le service va chercher toutes les scraping jobs de la veille et récupère leurs IDs.
+     * Un par un, il va downloader le JSON du contenu de la job. 
+     * On va parse la date et éliminer les résultats trop vieux.
+     * On catégorise l'article selon les rubriques.
+     * On envoie le corps de l'article à ChatGPT pour qu'il le résume avec des exemples de résumés tirer du VectorStore pour informer sa réponse.
+       * On pourrait générer les résumés en Markdown afin de faciliter la génération de la Newsletter.
+     * Lorsque tous les résumés nous sont parvenus, on va assembler un fichier CSV d'un coup avec tous les résumés en mémoire. Cet fichier va être conservé en mémoire jusqu'à ce que toutes les jobs aient été downloadées.
+       * On pourrait adjoindre le texte complet de l'article avec le résumé pour bâtir un meilleur VectorStore dans le futur.
+     * Lorsque le fichier est complet, on persiste le CSV dans le Sharepoint.
+     * À partir du CSV, on génère le newsletter et on le persiste dans le Sharepoint.
+       * Pour la démo, on persiste la newsletter en Markdown.
   3. Le juriste va chercher le rapport dans le Sharepoint.
