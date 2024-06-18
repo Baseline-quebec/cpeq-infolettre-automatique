@@ -1,1 +1,1 @@
-"""cpeq-infolettre-automatique test suite."""
+"""cpeq-infolettre-automatique unit test suite."""
