@@ -18,12 +18,13 @@ class WebScraperIoClient:
     retrieve job details, and download job data.
     """
 
-    def __init__(self, api_token: str) -> None:
+    def __init__(self, http_client: httpx.AsyncClient, api_token: str) -> None:
         """Initialize the WebScraperIoClient with the provided API token.
 
         Args:
             api_token (str): The API token used for authentication.
         """
+        self.__client = http_client
         self.__api_token = api_token
         self.__base_url: str = "https://api.webscraper.io/api/v1"
         self.__headers: dict[str, str] = {"Content-Type": "application/json"}
@@ -46,28 +47,27 @@ class WebScraperIoClient:
         }
 
         job_id: str
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url,
-                json=data,
-                headers=self.__headers,
-                params={"api_token": self.__api_token},
-            )
+        response = await self.__client.post(
+            url,
+            json=data,
+            headers=self.__headers,
+            params={"api_token": self.__api_token},
+        )
 
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                logger.exception(
-                    "HTTP Code %s while creating scraping job on Sitemap ID %s.",
-                    e.response.status_code,
-                    sitemap_id,
-                )
-                raise
-            except httpx.RequestError:
-                logger.exception("Error issuing POST request at URL %s.", url)
-                raise
-            else:
-                job_id = response.json().get("data", {}).get("id")
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP Code %s while creating scraping job on Sitemap ID %s.",
+                e.response.status_code,
+                sitemap_id,
+            )
+            raise
+        except httpx.RequestError:
+            logger.exception("Error issuing POST request at URL %s.", url)
+            raise
+        else:
+            job_id = response.json().get("data", {}).get("id")
 
         return job_id
 
@@ -80,22 +80,21 @@ class WebScraperIoClient:
         url: str = f"{self.__base_url}/scraping-jobs"
         job_ids: list[str] = []
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params={"api_token": self.__api_token})
+        response = await self.__client.get(url, params={"api_token": self.__api_token})
 
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                logger.exception(
-                    "HTTP code %s while getting all scraping jobs.",
-                    e.response.status_code,
-                )
-                raise
-            except httpx.RequestError:
-                logger.exception("Error issuing GET request at URL %s.", url)
-                raise
-            else:
-                job_ids = [job.id for job in response.json().get("data", [])]
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP code %s while getting all scraping jobs.",
+                e.response.status_code,
+            )
+            raise
+        except httpx.RequestError:
+            logger.exception("Error issuing GET request at URL %s.", url)
+            raise
+        else:
+            job_ids = [job.id for job in response.json().get("data", [])]
 
         return job_ids
 
@@ -112,22 +111,21 @@ class WebScraperIoClient:
         url: str = f"{self.__base_url}/scraping-job/{job_id}/json"
         job_data: list[dict[str, str]]
 
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(url, params={"api_token", self.__api_token})
-                response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                logger.exception(
-                    "HTTP Code %s while downloading scraping job data on Sitemap ID %s.",
-                    e.response.status_code,
-                    job_id,
-                )
-                raise
-            except httpx.RequestError:
-                logger.exception("Error issuing GET request at URL %s.", url)
-                raise
-            else:
-                job_data = self.process_raw_response(response.text)
+        response = await self.__client.get(url, params={"api_token", self.__api_token})
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP Code %s while downloading scraping job data on Sitemap ID %s.",
+                e.response.status_code,
+                job_id,
+            )
+            raise
+        except httpx.RequestError:
+            logger.exception("Error issuing GET request at URL %s.", url)
+            raise
+        else:
+            job_data = self.process_raw_response(response.text)
 
         return job_data
 
