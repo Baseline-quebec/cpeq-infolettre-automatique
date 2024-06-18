@@ -1,1 +1,1 @@
-"""cpeq-infolettre-automatique package."""
+"""cpeq-infolettre-automatique."""

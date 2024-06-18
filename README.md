@@ -1,8 +1,32 @@
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Baseline-quebec/cpeq-infolettre-automatique)
 
-# Automatic newsletter generation
+# cpeq-infolettre-automatique
 
-## Description
+CPEQ Infolettre automatique
+ 
+## Installing
+
+To install this package, run:
+
+```sh
+pip install cpeq-infolettre-automatique
+```
+
+## Using
+ 
+To serve this app, run:
+
+```sh
+docker compose up app
+```
+
+and open [localhost:8000](http://localhost:8000) in your browser.
+
+Within the Dev Container this is equivalent to:
+
+```sh
+poe api
+```
 
 ## Requirements
 
@@ -35,6 +59,7 @@ Host *
     AddKeysToAgent yes
     IgnoreUnknown UseKeychain
     UseKeychain yes
+    ForwardAgent yes
 ```
 </details>
 
@@ -42,7 +67,6 @@ Host *
 <summary>2. Install Docker</summary>
 
 [Install Docker Desktop](https://www.docker.com/get-started).
-    - Enable _Use Docker Compose V2_ in Docker Desktop's preferences window.
     - _Linux only_:
         - Export your user's user id and group id so that [files created in the Dev Container are owned by your user](https://github.com/moby/moby/issues/3206):
             ```sh
@@ -147,7 +171,7 @@ We use the following integration tools:
 
 - Run `poetry update` from within the development environment to upgrade all dependencies to the latest versions allowed by `pyproject.toml`.
 
-- Run `cz bump` to bump the package's version, update the `CHANGELOG.md`, and create a git tag.
+- Run `cz bump` to bump the app's version, update the `CHANGELOG.md`, and create a git tag.
 
 - Many VSCode extensions exists to help you code better and faster. We recommend the following ones:
     - The "Python" extension and its suite ("Python", "Pylance", "Python Debugger")
