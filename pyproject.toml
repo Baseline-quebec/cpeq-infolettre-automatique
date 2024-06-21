@@ -28,6 +28,8 @@ python-decouple = "^3.8"
 openai = "^1.23.2"
 numpy = "^1.26.4"
 tiktoken = "^0.6.0"
+asyncio = "^3.4.3"
+pydantic = "^2.7.4"
 
 [tool.poetry.group.test.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 commitizen = ">=3.2.1"
@@ -107,7 +109,9 @@ lint.ignore = [
     "D417", # Missing argument descriptions in the docstring. Not always needed.
     "E501", # Line too long. Already handled by ruff formater
     "E731", # Do not assign a lambda expression. Do not agree with this rule, it improves readability as it is self-documenting the lambda function.
+    "FIX002", # Fix TODO before release. Not useful in our workflow.
     "RET504", # Unnecessary assign before return. This is not bad, it helps debugging.
+    "TD003", # Reference issue link.
     "TRY003", # Raise exception with vanilla arguments. Creating exception classes should be done only when really needed.
     "W505", # Doc line too long. Editor autowraps doc, and it's too much work to fix it.
     "W391",
