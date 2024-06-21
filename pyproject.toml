@@ -30,6 +30,7 @@ numpy = "^1.26.4"
 tiktoken = "^0.6.0"
 asyncio = "^3.4.3"
 pydantic = "^2.7.4"
+pytest-asyncio = "^0.23.7"
 
 [tool.poetry.group.test.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 commitizen = ">=3.2.1"
@@ -79,6 +80,14 @@ show_column_numbers = true
 show_error_codes = true
 show_error_context = true
 warn_unreachable = true
+files = ["src/**/*.py", "tests/**/*.py"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = [
+  "method-assign",  # Necessary when mocking
+  "attr-defined",  # Mocked attributes are dynamically defined
+  ]
 
 [tool.pydantic-mypy]  # https://pydantic-docs.helpmanual.io/mypy_plugin/#configuring-the-plugin
 init_forbid_extra = true
@@ -125,6 +134,9 @@ target-version = "py312"
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
+[tool.ruff.lint.flake8-unused-arguments]
+ignore-variadic-names = true
+
 [tool.ruff.lint.isort]
 lines-after-imports = 2
 
@@ -136,6 +148,9 @@ convention = "google"
 
 [tool.ruff.lint.pylint]
 max-args = 6
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "INP001", "D100", "D101", "SLF"]
 
 [tool.poe.tasks]  # https://github.com/nat-n/poethepoet
 
