@@ -1,19 +1,20 @@
 """cpeq-infolettre-automatique REST API."""
 
 import logging
+from typing import Annotated
 
 import coloredlogs
 from decouple import config
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI
+from fastapi.responses import JSONResponse, Response
 
+from cpeq_infolettre_automatique.dependencies import get_service
+from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.utils import process_raw_response, save_data_to_json
 from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
 
 
 sitemaps: list[dict[str, str]] = []
-
-webscraper_io_api_token = config("WEBSCRAPER_IO_API_KEY", default="")
 
 app = FastAPI()
 
@@ -45,7 +46,7 @@ def initiate_scraping() -> list[str]:
     Returns:
         list[str]: A list of success messages or error messages for each job.
     """
-    client = WebScraperIoClient(api_token=webscraper_io_api_token)
+    client = WebScraperIoClient(api_token=config("WEBSCRAPER_IO_API_KEY", default=""))
     sitemap_ids = [sitemap["sitemap_id"] for sitemap in sitemaps]
     job_ids = client.create_scraping_jobs(sitemap_ids)
     results = []
@@ -69,6 +70,14 @@ def get_articles_from_scraper() -> JSONResponse:
     """
     # Appeler l'API de webscraper.io, appeler SharePoint, enlever les doublons, et retourner les articles en json
     return JSONResponse(content={"articles": []})
+
+
+@app.get("/generate-newsletter")
+async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
+    """Generate a newsletter from scraped news."""
+    # TODO(jsleb333): Schedule this task to return immediately
+    newsletter = await service.generate_newsletter()
+    return Response(content=str(newsletter))
 
 
 if __name__ == "__main__":
