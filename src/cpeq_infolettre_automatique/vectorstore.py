@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 import openai
 import tiktoken
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from cpeq_infolettre_automatique.config import EMBEDDING_MODEL, MAX_TOKENS, TOKEN_ENCODING
 from cpeq_infolettre_automatique.schemas import News
@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 class VectorStore:
     """Handles vector storage and retrieval using embeddings."""
 
-    def __init__(self, client: OpenAI, filepath: str) -> None:
+    def __init__(self, client: AsyncOpenAI, filepath: str) -> None:
         """Initialize the VectorStore with the provided OpenAI client and embedded data.
 
         Args:
