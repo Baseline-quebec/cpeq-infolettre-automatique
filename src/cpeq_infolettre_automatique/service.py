@@ -2,7 +2,7 @@
 
 import asyncio
 from collections.abc import Awaitable
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from cpeq_infolettre_automatique.schemas import News
@@ -13,7 +13,7 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
 NewsRepository = Any
 SummaryGenerator = Any
-NewsLetterFormatter = Any
+NewsletterFormatter = Any
 NewsLetter = Any
 
 
@@ -26,30 +26,32 @@ class Service:
         news_repository: NewsRepository,
         vectorstore: VectorStore,
         summary_generator: SummaryGenerator,
-        newsletter_formatter: NewsLetterFormatter,
+        newsletter_formatter: NewsletterFormatter,
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
         self.repository = news_repository
         self.vectorstore = vectorstore
-        self.generator = summary_generator
+        self.summary_generator = summary_generator
         self.formatter = newsletter_formatter
 
-    async def generate_newsletter(
-        self, start_date: datetime, end_date: datetime
-    ) -> Awaitable[NewsLetter]:
+    async def generate_newsletter(self) -> NewsLetter:
         """Generate the newsletter for the given date concurrently. Summarization is done concurrently inside 'pipelines'.
-
-        Args:
-            start_date: The start date of the newsletter.
-            end_date: The end date of the newsletter.
 
         Returns: The formatted newsletter as an awaitable object.
         """
+        # Find nearest sunday to the current date (at least for the alpha).
+        current_time = datetime.now(UTC)
+        end_date = current_time - timedelta(days=current_time.weekday())
+        start_date = end_date - timedelta(days=7)
+
         pipelines = await self._prepare_summarization_pipelines(start_date, end_date)
         summarized_news = await asyncio.gather(*pipelines)
-        flatten_news = [news for news_list in summarized_news for news in news_list]
-        newsletter = self._format_newsletter(flatten_news)
+        flattened_news = [news for news_list in summarized_news for news in news_list]
+        await self.repository.save_news(flattened_news)
+        await self.webscraper_io_client.delete_scraping_jobs()
+        newsletter = self._format_newsletter(flattened_news)
+        await self.repository.save_newsletter(newsletter)
         return newsletter
 
     async def _prepare_summarization_pipelines(
@@ -65,11 +67,11 @@ class Service:
 
         Returns: A list of summary generation pipelines to be run.
         """
-        job_ids = await self.webscraper_io_client.get_scraping_jobs(start_date, end_date)
+        job_ids = await self.webscraper_io_client.get_scraping_jobs()
 
         async def scraped_news_pipeline(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.get_scraping_job_data(job_id)
-            filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
+            filtered_news = await self._filter_news(all_news, start_date=start_date, end_date=end_date)
             summarized_news = await asyncio.gather(*[
                 self._summarize_news(news) for news in filtered_news
             ])
@@ -83,7 +85,7 @@ class Service:
 
         return pipelines
 
-    def _filter_news(
+    async def _filter_news(
         self, all_news: list[News], start_date: datetime, end_date: datetime
     ) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
@@ -101,7 +103,7 @@ class Service:
                 continue  # TODO(JSL): In future version, check if news exists in the repository.
             if not start_date <= news.date <= end_date:
                 continue
-            news.rubric = self.vectorstore.classify_rubric(news)
+            news.rubric = await self.vectorstore.classify_rubric(news)
             if news.rubric is None:
                 continue
             filtered_news.append(news)
@@ -117,7 +119,7 @@ class Service:
         Returns: The news data with the summary.
         """
         examples = await self.vectorstore.get_examples(news)
-        news.summary = await self.generator.generate_summary(news, examples)
+        news.summary = await self.summary_generator.generate_summary(news, examples)
         return news
 
     async def _format_newsletter(self, news: list[News]) -> NewsLetter:

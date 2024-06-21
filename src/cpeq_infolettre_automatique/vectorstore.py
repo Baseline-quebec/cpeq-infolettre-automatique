@@ -11,6 +11,7 @@ import tiktoken
 from openai import OpenAI
 
 from cpeq_infolettre_automatique.config import EMBEDDING_MODEL, MAX_TOKENS, TOKEN_ENCODING
+from cpeq_infolettre_automatique.schemas import News
 
 
 logger = logging.getLogger(__name__)
@@ -224,3 +225,23 @@ class VectorStore:
         most_similar_category = max(similarity_scores, key=similarity_scores.get)  # type: ignore[arg-type]
         highest_similarity_score = similarity_scores[most_similar_category]
         return most_similar_category, highest_similarity_score
+
+    async def get_examples(self, news: News) -> list[News]:
+        """Retrieve examples for a given news article.
+
+        Args:
+            news: The news article to find examples for.
+
+        Returns: A list of examples for the news article.
+        """
+        raise NotImplementedError
+
+    async def classify_rubric(self, news: News) -> str | None:
+        """Classify the rubric of a news article.
+
+        Args:
+            news: The news article to classify.
+
+        Returns: The rubric of the news article, or None if the news is not relevant.
+        """
+        raise NotImplementedError
