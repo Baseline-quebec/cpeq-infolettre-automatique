@@ -7,10 +7,11 @@ from decouple import config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from cpeq_infolettre_automatique.config import sitemaps
 from cpeq_infolettre_automatique.utils import process_raw_response, save_data_to_json
 from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
 
+
+sitemaps: list[dict[str, str]] = []
 
 webscraper_io_api_token = config("WEBSCRAPER_IO_API_KEY", default="")
 

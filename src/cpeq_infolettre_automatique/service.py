@@ -71,7 +71,9 @@ class Service:
 
         async def scraped_news_pipeline(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.get_scraping_job_data(job_id)
-            filtered_news = await self._filter_news(all_news, start_date=start_date, end_date=end_date)
+            filtered_news = await self._filter_news(
+                all_news, start_date=start_date, end_date=end_date
+            )
             summarized_news = await asyncio.gather(*[
                 self._summarize_news(news) for news in filtered_news
             ])
