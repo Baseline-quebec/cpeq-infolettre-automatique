@@ -2,7 +2,6 @@
 
 import json
 import logging
-from typing import Any
 
 import httpx
 
@@ -22,12 +21,13 @@ class WebScraperIoClient:
         """Initialize the WebScraperIoClient with the provided API token.
 
         Args:
+            http_client (httpx.AsyncClient): The AsyncClient used for API calls.
             api_token (str): The API token used for authentication.
         """
-        self.__client = http_client
-        self.__api_token = api_token
-        self.__base_url: str = "https://api.webscraper.io/api/v1"
-        self.__headers: dict[str, str] = {"Content-Type": "application/json"}
+        self._client = http_client
+        self._api_token = api_token
+        self._base_url: str = "https://api.webscraper.io/api/v1"
+        self._headers: dict[str, str] = {"Content-Type": "application/json"}
 
     async def create_scraping_job(self, sitemap_id: str) -> str:
         """Creates a new scraping job for given sitemap id.
@@ -36,22 +36,22 @@ class WebScraperIoClient:
             sitemap_id (str): ID of the Sitemap.
 
         Returns:
-            str: ID of the created job.
+            str: ID of the created job on success, empty string otherwise.
         """
-        url: str = f"{self.__base_url}/scraping-job"
-        data: Any = {
+        url: str = f"{self._base_url}/scraping-job"
+        data: dict[str, str | int] = {
             "sitemap_id": sitemap_id,
             "driver": "fulljs",
             "page_load_delay": 3000,
             "request_interval": 3000,
         }
 
-        job_id: str
-        response = await self.__client.post(
+        job_id: str = ""
+        response = await self._client.post(
             url,
             json=data,
-            headers=self.__headers,
-            params={"api_token": self.__api_token},
+            headers=self._headers,
+            params={"api_token": self._api_token},
         )
 
         try:
@@ -62,10 +62,8 @@ class WebScraperIoClient:
                 e.response.status_code,
                 sitemap_id,
             )
-            raise
         except httpx.RequestError:
             logger.exception("Error issuing POST request at URL %s.", url)
-            raise
         else:
             job_id = response.json().get("data", {}).get("id")
 
@@ -77,10 +75,10 @@ class WebScraperIoClient:
         Returns:
             A list containing the IDs of all the scraping jobs.
         """
-        url: str = f"{self.__base_url}/scraping-jobs"
+        url: str = f"{self._base_url}/scraping-jobs"
         job_ids: list[str] = []
 
-        response = await self.__client.get(url, params={"api_token": self.__api_token})
+        response = await self._client.get(url, params={"api_token": self._api_token})
 
         try:
             response.raise_for_status()
@@ -89,10 +87,8 @@ class WebScraperIoClient:
                 "HTTP code %s while getting all scraping jobs.",
                 e.response.status_code,
             )
-            raise
         except httpx.RequestError:
             logger.exception("Error issuing GET request at URL %s.", url)
-            raise
         else:
             job_ids = [job.id for job in response.json().get("data", [])]
 
@@ -108,10 +104,10 @@ class WebScraperIoClient:
             A list of JSON objects, represented as dictionaries.
             The Webscraper.io API returns JSON Lines
         """
-        url: str = f"{self.__base_url}/scraping-job/{job_id}/json"
-        job_data: list[dict[str, str]]
+        url: str = f"{self._base_url}/scraping-job/{job_id}/json"
+        job_data: list[dict[str, str]] = []
 
-        response = await self.__client.get(url, params={"api_token", self.__api_token})
+        response = await self._client.get(url, params={"api_token", self._api_token})
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:

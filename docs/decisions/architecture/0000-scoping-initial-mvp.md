@@ -104,9 +104,9 @@ Le flot d'exécution du programme ira comme suit :
      * Un par un, il va downloader le JSON du contenu de la job. 
      * On va parse la date et éliminer les résultats trop vieux.
      * On catégorise l'article selon les rubriques.
-     * On envoie le corps de l'article à ChatGPT pour qu'il le résume avec des exemples de résumés tirer du VectorStore pour informer sa réponse.
+     * On envoie le corps de l'article à ChatGPT pour qu'il le résume avec des exemples de résumés tirés du VectorStore pour informer sa réponse.
        * On pourrait générer les résumés en Markdown afin de faciliter la génération de la Newsletter.
-     * Lorsque tous les résumés nous sont parvenus, on va assembler un fichier CSV d'un coup avec tous les résumés en mémoire. Cet fichier va être conservé en mémoire jusqu'à ce que toutes les jobs aient été downloadées.
+     * Lorsque tous les résumés nous sont parvenus, on va assembler un fichier CSV d'un coup avec tous les résumés en mémoire. Ce fichier va être conservé en mémoire jusqu'à ce que toutes les jobs aient été downloadées.
        * On pourrait adjoindre le texte complet de l'article avec le résumé pour bâtir un meilleur VectorStore dans le futur.
      * Lorsque le fichier est complet, on persiste le CSV dans le Sharepoint.
      * À partir du CSV, on génère le newsletter et on le persiste dans le Sharepoint.

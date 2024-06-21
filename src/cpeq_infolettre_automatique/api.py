@@ -1,62 +1,58 @@
 """cpeq-infolettre-automatique REST API."""
 
+import asyncio
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 import coloredlogs
+import httpx
 from decouple import config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from cpeq_infolettre_automatique.config import sitemaps
-from cpeq_infolettre_automatique.utils import process_raw_response, save_data_to_json
 from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
 
 
 webscraper_io_api_token = config("WEBSCRAPER_IO_API_KEY", default="")
 
-app = FastAPI()
 
-
-@app.on_event("startup")
-def startup_event() -> None:
-    """Run API startup events with configured logging."""
-    # Remove all handlers associated with the root logger object.
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
+    """Handle FastAPI startup and shutdown events."""
+    # Startup events:
+    # - Remove all handlers associated with the root logger object.
     for handler in logging.root.handlers:
         logging.root.removeHandler(handler)
     # Add coloredlogs' coloured StreamHandler to the root logger.
+    # - Add coloredlogs' colored StreamHandler to the root logger.
     coloredlogs.install()
+    yield
+    # Shutdown events.
 
 
-@app.get("/")
-def read_root() -> str:
-    """Read the API root endpoint.
-
-    Returns:
-        str: A simple "API is alive!" message.
-    """
-    return "API is alive!"
+app = FastAPI(lifespan=lifespan)
+app.http_client = httpx.AsyncClient()
 
 
 @app.get("/initiate_scraping")
-def initiate_scraping() -> list[str]:
+async def initiate_scraping() -> list[tuple[str, str]]:
     """Initiate web scraping jobs and process their data.
 
     Returns:
-        list[str]: A list of success messages or error messages for each job.
+        list[tuple[str, str]]: A list of tuples associating a sitemap id to a job id
     """
-    client = WebScraperIoClient(api_token=webscraper_io_api_token)
+    webscraper_client = WebScraperIoClient(
+        http_client=app.http_client, api_token=webscraper_io_api_token
+    )
     sitemap_ids = [sitemap["sitemap_id"] for sitemap in sitemaps]
-    job_ids = client.create_scraping_jobs(sitemap_ids)
-    results = []
-    for job_id in job_ids:
-        raw_data = client.download_scraping_job_data(job_id)
-        processed_data = process_raw_response(raw_data)
-        if processed_data:
-            save_message = save_data_to_json(processed_data, f"{job_id}_output.json")
-            results.append(save_message)
-        else:
-            results.append(f"No data processed for job ID {job_id}")
-    return results
+
+    async def create_job(sitemap_id: str) -> tuple[str, str]:
+        return (sitemap_id, await webscraper_client.create_scraping_job(sitemap_id))
+
+    coroutines = [create_job(sitemap_id) for sitemap_id in sitemap_ids]
+    return await asyncio.gather(*coroutines)
 
 
 @app.get("/get-articles")
@@ -75,6 +71,6 @@ if __name__ == "__main__":
 
     uvicorn.run(
         app,
-        host=str(config("DEVLOCAL_HOST", "localhost")),
-        port=int(config("DEVLOCAL_PORT", 8001)),
+        port=int(config("DEVLOCAL_PORT", 8000)),
+        log_level="info",
     )
