@@ -65,7 +65,7 @@ class WebScraperIoClient:
         except httpx.RequestError:
             logger.exception("Error issuing POST request at URL %s.", url)
         else:
-            job_id = response.json().get("data", {}).get("id")
+            job_id = str(response.json().get("data", {}).get("id"))
 
         return job_id
 
@@ -90,7 +90,7 @@ class WebScraperIoClient:
         except httpx.RequestError:
             logger.exception("Error issuing GET request at URL %s.", url)
         else:
-            job_ids = [job.id for job in response.json().get("data", [])]
+            job_ids = [str(job.id) for job in response.json().get("data", [])]
 
         return job_ids
 

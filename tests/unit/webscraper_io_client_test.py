@@ -70,11 +70,11 @@ def async_client_fixture() -> AsyncClient:
     return AsyncClient()
 
 
+@pytest.mark.asyncio(scope="class")
 class WebscraperIoClientTest:
     """Webscraper.io Client tests."""
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_happy_path__when_create_scraping_job__then_return_job_id__test(
         async_client_fixture: AsyncClient,
     ) -> None:
@@ -94,7 +94,6 @@ class WebscraperIoClientTest:
         assert return_value == job_id
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_http_status_error__when_create_scraping_job__then_return_empty_string__test(
         async_client_fixture: AsyncClient,
     ) -> None:
@@ -110,7 +109,6 @@ class WebscraperIoClientTest:
         assert return_value == ""
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_request_error__when_create_scraping_job__then_return_empty_string__test(
         async_client_fixture: AsyncClient,
     ) -> None:
@@ -126,7 +124,6 @@ class WebscraperIoClientTest:
         assert return_value == ""
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_happy_path__when_get_scraping_jobs__then_return_job_ids__test(
         async_client_fixture: AsyncClient,
     ) -> None:
@@ -146,7 +143,6 @@ class WebscraperIoClientTest:
         assert return_value == job_ids
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_http_status_error__when_get_scraping_jobs__then_return_empty_array__test(
         async_client_fixture: AsyncClient,
     ) -> None:
@@ -162,7 +158,6 @@ class WebscraperIoClientTest:
         assert len(return_value) == 0
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_request_error__when_get_scraping_jobs__then_return_empty_array__test(
         async_client_fixture: AsyncClient,
     ) -> None:
@@ -178,7 +173,6 @@ class WebscraperIoClientTest:
         assert len(return_value) == 0
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_happy_path__when_download_scraping_job_data__then_return_data__test(
         async_client_fixture: AsyncClient, scraping_job_data_fixture: str
     ) -> None:
@@ -199,7 +193,6 @@ class WebscraperIoClientTest:
         assert len(return_value) != 0
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_http_status_error__when_download_scraping_job_data__then_return_empty_array__test(
         async_client_fixture: AsyncClient,
     ) -> None:
@@ -216,7 +209,6 @@ class WebscraperIoClientTest:
         assert len(return_value) == 0
 
     @staticmethod
-    @pytest.mark.asyncio()
     async def given_request_error__when_download_scraping_job_data__then_return_empty_array__test(
         async_client_fixture: AsyncClient,
     ) -> None:

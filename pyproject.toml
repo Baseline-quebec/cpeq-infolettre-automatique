@@ -36,12 +36,11 @@ pre-commit = ">=3.7.0"
 pytest = ">=8.1.1"
 pytest-mock = ">=3.14.0"
 pytest-xdist = ">=3.5.0"
+pytest-asyncio = "^0.23.7"
 ruff = ">=0.3.5"
 safety = ">=3.1.0"
 shellcheck-py = ">=0.10.0.1"
 typeguard = ">=4.2.1"
-types-aiofiles = "^23.2.0.20240403"
-pytest-asyncio = "^0.23.7"
 
 [tool.poetry.group.dev.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 cruft = ">=2.15.0"

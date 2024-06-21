@@ -71,6 +71,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         app,
+        host=str(config("DEVLOCAL_HOST", "localhost")),
         port=int(config("DEVLOCAL_PORT", 8000)),
         log_level="info",
     )
