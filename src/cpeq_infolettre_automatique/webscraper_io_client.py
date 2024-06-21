@@ -107,7 +107,7 @@ class WebScraperIoClient:
         url: str = f"{self._base_url}/scraping-job/{job_id}/json"
         job_data: list[dict[str, str]] = []
 
-        response = await self._client.get(url, params={"api_token", self._api_token})
+        response = await self._client.get(url, params={"api_token": self._api_token})
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:

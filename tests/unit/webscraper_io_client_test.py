@@ -130,7 +130,7 @@ class WebscraperIoClientTest:
         """get_scraping_jobs should return all the job ids on a happy path."""
         # Given
         job_ids: list[str] = ["1", "2", "3"]
-        response: Response = Response()
+        response: Response = Response(status_code=200)
         json: Any = {"data": [{"id": job_id} for job_id in job_ids]}
         response.json = MagicMock(return_value=json)
         async_client_fixture.get = AsyncMock(return_value=response)

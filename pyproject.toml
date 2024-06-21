@@ -79,6 +79,13 @@ show_error_codes = true
 show_error_context = true
 warn_unreachable = true
 
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = [
+  "method-assign",  # Necessary when mocking
+  "attr-defined",  # Mocked attributes are dynamically defined
+  ]
+
 [tool.pydantic-mypy]  # https://pydantic-docs.helpmanual.io/mypy_plugin/#configuring-the-plugin
 init_forbid_extra = true
 init_typed = true
