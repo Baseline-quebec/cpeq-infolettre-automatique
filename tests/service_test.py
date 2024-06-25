@@ -36,7 +36,7 @@ class TestService:
 
     @staticmethod
     @pytest.mark.asyncio()
-    async def test_generate_newsletter__when_happy_path__should_return_list_of_news(
+    async def test_generate_newsletter__when_happy_path__returns_list_of_news(
         service_fixture: Service,
     ) -> None:
         """Test that the newsletter generation flow and logic operates as intented given expected situation."""
@@ -53,7 +53,7 @@ class TestService:
         assert service_fixture.news_repository.save_news.called
 
     @staticmethod
-    def test_prepare_dates__when_default_args__should_return_closest_monday_to_monday_period() -> (
+    def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> (
         None
     ):
         """Test that the start and end dates are correctly prepared when no arguments are provided."""

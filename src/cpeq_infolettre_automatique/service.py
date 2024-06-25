@@ -15,7 +15,7 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
 NewsRepository = Any
 SummaryGenerator = Any
 NewsletterFormatter = Any
-NewsLetter = Any
+Newsletter = Any
 
 
 class Service:
@@ -36,7 +36,7 @@ class Service:
         self.summary_generator = summary_generator
         self.formatter = newsletter_formatter
 
-    async def generate_newsletter(self) -> NewsLetter:
+    async def generate_newsletter(self) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
         Returns: The formatted newsletter.
@@ -136,6 +136,6 @@ class Service:
         news.summary = await self.summary_generator.generate_summary(news, examples)
         return news
 
-    def _format_newsletter(self, news: list[News]) -> NewsLetter:
+    def _format_newsletter(self, news: list[News]) -> Newsletter:
         """Format the news into a newsletter."""
         raise NotImplementedError
