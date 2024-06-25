@@ -1,7 +1,7 @@
 """Service for the automatic newsletter generation that is called by the API."""
 
 import asyncio
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Iterable
 from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -42,8 +42,14 @@ class Service:
         Returns: The formatted newsletter.
         """
         start_date, end_date = self._prepare_dates()
-        coroutines = await self._prepare_summarization_coroutines(start_date, end_date)
-        summarized_news = await asyncio.gather(*coroutines)
+
+        # For the moment, only the coroutine for scraped news is implemented.
+        job_ids = await self.webscraper_io_client.get_scraping_jobs()
+        scraped_news_coroutines = self._prepare_scraped_news_summarization_coroutines(
+            start_date, end_date, job_ids
+        )
+
+        summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
         await self.news_repository.save_news(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
@@ -70,36 +76,28 @@ class Service:
             start_date = end_date - timedelta(days=7)
         return start_date, end_date
 
-    async def _prepare_summarization_coroutines(
-        self, start_date: date, end_date: date
-    ) -> list[Awaitable[list[News]]]:
-        """Prepare the coroutines for concurrent summary generation of the news.
-
-        For the moment, only the coroutine for scraped news is implemented.
+    def _prepare_scraped_news_summarization_coroutines(
+        self, start_date: date, end_date: date, job_ids: list[str]
+    ) -> Iterable[Awaitable[Iterable[News]]]:
+        """Prepare the summarization coroutines for concurrent summary generation of the news that are taken from the webscaper.
 
         Args:
             start_date: The start date of the newsletter.
             end_date: The end date of the newsletter.
+            job_ids: The IDs of the scraping jobs.
 
-        Returns: A list of summary generation coroutines to be run.
+        Returns: An iterable of summary generation coroutines to be run.
         """
-        job_ids = await self.webscraper_io_client.get_scraping_jobs()
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.get_scraping_job_data(job_id)
             filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
-            summarized_news = await asyncio.gather(*[
-                self._summarize_news(news) for news in filtered_news
-            ])
+            summarized_news = await asyncio.gather(
+                *(self._summarize_news(news) for news in filtered_news)
+            )
             return summarized_news
 
-        coroutines: list[Awaitable[list[News]]] = [
-            scraped_news_coroutine(job_id) for job_id in job_ids
-        ]
-
-        # Add more coroutines here for other sources of news data.
-
-        return coroutines
+        return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     def _filter_news(self, all_news: list[News], start_date: date, end_date: date) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.

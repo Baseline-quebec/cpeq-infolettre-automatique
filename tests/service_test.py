@@ -53,9 +53,7 @@ class TestService:
         assert service_fixture.news_repository.save_news.called
 
     @staticmethod
-    def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> (
-        None
-    ):
+    def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:
         """Test that the start and end dates are correctly prepared when no arguments are provided."""
         with patch("cpeq_infolettre_automatique.service.datetime") as datetime_mock:
             datetime_mock.now.return_value = datetime(2024, 1, 9)  # noqa: DTZ001
