@@ -83,7 +83,7 @@ class WebscraperIoClientTest:
         """create_scraping_job should return the newly created Job ID on a happy path."""
         # Given
         job_id: str = "job_id"
-        response: Response = Response()
+        response: Response = Response(status_code=200)
         json: Any = {"data": {"id": job_id}}
         response.json = MagicMock(return_value=json)
         async_client_fixture.post = MagicMock(return_value=response)
@@ -181,9 +181,7 @@ class WebscraperIoClientTest:
         """download_scraping_job_data should return job data on a happy path."""
         # Given
         job_id: str = "job_id"
-        response: Response = Response()
-
-        response.text = MagicMock(return_value=scraping_job_data_fixture)
+        response: Response = Response(status_code=200, text=scraping_job_data_fixture)
         async_client_fixture.get = AsyncMock(return_value=response)
 
         webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
