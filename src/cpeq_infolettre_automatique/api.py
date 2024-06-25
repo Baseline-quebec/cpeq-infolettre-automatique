@@ -32,7 +32,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.http_client = httpx.AsyncClient(http2=True)
 
     yield
+
     # Shutdown events.
+    await app.state.http_client.aclose()
 
 
 app = FastAPI(lifespan=lifespan)
