@@ -87,9 +87,7 @@ class Service:
 
         async def scraped_news_pipeline(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.get_scraping_job_data(job_id)
-            filtered_news = await self._filter_news(
-                all_news, start_date=start_date, end_date=end_date
-            )
+            filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
             summarized_news = await asyncio.gather(*[
                 self._summarize_news(news) for news in filtered_news
             ])
@@ -103,9 +101,7 @@ class Service:
 
         return pipelines
 
-    async def _filter_news(
-        self, all_news: list[News], start_date: date, end_date: date
-    ) -> list[News]:
+    def _filter_news(self, all_news: list[News], start_date: date, end_date: date) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
@@ -121,7 +117,7 @@ class Service:
                 continue  # TODO(JSL): In future version, check if news exists in the repository.
             if not start_date <= news.date <= end_date:
                 continue
-            news.rubric = await self.vectorstore.classify_rubric(news)
+            news.rubric = self.vectorstore.classify_rubric(news)
             if news.rubric is None:
                 continue
             filtered_news.append(news)
@@ -136,10 +132,10 @@ class Service:
 
         Returns: The news data with the summary.
         """
-        examples = await self.vectorstore.get_examples(news)
+        examples = self.vectorstore.get_examples(news)
         news.summary = await self.summary_generator.generate_summary(news, examples)
         return news
 
-    async def _format_newsletter(self, news: list[News]) -> NewsLetter:
+    def _format_newsletter(self, news: list[News]) -> NewsLetter:
         """Format the news into a newsletter."""
         raise NotImplementedError
