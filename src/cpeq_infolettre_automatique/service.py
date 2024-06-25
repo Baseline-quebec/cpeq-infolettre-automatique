@@ -31,7 +31,7 @@ class Service:
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
-        self.repository = news_repository
+        self.news_repository = news_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
         self.formatter = newsletter_formatter
@@ -45,10 +45,10 @@ class Service:
         pipelines = await self._prepare_summarization_pipelines(start_date, end_date)
         summarized_news = await asyncio.gather(*pipelines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
-        await self.repository.save_news(flattened_news)
+        await self.news_repository.save_news(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
         newsletter = self._format_newsletter(flattened_news)
-        await self.repository.save_newsletter(newsletter)
+        await self.news_repository.save_newsletter(newsletter)
         return newsletter
 
     @staticmethod
