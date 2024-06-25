@@ -1,6 +1,6 @@
 """Schemas used in the application."""
 
-from datetime import datetime
+from datetime import date
 
 from pydantic import BaseModel
 
@@ -10,6 +10,6 @@ class News(BaseModel):
 
     title: str
     content: str
-    date: datetime | None
+    date: date | None
     rubric: str | None
     summary: str | None

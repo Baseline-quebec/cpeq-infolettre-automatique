@@ -2,8 +2,9 @@
 
 import asyncio
 from collections.abc import Awaitable
-from datetime import UTC, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import VectorStore
@@ -36,15 +37,11 @@ class Service:
         self.formatter = newsletter_formatter
 
     async def generate_newsletter(self) -> NewsLetter:
-        """Generate the newsletter for the given date concurrently. Summarization is done concurrently inside 'pipelines'.
+        """Generate the newsletter for the previous whole monday-to-sunday period. concurrently. Summarization is done concurrently inside 'pipelines'.
 
         Returns: The formatted newsletter as an awaitable object.
         """
-        # Find nearest sunday to the current date (at least for the alpha).
-        current_time = datetime.now(UTC)
-        end_date = current_time - timedelta(days=current_time.weekday())
-        start_date = end_date - timedelta(days=7)
-
+        start_date, end_date = self._prepare_dates()
         pipelines = await self._prepare_summarization_pipelines(start_date, end_date)
         summarized_news = await asyncio.gather(*pipelines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
@@ -54,8 +51,27 @@ class Service:
         await self.repository.save_newsletter(newsletter)
         return newsletter
 
+    @staticmethod
+    def _prepare_dates(
+        start_date: date | None = None, end_date: date | None = None
+    ) -> tuple[date, date]:
+        """Prepare the start and end dates for the newsletter.
+
+        Args:
+            start_date: The start date of the newsletter.
+            end_date: The end date of the newsletter.
+
+        Returns: The start and end dates for the newsletter.
+        """
+        if end_date is None:
+            current_date = datetime.now(ZoneInfo("localtime")).date()
+            end_date = current_date - timedelta(days=current_date.weekday())
+        if start_date is None:
+            start_date = end_date - timedelta(days=7)
+        return start_date, end_date
+
     async def _prepare_summarization_pipelines(
-        self, start_date: datetime, end_date: datetime
+        self, start_date: date, end_date: date
     ) -> list[Awaitable[list[News]]]:
         """Prepare the async pipelines for concurrent summary generation of the news.
 
@@ -88,7 +104,7 @@ class Service:
         return pipelines
 
     async def _filter_news(
-        self, all_news: list[News], start_date: datetime, end_date: datetime
+        self, all_news: list[News], start_date: date, end_date: date
     ) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
