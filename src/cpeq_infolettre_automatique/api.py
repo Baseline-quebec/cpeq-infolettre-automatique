@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import coloredlogs
 import httpx
 from decouple import config
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from cpeq_infolettre_automatique.config import sitemaps
@@ -19,7 +19,7 @@ webscraper_io_api_token = config("WEBSCRAPER_IO_API_KEY", default="")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Handle FastAPI startup and shutdown events."""
     # Startup events:
     # - Remove all handlers associated with the root logger object.
@@ -28,23 +28,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     # Add coloredlogs' coloured StreamHandler to the root logger.
     # - Add coloredlogs' colored StreamHandler to the root logger.
     coloredlogs.install()
+
+    app.state.http_client = httpx.AsyncClient()
+
     yield
     # Shutdown events.
 
 
 app = FastAPI(lifespan=lifespan)
-app.http_client = httpx.AsyncClient()
 
 
 @app.get("/initiate_scraping")
-async def initiate_scraping() -> list[tuple[str, str]]:
+async def initiate_scraping(request: Request) -> list[tuple[str, str]]:
     """Initiate web scraping jobs and process their data.
 
     Returns:
         list[tuple[str, str]]: A list of tuples associating a sitemap id to a job id
     """
     webscraper_client = WebScraperIoClient(
-        http_client=app.http_client, api_token=webscraper_io_api_token
+        http_client=request.app.state.http_client, api_token=webscraper_io_api_token
     )
     sitemap_ids = [sitemap["sitemap_id"] for sitemap in sitemaps]
 
