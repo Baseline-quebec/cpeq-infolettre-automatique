@@ -35,7 +35,7 @@ class TestService:
 
     @staticmethod
     @pytest.mark.asyncio()
-    async def generate_newsletter__given_happy_path__returns_list_of_news(
+    async def test_generate_newsletter__when_happy_path__should_return_list_of_news(
         service_fixture: Service,
     ) -> None:
         """Test that the newsletter generation flow and logic operates as intented given expected situation."""

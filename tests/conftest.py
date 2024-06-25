@@ -2,7 +2,7 @@
 
 from datetime import date
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -37,9 +37,9 @@ def webscraper_io_client_fixture(news_fixture: News) -> WebScraperIoClient:
 @pytest.fixture()
 def vectorstore_fixture(news_fixture: News) -> VectorStore:
     """Fixture for mocked VectorStore."""
-    vectorstore_fixture = AsyncMock(spec=VectorStore)
-    vectorstore_fixture.classify_rubric = AsyncMock(return_value="Some rubric")
-    vectorstore_fixture.get_examples = AsyncMock(return_value=[news_fixture] * 3)
+    vectorstore_fixture = MagicMock(spec=VectorStore)
+    vectorstore_fixture.classify_rubric = MagicMock(return_value="Some rubric")
+    vectorstore_fixture.get_examples = MagicMock(return_value=[news_fixture] * 3)
     return vectorstore_fixture
 
 
@@ -60,4 +60,4 @@ def summary_generator_fixture() -> Any:
 @pytest.fixture()
 def newsletter_formatter_fixture() -> Any:
     """Fixture for mocked NewsRepository."""
-    return AsyncMock()
+    return MagicMock()
