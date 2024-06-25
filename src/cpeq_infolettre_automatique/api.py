@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # - Add coloredlogs' colored StreamHandler to the root logger.
     coloredlogs.install()
 
-    app.state.http_client = httpx.AsyncClient()
+    app.state.http_client = httpx.AsyncClient(http2=True)
 
     yield
     # Shutdown events.

@@ -27,6 +27,7 @@ python-decouple = "^3.8"
 openai = "^1.23.2"
 numpy = "^1.26.4"
 tiktoken = "^0.6.0"
+httpx = {version = "^0.27.0", extras = ["http2"]}
 
 [tool.poetry.group.test.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 commitizen = ">=3.21.3"
