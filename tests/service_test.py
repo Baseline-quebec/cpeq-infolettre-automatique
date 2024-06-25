@@ -1,7 +1,8 @@
 """Tests for service class."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -49,4 +50,17 @@ class TestService:
         assert service_fixture.vectorstore.get_examples.called
         assert service_fixture.summary_generator.generate_summary.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
-        assert service_fixture.repository.save_news.called
+        assert service_fixture.news_repository.save_news.called
+
+    @staticmethod
+    def test_prepare_dates__when_default_args__should_return_closest_monday_to_monday_period() -> (
+        None
+    ):
+        """Test that the start and end dates are correctly prepared when no arguments are provided."""
+        with patch("cpeq_infolettre_automatique.service.datetime") as datetime_mock:
+            datetime_mock.now.return_value = datetime(2024, 1, 9)  # noqa: DTZ001
+            start_date, end_date = Service._prepare_dates()
+            first_monday = date(2024, 1, 1)
+            second_monday = date(2024, 1, 8)
+            assert start_date == first_monday
+            assert end_date == second_monday

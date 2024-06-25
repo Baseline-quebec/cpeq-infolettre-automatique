@@ -115,7 +115,7 @@ class Service:
         for news in all_news:
             if news.date is None:
                 continue  # TODO(JSL): In future version, check if news exists in the repository.
-            if not start_date <= news.date <= end_date:
+            if not start_date <= news.date < end_date:
                 continue
             news.rubric = self.vectorstore.classify_rubric(news)
             if news.rubric is None:
