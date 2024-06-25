@@ -39,7 +39,7 @@ class TestService:
         service_fixture: Service,
     ) -> None:
         """Test that the newsletter generation flow and logic operates as intented given expected situation."""
-        service_fixture._format_newsletter = lambda news: news  # type: ignore[return-value, assignment]
+        service_fixture._format_newsletter = lambda news: news
         news_list = await service_fixture.generate_newsletter()
         expected_number_of_news = 4
         assert len(news_list) == expected_number_of_news

@@ -226,7 +226,7 @@ class VectorStore:
         highest_similarity_score = similarity_scores[most_similar_category]
         return most_similar_category, highest_similarity_score
 
-    async def get_examples(self, news: News) -> list[News]:
+    def get_examples(self, news: News) -> list[News]:
         """Retrieve examples for a given news article.
 
         Args:
@@ -236,7 +236,7 @@ class VectorStore:
         """
         raise NotImplementedError
 
-    async def classify_rubric(self, news: News) -> str | None:
+    def classify_rubric(self, news: News) -> str | None:
         """Classify the rubric of a news article.
 
         Args:

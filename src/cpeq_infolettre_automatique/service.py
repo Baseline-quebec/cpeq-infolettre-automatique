@@ -37,13 +37,13 @@ class Service:
         self.formatter = newsletter_formatter
 
     async def generate_newsletter(self) -> NewsLetter:
-        """Generate the newsletter for the previous whole monday-to-sunday period. concurrently. Summarization is done concurrently inside 'pipelines'.
+        """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
-        Returns: The formatted newsletter as an awaitable object.
+        Returns: The formatted newsletter.
         """
         start_date, end_date = self._prepare_dates()
-        pipelines = await self._prepare_summarization_pipelines(start_date, end_date)
-        summarized_news = await asyncio.gather(*pipelines)
+        coroutines = await self._prepare_summarization_coroutines(start_date, end_date)
+        summarized_news = await asyncio.gather(*coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
         await self.news_repository.save_news(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
@@ -70,22 +70,22 @@ class Service:
             start_date = end_date - timedelta(days=7)
         return start_date, end_date
 
-    async def _prepare_summarization_pipelines(
+    async def _prepare_summarization_coroutines(
         self, start_date: date, end_date: date
     ) -> list[Awaitable[list[News]]]:
-        """Prepare the async pipelines for concurrent summary generation of the news.
+        """Prepare the coroutines for concurrent summary generation of the news.
 
-        For the moment, only the pipeline for scraped news is implemented.
+        For the moment, only the coroutine for scraped news is implemented.
 
         Args:
             start_date: The start date of the newsletter.
             end_date: The end date of the newsletter.
 
-        Returns: A list of summary generation pipelines to be run.
+        Returns: A list of summary generation coroutines to be run.
         """
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
 
-        async def scraped_news_pipeline(job_id: str) -> list[News]:
+        async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.get_scraping_job_data(job_id)
             filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
             summarized_news = await asyncio.gather(*[
@@ -93,13 +93,13 @@ class Service:
             ])
             return summarized_news
 
-        pipelines: list[Awaitable[list[News]]] = [
-            scraped_news_pipeline(job_id) for job_id in job_ids
+        coroutines: list[Awaitable[list[News]]] = [
+            scraped_news_coroutine(job_id) for job_id in job_ids
         ]
 
-        # Add more pipelines here for other sources of news data.
+        # Add more coroutines here for other sources of news data.
 
-        return pipelines
+        return coroutines
 
     def _filter_news(self, all_news: list[News], start_date: date, end_date: date) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
