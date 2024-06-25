@@ -91,7 +91,9 @@ class Service:
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.get_scraping_job_data(job_id)
-            filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
+            filtered_news = await self._filter_news(
+                all_news, start_date=start_date, end_date=end_date
+            )
             summarized_news = await asyncio.gather(
                 *(self._summarize_news(news) for news in filtered_news)
             )
@@ -99,7 +101,9 @@ class Service:
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
-    def _filter_news(self, all_news: list[News], start_date: date, end_date: date) -> list[News]:
+    async def _filter_news(
+        self, all_news: list[News], start_date: date, end_date: date
+    ) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
@@ -115,7 +119,7 @@ class Service:
                 continue
             if not start_date <= news.date < end_date:
                 continue
-            news.rubric = self.vectorstore.classify_rubric(news)
+            news.rubric = await self.vectorstore.classify_rubric(news)
             if news.rubric is None:
                 continue
             filtered_news.append(news)

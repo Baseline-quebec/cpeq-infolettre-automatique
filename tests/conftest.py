@@ -38,7 +38,7 @@ def webscraper_io_client_fixture(news_fixture: News) -> WebScraperIoClient:
 def vectorstore_fixture(news_fixture: News) -> VectorStore:
     """Fixture for mocked VectorStore."""
     vectorstore_fixture = MagicMock(spec=VectorStore)
-    vectorstore_fixture.classify_rubric = MagicMock(return_value="Some rubric")
+    vectorstore_fixture.classify_rubric = AsyncMock(return_value="Some rubric")
     vectorstore_fixture.get_examples = MagicMock(return_value=[news_fixture] * 3)
     return vectorstore_fixture
 

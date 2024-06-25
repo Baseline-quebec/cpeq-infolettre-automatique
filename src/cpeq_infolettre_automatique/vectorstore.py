@@ -236,7 +236,7 @@ class VectorStore:
         """
         raise NotImplementedError
 
-    def classify_rubric(self, news: News) -> str | None:
+    async def classify_rubric(self, news: News) -> str | None:
         """Classify the rubric of a news article.
 
         Args:
