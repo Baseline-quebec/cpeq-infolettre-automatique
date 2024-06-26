@@ -150,7 +150,12 @@ convention = "google"
 max-args = 6
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "INP001", "D100", "D101", "SLF"]
+"tests/*" = [
+  "S101",  # Use of assert
+  "D100",  # Missing docstring in public module
+  "D101",  # Missing docstring in public class
+  "SLF",  # Private member access
+]
 
 [tool.poe.tasks]  # https://github.com/nat-n/poethepoet
 
