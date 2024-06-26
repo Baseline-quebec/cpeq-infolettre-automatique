@@ -39,7 +39,10 @@ class TestService:
     async def test_generate_newsletter__when_happy_path__returns_list_of_news(
         service_fixture: Service,
     ) -> None:
-        """Test that the newsletter generation flow and logic operates as intented given expected situation."""
+        """Test that the newsletter generation flow and logic operates as intented given expected situation.
+
+        TODO(jsleb333): Remove called assertions with specific tests.
+        """
         service_fixture._format_newsletter = lambda news: news
         news_list = await service_fixture.generate_newsletter()
         expected_number_of_news = 4
