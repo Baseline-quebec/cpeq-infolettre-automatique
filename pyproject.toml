@@ -28,6 +28,7 @@ python-decouple = "^3.8"
 openai = "^1.23.2"
 numpy = "^1.26.4"
 tiktoken = "^0.6.0"
+weaviate-client = "^4.6.5"
 
 [tool.poetry.group.test.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 commitizen = ">=3.2.1"
