@@ -77,7 +77,7 @@ class WebscraperIoClientTest:
     """Webscraper.io Client tests."""
 
     @staticmethod
-    async def test__given_happy_path__when_create_scraping_job__then_return_job_id(
+    async def test_create_scraping_job__when_happy_path__returns_job_id(
         async_client_fixture: AsyncClient,
     ) -> None:
         """create_scraping_job should return the newly created Job ID on a happy path."""
@@ -96,7 +96,7 @@ class WebscraperIoClientTest:
         assert return_value == job_id
 
     @staticmethod
-    async def test__given_http_status_error__when_create_scraping_job__then_return_empty_string(
+    async def test_create_scraping_job__when_http_status_error__returns_empty_string(
         async_client_fixture: AsyncClient,
     ) -> None:
         """create_scraping_job should return empty string when an HTTPStatusError is raised."""
@@ -111,7 +111,7 @@ class WebscraperIoClientTest:
         assert return_value == ""
 
     @staticmethod
-    async def test__given_request_error__when_create_scraping_job__then_return_empty_string(
+    async def test_create_scraping_job__when_request_error__returns_empty_string(
         async_client_fixture: AsyncClient,
     ) -> None:
         """create_scraping_job should return empty string when a RequestError is raised."""
@@ -126,7 +126,7 @@ class WebscraperIoClientTest:
         assert return_value == ""
 
     @staticmethod
-    async def test__given_happy_path__when_get_scraping_jobs__then_return_job_ids(
+    async def test_get_scraping_jobs__when_happy_path__returns_job_ids(
         async_client_fixture: AsyncClient,
     ) -> None:
         """get_scraping_jobs should return all the job ids on a happy path."""
@@ -145,7 +145,7 @@ class WebscraperIoClientTest:
         assert return_value == job_ids
 
     @staticmethod
-    async def test__given_http_status_error__when_get_scraping_jobs__then_return_empty_array(
+    async def test_get_scraping_jobs__when_http_status_error__returns_empty_array(
         async_client_fixture: AsyncClient,
     ) -> None:
         """get_scraping_jobs should return empty array when an HTTPStatusError is raised."""
@@ -160,7 +160,7 @@ class WebscraperIoClientTest:
         assert len(return_value) == 0
 
     @staticmethod
-    async def test__given_request_error__when_get_scraping_jobs__then_return_empty_array(
+    async def test_get_scraping_jobs__when_request_error__returns_empty_array(
         async_client_fixture: AsyncClient,
     ) -> None:
         """get_scraping_jobs should return empty array when a RequestError is raised."""
@@ -175,7 +175,7 @@ class WebscraperIoClientTest:
         assert len(return_value) == 0
 
     @staticmethod
-    async def test__given_happy_path__when_download_scraping_job_data__then_return_data(
+    async def test_download_scraping_job_data__when_happy_path__returns_data(
         async_client_fixture: AsyncClient, scraping_job_data_fixture: str
     ) -> None:
         """download_scraping_job_data should return job data on a happy path."""
@@ -193,7 +193,7 @@ class WebscraperIoClientTest:
         assert len(return_value) != 0
 
     @staticmethod
-    async def test__given_http_status_error__when_download_scraping_job_data__then_return_empty_array(
+    async def test_download_scraping_job_data__when_http_status_error__returns_empty_array(
         async_client_fixture: AsyncClient,
     ) -> None:
         """download_scraping_job_data should return empty array when an HTTPStatusError is raised."""
@@ -209,7 +209,7 @@ class WebscraperIoClientTest:
         assert len(return_value) == 0
 
     @staticmethod
-    async def test__given_request_error__when_download_scraping_job_data__then_return_empty_array(
+    async def test_download_scraping_job_data__when__request_error__returns_empty_array(
         async_client_fixture: AsyncClient,
     ) -> None:
         """download_scraping_job_data should return empty array when a RequestError is raised."""
