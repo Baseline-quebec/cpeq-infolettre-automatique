@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 from decouple import config
 
+from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.utils import process_raw_response
 
 
@@ -97,9 +98,8 @@ class WebScraperIoClient:
                 logger.warning("No job ID received for sitemap %s", sitemap_id)
         return job_ids
 
-    @staticmethod
-    def get_scraping_jobs() -> None:
-        """Unimplemented method to get scraping jobs."""
+    async def get_scraping_jobs(self) -> list[str]:
+        """Get the list of scraping job ids available."""
         raise NotImplementedError
 
     def get_scraping_job_details(self, scraping_job_id: str) -> dict[str, Any]:
@@ -172,3 +172,21 @@ class WebScraperIoClient:
             )
 
         return combined_data
+
+    async def get_scraping_job_data(self, job_id: str) -> list[News]:
+        """Fetches the data for a scraping job.
+
+        Args:
+            job_id: The ID of the scraping job.
+
+        Returns: The scraped news.
+        """
+        raise NotImplementedError
+
+    async def delete_scraping_jobs(self) -> None:
+        """Deletes a scraping job.
+
+        Args:
+            job_id: The ID of the scraping job.
+        """
+        raise NotImplementedError

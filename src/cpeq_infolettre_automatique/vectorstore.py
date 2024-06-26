@@ -1,17 +1,19 @@
 """Client module for openAI API interaction."""
 
 import logging
+import operator
 from collections.abc import Iterator
-from typing import Any
+from typing import Annotated
 
+import numpy as np
 import weaviate
 from decouple import config
+from fastapi import Depends
 from weaviate.classes.aggregate import GroupByAggregate
 
-from cpeq_infolettre_automatique.config import VectorstoreConfig
+from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
+from cpeq_infolettre_automatique.schemas import News
 
-
-News = Any
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -33,22 +35,24 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
     client.close()
 
 
-class Vectorstore:
+class VectorStore:
     """Handles vector storage and retrieval using embeddings."""
 
-    def __init__(self, client: weaviate.WeaviateClient) -> None:
+    def __init__(
+        self, client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)]
+    ) -> None:
         """Initialize the VectorStore with the provided Weaviate client and embedded data.
 
         Args:
-            client (weaviate.WeaviateClient): An instance of the Weaviate client to handle API calls.
+            client: An instance of the Weaviate client to handle API calls.
         """
         self.vectorstore_client = client
 
-    def _get_classification_scores(self, news: News) -> dict[str, float]:
-        """Retrieve data from Weaviate for a specific class.
+    def _get_rubric_classification_scores(self, news: News) -> list[tuple[Rubric, float]]:
+        """Retrieve data from Weaviate for a specific class .
 
         Args:
-            class_name (str): The name of the class to retrieve
+            class_name(str): The name of the class to retrieve
         """
         query: str = news.query
 
@@ -57,26 +61,26 @@ class Vectorstore:
         )
 
         objects = collection.aggregate.hybrid(
-            query=query, group_by=GroupByAggregate(prop="Rubrique")
+            query=query, group_by=GroupByAggregate(prop="rubric")
         )
 
-        rubrique_scores: dict[str, float] = {}
-        for group_rubrique in objects.groups:
-            rubrique_scores[group_rubrique.grouped_by.value] = rubrique_scores[
-                group_rubrique.grouped_by.value
-            ]
+        rubrique_scores = [
+            (Rubric(group_rubrique.grouped_by.value), np.mean([1, 2, 3], dtype=float))
+            for group_rubrique in objects.groups
+        ]
+
+        rubrique_scores.sort(key=operator.itemgetter(1), reverse=True)
 
         return rubrique_scores
 
-    def get_classification(self, news: News) -> str:
+    async def classify_news_rubric(self, news: News) -> Rubric | None:
         """Retrieve classification scores from Weaviate.
 
         Args:
-            class_name (str): The name of the class to retrieve
+            news: The news to classify the Rubric for.
         """
-        classification_scores = self._get_classification_scores(news)
-        rubrique_with_max_score = max(
-            classification_scores, key=lambda k: classification_scores[k]
-        )
+        rubric_classification_scores = self._get_rubric_classification_scores(news)
+        if rubric_classification_scores[0][1] > (rubric_classification_scores[1][1] - 0.001):
+            return rubric_classification_scores[0][0]
 
-        return rubrique_with_max_score
+        return None

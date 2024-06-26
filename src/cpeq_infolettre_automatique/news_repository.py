@@ -7,7 +7,7 @@ import weaviate
 import weaviate.classes as wvc
 from tqdm import tqdm
 
-from cpeq_infolettre_automatique.config import WeaviateConfig
+from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig, WeaviateConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
 
 
@@ -22,8 +22,8 @@ class WeaviateRepository:
     def __init__(
         self,
         client: weaviate.WeaviateClient,
-        collection_name: str,
         embedding_model: EmbeddingModel,
+        collection_name: str = VectorstoreConfig.collection_name,
     ) -> None:
         """Initialize the repository.
 
@@ -139,7 +139,7 @@ class NewsRepository(WeaviateRepository):
             raise ValueError(error_msg)
         collection = self.client.collections.get(self.collection_name)
         try:
-            items_get = [
+            news_get = [
                 NewsGet(**data_object.properties)
                 for data_object in collection.query.fetch_objects(
                     filters=wvc.query.Filter.by_id().contains_any(ids),
@@ -151,7 +151,25 @@ class NewsRepository(WeaviateRepository):
             weaviate.exceptions.WeaviateQueryError,
         ) as err:
             raise ValueError(err.message) from err
-        return items_get
+        return news_get
+
+    def read_many_by_rubric(self, rubique: Rubric, nb_per_page: int) -> list[NewsGet]:
+        """Get objects from the repository."""
+        collection = self.client.collections.get(self.collection_name)
+        try:
+            news_get = [
+                NewsGet(**data_object.properties)
+                for data_object in collection.query.fetch_objects(
+                    filters=wvc.query.Filter.by_property("Rubric").equal(rubique.name),
+                    limit=nb_per_page,
+                ).objects
+            ]
+        except (
+            weaviate.exceptions.UnexpectedStatusCodeError,
+            weaviate.exceptions.WeaviateQueryError,
+        ) as err:
+            raise ValueError(err.message) from err
+        return news_get
 
     def read_many(
         self,
