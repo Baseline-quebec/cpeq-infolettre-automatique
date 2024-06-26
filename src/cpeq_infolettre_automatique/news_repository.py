@@ -218,13 +218,3 @@ class NewsRepository(WeaviateRepository):
             raise ValueError(err.message) from err
         deleted_ids: list[str] = [str(object_.id_) for object_ in response.objects]  # type: ignore[attr-defined]
         return deleted_ids
-
-    def count(self) -> int:
-        """Count the number of objects in the collection."""
-        try:
-            return len(self.client.collections.get(self.collection_name))
-        except (
-            weaviate.exceptions.UnexpectedStatusCodeError,
-            weaviate.exceptions.WeaviateQueryError,
-        ) as err:
-            raise ValueError(err.message) from err

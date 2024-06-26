@@ -23,10 +23,16 @@ class News(BaseModel):
         return f"{self.title} {self.content}"
 
 
-class NewsInsert(News):
+class NewsUpsert(News):
     """Schema for the news data."""
 
     @property
     def uuid(self) -> uuid.UUID:
         """UUID of the item."""
         return uuid.uuid5(uuid.NAMESPACE_DNS, self.query)
+
+
+class NewsGet(News):
+    """Schema for the news data."""
+
+    uuid: uuid.UUID
