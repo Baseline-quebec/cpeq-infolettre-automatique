@@ -6,33 +6,41 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import AsyncClient, HTTPStatusError, RequestError, Response
+from pydantic import BaseModel
 
 from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
 
 
 # mypy: disable-error-code="method-assign"
 
-sitemaps: list[dict[str, str]] = [
-    {
-        "name": "Ciraig",
-        "url": "https://ciraig.org/index.php/fr/category/actualites/",
-        "sitemap_id": "1127309",
-    },
-    {
-        "name": "CIRODD",
-        "url": "https://cirodd.org/actualites/",
-        "sitemap_id": "1120854",
-    },
-    {
-        "name": "FAQDD",
-        "url": "https://faqdd.qc.ca/publications/",
-        "sitemap_id": "1120853",
-    },
-    {
-        "name": "ECPAR",
-        "url": "http://www.ecpar.org/fr/nouvelles/",
-        "sitemap_id": "1125386",
-    },
+
+class Sitemap(BaseModel):
+    sitemap_id: str
+    name: str
+    url: str
+
+
+sitemaps: list[Sitemap] = [
+    Sitemap(
+        name="Ciraig",
+        url="https://ciraig.org/index.php/fr/category/actualites/",
+        sitemap_id="1127309",
+    ),
+    Sitemap(
+        name="CIRODD",
+        url="https://cirodd.org/actualites/",
+        sitemap_id="1120854",
+    ),
+    Sitemap(
+        name="FAQDD",
+        url="https://faqdd.qc.ca/publications/",
+        sitemap_id="1120853",
+    ),
+    Sitemap(
+        name="ECPAR",
+        url="http://www.ecpar.org/fr/nouvelles/",
+        sitemap_id="1125386",
+    ),
 ]
 
 # Sitemaps tests # sitemap_ids = [
