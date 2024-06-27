@@ -10,7 +10,7 @@ from cpeq_infolettre_automatique.api import app
 from cpeq_infolettre_automatique.dependencies import (
     get_service,
     get_vectorstore,
-    get_webscraper_io_client,
+    get_webscraperio_client,
 )
 from cpeq_infolettre_automatique.service import Service
 
@@ -31,7 +31,7 @@ def service_fixture() -> Service:
 def client_fixture(service_fixture: Service) -> TestClient:
     """Create a test client for the FastAPI app."""
     app.dependency_overrides[get_vectorstore] = AsyncMock()
-    app.dependency_overrides[get_webscraper_io_client] = AsyncMock()
+    app.dependency_overrides[get_webscraperio_client] = AsyncMock()
     app.dependency_overrides[get_service] = lambda: service_fixture
     return TestClient(app)
 
@@ -43,8 +43,7 @@ def test_root_status_code() -> None:
         raise AssertionError(error_message)
 
 
-@pytest.mark.asyncio()
-async def test_generate_newsletter__(
+def test_generate_newsletter__when_happy_path__returns_successful_response(
     client_fixture: TestClient,
     service_fixture: Service,
 ) -> None:

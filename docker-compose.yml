@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   devcontainer:
@@ -28,10 +26,9 @@ services:
         "sudo chown user $$SSH_AUTH_SOCK && cp --update /opt/build/poetry/poetry.lock /workspaces/cpeq-infolettre-automatique/ && mkdir -p /workspaces/cpeq-infolettre-automatique/.git/hooks/ && cp --update /opt/build/git/* /workspaces/cpeq-infolettre-automatique/.git/hooks/ && zsh"
       ]
     environment:
-      - POETRY_PYPI_TOKEN_PYPI
       - SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock
     ports:
-      - "8000"
+      - "8000:8000"
     volumes:
       - ~/.gitconfig:/etc/gitconfig
       - ~/.ssh/known_hosts:/home/user/.ssh/known_hosts
@@ -39,15 +36,15 @@ services:
     profiles:
       - dev
 
-  app:
+  api:
     build:
       context: .
-      target: app
+      target: api
     tty: true
     ports:
       - "8000:8000"
     profiles:
-      - app
+      - api
 
 volumes:
   command-history-volume:

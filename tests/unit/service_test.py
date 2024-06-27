@@ -8,12 +8,12 @@ import pytest
 
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.vectorstore import VectorStore
-from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
+from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 @pytest.fixture()
 def service_fixture(
-    webscraper_io_client_fixture: WebScraperIoClient,
+    webscraper_io_client_fixture: WebscraperIoClient,
     vectorstore_fixture: VectorStore,
     news_repository_fixture: Any,
     summary_generator_fixture: Any,
@@ -48,7 +48,7 @@ class TestService:
         expected_number_of_news = 4
         assert len(news_list) == expected_number_of_news
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
-        assert service_fixture.webscraper_io_client.get_scraping_job_data.called
+        assert service_fixture.webscraper_io_client.download_scraping_job_data.called
         assert service_fixture.vectorstore.classify_rubric.called
         assert service_fixture.vectorstore.get_examples.called
         assert service_fixture.summary_generator.generate_summary.called

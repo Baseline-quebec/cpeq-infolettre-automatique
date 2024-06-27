@@ -8,7 +8,7 @@ import pytest
 
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import VectorStore
-from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
+from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 @pytest.fixture()
@@ -24,13 +24,15 @@ def news_fixture() -> News:
 
 
 @pytest.fixture()
-def webscraper_io_client_fixture(news_fixture: News) -> WebScraperIoClient:
+def webscraper_io_client_fixture(news_fixture: News) -> WebscraperIoClient:
     """Fixture for mocked WebScraperIoClient."""
-    webscraper_io_client_fixture = AsyncMock(spec=WebScraperIoClient)
+    webscraper_io_client_fixture = AsyncMock(spec=WebscraperIoClient)
     webscraper_io_client_fixture.get_scraping_jobs = AsyncMock(
         return_value=["job_id_1", "job_id_2"]
     )
-    webscraper_io_client_fixture.get_scraping_job_data = AsyncMock(return_value=[news_fixture] * 2)
+    webscraper_io_client_fixture.download_scraping_job_data = AsyncMock(
+        return_value=[news_fixture] * 2
+    )
     return webscraper_io_client_fixture
 
 

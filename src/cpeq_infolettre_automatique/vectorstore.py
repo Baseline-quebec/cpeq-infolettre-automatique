@@ -10,7 +10,11 @@ import openai
 import tiktoken
 from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.config import EMBEDDING_MODEL, MAX_TOKENS, TOKEN_ENCODING
+from cpeq_infolettre_automatique.config import (
+    EMBEDDING_MODEL,
+    MAX_TOKENS,
+    TOKEN_ENCODING,
+)
 from cpeq_infolettre_automatique.schemas import News
 
 
@@ -34,7 +38,7 @@ class VectorStore:
             self.global_mean_embedding = self._calculate_global_mean_embedding()
 
     @staticmethod
-    def _load_embedded_data(filepath: str) -> Any | None:
+    def _load_embedded_data(filepath: str) -> Any:
         """Load embedded data from a JSON file.
 
         Args:
@@ -44,11 +48,11 @@ class VectorStore:
             dict | None: The data loaded from the JSON file, or None if an error occurs.
         """
         try:
-            with Path(filepath).open() as file:
+            with Path(filepath).open(encoding="utf-8") as file:
                 return json.load(file)
         except Exception:
             logger.exception("Error loading embedded data from %s", filepath)
-            return None
+            return {}
 
     def _calculate_global_mean_embedding(self) -> np.ndarray[Any, Any] | None:
         """Calculate the global mean embedding from all embeddings in the dataset.
@@ -105,7 +109,8 @@ class VectorStore:
 
     @staticmethod
     def get_average_embeddings(
-        rubrics_data: list[dict[str, str | list[dict[str, str]]]], model: str = EMBEDDING_MODEL
+        rubrics_data: list[dict[str, str | list[dict[str, str]]]],
+        model: str = EMBEDDING_MODEL,
     ) -> dict[str, list[float]]:
         """Calculates average embeddings for each rubric using provided examples.
 
@@ -185,7 +190,7 @@ class VectorStore:
 
     def get_and_save_embeddings(
         self,
-        data: Any,
+        data: list[dict[str, Any]],
         model: str = EMBEDDING_MODEL,
         max_tokens: int = MAX_TOKENS,
         output_file: str = "embedded_rubrics.json",
