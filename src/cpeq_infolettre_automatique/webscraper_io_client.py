@@ -5,7 +5,6 @@ import json
 import logging
 from collections.abc import Iterable
 from types import MappingProxyType
-from typing import ClassVar
 
 import dateparser
 import httpx
@@ -24,8 +23,8 @@ class WebscraperIoClient:
     retrieve job details, and download job data.
     """
 
-    _base_url: ClassVar[str] = "https://api.webscraper.io/api/v1"
-    _headers: MappingProxyType[str, str] = MappingProxyType({"Content-Type": "application/json"})
+    _base_url = "https://api.webscraper.io/api/v1"
+    _headers = MappingProxyType({"Content-Type": "application/json"})
 
     def __init__(self, http_client: httpx.AsyncClient, api_token: str) -> None:
         """Initialize the WebScraperIoClient with the provided API token.
