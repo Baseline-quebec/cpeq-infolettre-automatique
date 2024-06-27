@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from collections.abc import Iterable
 from typing import ClassVar
 
 import dateparser
@@ -132,7 +133,7 @@ class WebscraperIoClient:
 
         return job_ids
 
-    async def download_scraping_job_data(self, job_id: str) -> tuple[News, ...]:
+    async def download_scraping_job_data(self, job_id: str) -> Iterable[News]:
         """Fetches raw JSON data for a scraping job and processes it into a structured format.
 
         Args:

@@ -102,7 +102,7 @@ class Service:
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     async def _filter_news(
-        self, all_news: tuple[News, ...], start_date: date, end_date: date
+        self, all_news: Iterable[News], start_date: date, end_date: date
     ) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 

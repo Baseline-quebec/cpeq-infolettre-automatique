@@ -12,6 +12,8 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from cpeq_infolettre_automatique.schemas import News
 
 # mypy: disable-error-code="method-assign"
@@ -191,10 +193,10 @@ class WebscraperIoClientTest:
         webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
-        return_value: tuple[News, ...] = await webscraper.download_scraping_job_data(job_id)
+        return_value: Iterable[News] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
-        assert len(return_value) != 0
+        assert sum(1 for i in return_value) != 0
 
     @staticmethod
     async def test_download_scraping_job_data__when_http_status_error__returns_empty_array(
@@ -207,10 +209,10 @@ class WebscraperIoClientTest:
         webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
-        return_value: tuple[News, ...] = await webscraper.download_scraping_job_data(job_id)
+        return_value: Iterable[News] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
-        assert len(return_value) == 0
+        assert sum(1 for i in return_value) == 0
 
     @staticmethod
     async def test_download_scraping_job_data__when__request_error__returns_empty_array(
@@ -223,7 +225,7 @@ class WebscraperIoClientTest:
         webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
-        return_value: tuple[News, ...] = await webscraper.download_scraping_job_data(job_id)
+        return_value: Iterable[News] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
-        assert len(return_value) == 0
+        assert sum(1 for i in return_value) == 0

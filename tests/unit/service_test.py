@@ -1,5 +1,8 @@
 """Tests for service class."""
 
+# mypy: disable-error-code="method-assign"
+# mypy: disable-error-code="attr-defined"
+
 from datetime import date, datetime
 from typing import Any
 from unittest.mock import patch
@@ -9,10 +12,6 @@ import pytest
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
-
-
-# mypy: disable-error-code="method-assign"
-# mypy: disable-error-code="attr-defined"
 
 
 @pytest.fixture()

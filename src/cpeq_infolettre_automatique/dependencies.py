@@ -23,7 +23,7 @@ class ApiDependency:
     def __init__(self) -> None:
         """Create a new instance of the dependency.
 
-        Will be called by FastAPI when the dependency is injected with Depends(). The instanciated BaseFastAPIDependency object should define __call__ to return the dependency to inject.
+        Will be called by FastAPI when the dependency is injected with Depends(). The instanciated ApiDependency object should define __call__ to return the dependency to inject.
 
         Any subdependencies used by the dependency should be injected here, in the __init__ method.
         """
@@ -48,8 +48,6 @@ class HttpClientDependency(ApiDependency):
 
     def __call__(self) -> httpx.AsyncClient:
         """Returns the HTTP Client instance."""
-        if self.client is None:
-            self.setup()
         return self.client
 
     @classmethod

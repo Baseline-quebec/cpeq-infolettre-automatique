@@ -20,7 +20,7 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 @asynccontextmanager
-async def lifespan() -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
     """Handle FastAPI startup and shutdown events."""
     # Startup events:
     # - Remove all handlers associated with the root logger object.
