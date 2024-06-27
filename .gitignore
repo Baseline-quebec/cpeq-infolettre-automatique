@@ -65,3 +65,9 @@ __pycache__/
 
 # Remove any file including local in its name
 **local**
+
+# Cache folders and files
+*cache*
+
+# Coverage reports
+reports
