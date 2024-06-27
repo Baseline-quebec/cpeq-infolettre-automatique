@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Iterable
+from types import MappingProxyType
 from typing import ClassVar
 
 import dateparser
@@ -24,7 +25,7 @@ class WebscraperIoClient:
     """
 
     _base_url: ClassVar[str] = "https://api.webscraper.io/api/v1"
-    _headers: ClassVar[dict[str, str]] = {"Content-Type": "application/json"}
+    _headers: MappingProxyType[str, str] = MappingProxyType({"Content-Type": "application/json"})
 
     def __init__(self, http_client: httpx.AsyncClient, api_token: str) -> None:
         """Initialize the WebScraperIoClient with the provided API token.
