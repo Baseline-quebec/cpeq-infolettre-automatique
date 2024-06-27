@@ -1,7 +1,7 @@
 """cpeq-infolettre-automatique REST API."""
 
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -20,7 +20,7 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 @asynccontextmanager
-async def lifespan() -> AsyncGenerator[None, None]:
+async def lifespan() -> AsyncIterator[None]:
     """Handle FastAPI startup and shutdown events."""
     # Startup events:
     # - Remove all handlers associated with the root logger object.

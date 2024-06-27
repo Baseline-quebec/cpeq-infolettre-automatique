@@ -46,13 +46,6 @@ sitemaps: list[Sitemap] = [
     ),
 ]
 
-# Sitemaps tests # sitemap_ids = [
-#     "1127309",
-#     "1120854",
-#     "1125386", ]
-# List of sitemap IDs, FAQDD ne se trouvait rien et bloquait!
-# sitemap_ids = ["1125386"]  # noqa: ERA001
-
 # Start Scraping job tests
 new_scraping_job = "21417285"  # unique scraping job test
 all_scraping_jobs = ["21417285", "21416924", "21398005"]  # multiple scraping job test
@@ -70,14 +63,14 @@ processed_scraping_jobs_ids = [
 ]  # multiple scraping job test
 
 
-@pytest.fixture()
+@pytest.fixture(scope="class")
 def scraping_job_data_fixture() -> str:
     """Scraping job data fixture."""
     with Path("tests", "unit", "test_data", "scraped_data.txt").open(encoding="utf-8") as file:
         return file.read()
 
 
-@pytest.fixture()
+@pytest.fixture(scope="class")
 def async_client_fixture() -> AsyncClient:
     """AsyncClient fixture."""
     return AsyncClient()
