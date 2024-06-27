@@ -30,7 +30,9 @@ def webscraper_io_client_fixture(news_fixture: News) -> WebscraperIoClient:
     webscraper_io_client_fixture.get_scraping_jobs = AsyncMock(
         return_value=["job_id_1", "job_id_2"]
     )
-    webscraper_io_client_fixture.get_scraping_job_data = AsyncMock(return_value=[news_fixture] * 2)
+    webscraper_io_client_fixture.download_scraping_job_data = AsyncMock(
+        return_value=[news_fixture] * 2
+    )
     return webscraper_io_client_fixture
 
 

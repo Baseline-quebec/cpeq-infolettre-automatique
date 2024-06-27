@@ -1,6 +1,5 @@
 """Test cpeq-infolettre-automatique REST API."""
 
-from typing import Any
 from unittest.mock import AsyncMock
 
 import httpx
@@ -44,13 +43,12 @@ def test_root_status_code() -> None:
         raise AssertionError(error_message)
 
 
-@pytest.mark.asyncio()
-async def test_generate_newsletter__(
+def test_generate_newsletter__when_happy_path__returns_successful_response(
     client_fixture: TestClient,
     service_fixture: Service,
 ) -> None:
     """Test generating a newsletter."""
-    response: Any = await client_fixture.get("/generate-newsletter")
+    response = client_fixture.get("/generate-newsletter")
     assert response.status_code == SUCCESS_HTTP_STATUS_CODE
     assert response.text == EXPECTED_NEWSLETTER
     assert service_fixture.generate_newsletter.called
