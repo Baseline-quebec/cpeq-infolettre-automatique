@@ -1,8 +1,5 @@
 """Tests for service class."""
 
-# mypy: disable-error-code="method-assign"
-# mypy: disable-error-code="attr-defined"
-
 from datetime import date, datetime
 from typing import Any
 from unittest.mock import patch

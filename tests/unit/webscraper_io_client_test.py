@@ -16,8 +16,6 @@ if TYPE_CHECKING:
 
     from cpeq_infolettre_automatique.schemas import News
 
-# mypy: disable-error-code="method-assign"
-
 
 class Sitemap(BaseModel):
     sitemap_id: str

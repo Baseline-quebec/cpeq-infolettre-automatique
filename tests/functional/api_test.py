@@ -16,9 +16,6 @@ from cpeq_infolettre_automatique.dependencies import (
 from cpeq_infolettre_automatique.service import Service
 
 
-# mypy: disable-error-code="method-assign"
-# mypy: disable-error-code="attr-defined"
-
 EXPECTED_NEWSLETTER = "Some newsletter"
 SUCCESS_HTTP_STATUS_CODE = 200
 
