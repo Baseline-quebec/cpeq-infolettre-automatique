@@ -194,7 +194,7 @@ class WebscraperIoClientTest:
         return_value: Iterable[News] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
-        assert sum(1 for i in return_value) != 0
+        assert sum(1 for _ in return_value) != 0
 
     @staticmethod
     async def test_download_scraping_job_data__when_http_status_error__returns_empty_array(
@@ -210,7 +210,7 @@ class WebscraperIoClientTest:
         return_value: Iterable[News] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
-        assert sum(1 for i in return_value) == 0
+        assert sum(1 for _ in return_value) == 0
 
     @staticmethod
     async def test_download_scraping_job_data__when__request_error__returns_empty_array(
@@ -226,4 +226,4 @@ class WebscraperIoClientTest:
         return_value: Iterable[News] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
-        assert sum(1 for i in return_value) == 0
+        assert sum(1 for _ in return_value) == 0
