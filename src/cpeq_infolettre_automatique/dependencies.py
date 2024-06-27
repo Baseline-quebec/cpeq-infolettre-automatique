@@ -59,12 +59,10 @@ class HttpClientDependency(ApiDependency):
 
 
 def get_webscraperio_client(
-    http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())]
+    http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())],
 ) -> WebscraperIoClient:
     """Returns a configured WebscraperIO Client."""
-    return WebscraperIoClient(
-        http_client=http_client, api_token=config("WEBSCRAPER_IO_API_KEY")
-    )
+    return WebscraperIoClient(http_client=http_client, api_token=config("WEBSCRAPER_IO_API_KEY"))
 
 
 def get_openai_client() -> AsyncOpenAI:
@@ -83,9 +81,7 @@ def get_vectorstore(
 
 
 def get_service(
-    webscraper_io_client: Annotated[
-        WebscraperIoClient, Depends(get_webscraperio_client)
-    ],
+    webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
     vectorstore: Annotated[VectorStore, Depends(get_vectorstore)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""

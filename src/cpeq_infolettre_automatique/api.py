@@ -66,9 +66,7 @@ def get_articles_from_scraper() -> JSONResponse:
 
 
 @app.get("/generate-newsletter")
-async def generate_newsletter(
-    service: Annotated[Service, Depends(get_service)]
-) -> Response:
+async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
     """Generate a newsletter from scraped news."""
     # TODO(jsleb333): Schedule this task to return immediately
     newsletter = await service.generate_newsletter()

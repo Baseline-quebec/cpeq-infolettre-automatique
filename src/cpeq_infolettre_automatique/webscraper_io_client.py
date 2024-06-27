@@ -182,8 +182,4 @@ class WebscraperIoClient:
         Returns:
             list[dict[str, str]]: A list of dictionaries or a list with an error message.
         """
-        return [
-            json.loads(line)
-            for line in raw_response.strip().split("\n")
-            if line.strip()
-        ]
+        return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
