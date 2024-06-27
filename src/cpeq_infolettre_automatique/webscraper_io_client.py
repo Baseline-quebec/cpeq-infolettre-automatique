@@ -1,21 +1,29 @@
 """Client module for WebScraper.io API interaction."""
 
+import asyncio
 import json
 import logging
+from datetime import date
+from typing import ClassVar
 
 import httpx
+
+from cpeq_infolettre_automatique.schemas import News
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-class WebScraperIoClient:
+class WebscraperIoClient:
     """A client for interacting with the WebScraper.io API.
 
     This class provides methods to create scraping jobs,
     retrieve job details, and download job data.
     """
+
+    _base_url: ClassVar[str] = "https://api.webscraper.io/api/v1"
+    _headers: ClassVar[dict[str, str]] = {"Content-Type": "application/json"}
 
     def __init__(self, http_client: httpx.AsyncClient, api_token: str) -> None:
         """Initialize the WebScraperIoClient with the provided API token.
@@ -26,8 +34,6 @@ class WebScraperIoClient:
         """
         self._client = http_client
         self._api_token = api_token
-        self._base_url: str = "https://api.webscraper.io/api/v1"
-        self._headers: dict[str, str] = {"Content-Type": "application/json"}
 
     async def create_scraping_job(self, sitemap_id: str) -> str:
         """Creates a new scraping job for given sitemap id.
@@ -69,6 +75,36 @@ class WebScraperIoClient:
 
         return job_id
 
+    async def delete_scraping_jobs(self) -> None:
+        """Deletes all existing scraping jobs."""
+        job_ids: list[str] = await self.get_scraping_jobs()
+        coroutines = [self.delete_scraping_job(job_id) for job_id in job_ids]
+        await asyncio.gather(*coroutines)
+
+    async def delete_scraping_job(self, job_id: str) -> None:
+        """Deletes an existing job with given id.
+
+        Args:
+            job_id (str): ID of the job to delete.
+        """
+        url: str = f"{self._base_url}/scraping-job/{job_id}"
+
+        response: httpx.Response = await self._client.delete(
+            url,
+            params={"api_token": self._api_token},
+        )
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP Code %s while deleting scraping job with ID %s.",
+                e.response.status_code,
+                job_id,
+            )
+        except httpx.RequestError:
+            logger.exception("Error issuing DELETE request at URL %s.", url)
+
     async def get_scraping_jobs(self) -> list[str]:
         """Gets the list of scraping jobs from Webscraper.io.
 
@@ -78,7 +114,9 @@ class WebScraperIoClient:
         url: str = f"{self._base_url}/scraping-jobs"
         job_ids: list[str] = []
 
-        response = await self._client.get(url, params={"api_token": self._api_token})
+        response: httpx.Response = await self._client.get(
+            url, params={"api_token": self._api_token}
+        )
 
         try:
             response.raise_for_status()
@@ -94,7 +132,7 @@ class WebScraperIoClient:
 
         return job_ids
 
-    async def download_scraping_job_data(self, job_id: str) -> list[dict[str, str]]:
+    async def download_scraping_job_data(self, job_id: str) -> tuple[News, ...]:
         """Fetches raw JSON data for a scraping job and processes it into a structured format.
 
         Args:
@@ -123,7 +161,16 @@ class WebScraperIoClient:
         else:
             job_data = self.process_raw_response(response.text)
 
-        return job_data
+        return tuple(
+            News(
+                title=data["title"],
+                content=data["content"],
+                date=date.fromisoformat(data["date"]),
+                rubric="",
+                summary="",
+            )
+            for data in job_data
+        )
 
     @staticmethod
     def process_raw_response(raw_response: str) -> list[dict[str, str]]:

@@ -8,13 +8,14 @@ from typing import Any
 import numpy as np
 import openai
 import tiktoken
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from cpeq_infolettre_automatique.config import (
     EMBEDDING_MODEL,
     MAX_TOKENS,
     TOKEN_ENCODING,
 )
+from cpeq_infolettre_automatique.schemas import News
 
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 class VectorStore:
     """Handles vector storage and retrieval using embeddings."""
 
-    def __init__(self, client: OpenAI, filepath: str) -> None:
+    def __init__(self, client: AsyncOpenAI, filepath: str) -> None:
         """Initialize the VectorStore with the provided OpenAI client and embedded data.
 
         Args:
@@ -37,7 +38,7 @@ class VectorStore:
             self.global_mean_embedding = self._calculate_global_mean_embedding()
 
     @staticmethod
-    def _load_embedded_data(filepath: str) -> Any:  # noqa: ANN401
+    def _load_embedded_data(filepath: str) -> Any:
         """Load embedded data from a JSON file.
 
         Args:
@@ -47,7 +48,7 @@ class VectorStore:
             dict | None: The data loaded from the JSON file, or None if an error occurs.
         """
         try:
-            with Path(filepath).open() as file:
+            with Path(filepath).open(encoding="utf-8") as file:
                 return json.load(file)
         except Exception:
             logger.exception("Error loading embedded data from %s", filepath)
@@ -229,3 +230,23 @@ class VectorStore:
         most_similar_category = max(similarity_scores, key=similarity_scores.get)  # type: ignore[arg-type]
         highest_similarity_score = similarity_scores[most_similar_category]
         return most_similar_category, highest_similarity_score
+
+    def get_examples(self, news: News) -> list[News]:
+        """Retrieve examples for a given news article.
+
+        Args:
+            news: The news article to find examples for.
+
+        Returns: A list of examples for the news article.
+        """
+        raise NotImplementedError
+
+    async def classify_rubric(self, news: News) -> str | None:
+        """Classify the rubric of a news article.
+
+        Args:
+            news: The news article to classify.
+
+        Returns: The rubric of the news article, or None if the news is not relevant.
+        """
+        raise NotImplementedError

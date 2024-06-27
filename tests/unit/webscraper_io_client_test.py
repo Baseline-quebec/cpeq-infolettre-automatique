@@ -1,15 +1,18 @@
 """Unit Tests for the Webscraper.io client class."""
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import AsyncClient, HTTPStatusError, RequestError, Response
 from pydantic import BaseModel
 
-from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
+from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
+
+if TYPE_CHECKING:
+    from cpeq_infolettre_automatique.schemas import News
 
 # mypy: disable-error-code="method-assign"
 
@@ -70,7 +73,7 @@ processed_scraping_jobs_ids = [
 @pytest.fixture()
 def scraping_job_data_fixture() -> str:
     """Scraping job data fixture."""
-    with Path("tests", "unit", "test_data", "scraped_data.txt").open() as file:
+    with Path("tests", "unit", "test_data", "scraped_data.txt").open(encoding="utf-8") as file:
         return file.read()
 
 
@@ -95,7 +98,7 @@ class WebscraperIoClientTest:
         json: Any = {"data": {"id": job_id}}
         response.json = MagicMock(return_value=json)
         async_client_fixture.post = MagicMock(return_value=response)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
         return_value: str = await webscraper.create_scraping_job("sitemap_id")
@@ -110,13 +113,13 @@ class WebscraperIoClientTest:
         """create_scraping_job should return empty string when an HTTPStatusError is raised."""
         # Given
         async_client_fixture.post = AsyncMock(side_effet=HTTPStatusError)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
         return_value: str = await webscraper.create_scraping_job("sitemap_id")
 
         # Then
-        assert return_value == ""
+        assert not return_value
 
     @staticmethod
     async def test_create_scraping_job__when_request_error__returns_empty_string(
@@ -125,13 +128,13 @@ class WebscraperIoClientTest:
         """create_scraping_job should return empty string when a RequestError is raised."""
         # Given
         async_client_fixture.post = AsyncMock(side_effet=RequestError)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
         return_value: str = await webscraper.create_scraping_job("sitemap_id")
 
         # Then
-        assert return_value == ""
+        assert not return_value
 
     @staticmethod
     async def test_get_scraping_jobs__when_happy_path__returns_job_ids(
@@ -144,7 +147,7 @@ class WebscraperIoClientTest:
         json: Any = {"data": [{"id": job_id} for job_id in job_ids]}
         response.json = MagicMock(return_value=json)
         async_client_fixture.get = AsyncMock(return_value=response)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
         return_value: list[str] = await webscraper.get_scraping_jobs()
@@ -159,7 +162,7 @@ class WebscraperIoClientTest:
         """get_scraping_jobs should return empty array when an HTTPStatusError is raised."""
         # Given
         async_client_fixture.get = AsyncMock(side_effet=HTTPStatusError)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
         return_value: list[str] = await webscraper.get_scraping_jobs()
@@ -174,7 +177,7 @@ class WebscraperIoClientTest:
         """get_scraping_jobs should return empty array when a RequestError is raised."""
         # Given
         async_client_fixture.get = MagicMock(side_effet=RequestError)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
         return_value: list[str] = await webscraper.get_scraping_jobs()
@@ -192,10 +195,10 @@ class WebscraperIoClientTest:
         response: Response = Response(status_code=200, text=scraping_job_data_fixture)
         async_client_fixture.get = AsyncMock(return_value=response)
 
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
-        return_value: list[dict[str, str]] = await webscraper.download_scraping_job_data(job_id)
+        return_value: tuple[News, ...] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
         assert len(return_value) != 0
@@ -208,10 +211,10 @@ class WebscraperIoClientTest:
         # Given
         job_id: str = "job_id"
         async_client_fixture.get = AsyncMock(side_effet=HTTPStatusError)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
-        return_value: list[dict[str, str]] = await webscraper.download_scraping_job_data(job_id)
+        return_value: tuple[News, ...] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
         assert len(return_value) == 0
@@ -224,10 +227,10 @@ class WebscraperIoClientTest:
         # Given
         job_id: str = "job_id"
         async_client_fixture.get = AsyncMock(side_effet=RequestError)
-        webscraper: WebScraperIoClient = WebScraperIoClient(async_client_fixture, "api_key")
+        webscraper: WebscraperIoClient = WebscraperIoClient(async_client_fixture, "api_key")
 
         # When
-        return_value: list[dict[str, str]] = await webscraper.download_scraping_job_data(job_id)
+        return_value: tuple[News, ...] = await webscraper.download_scraping_job_data(job_id)
 
         # Then
         assert len(return_value) == 0
