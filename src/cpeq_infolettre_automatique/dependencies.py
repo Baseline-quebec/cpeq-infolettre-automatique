@@ -58,19 +58,13 @@ class HttpClientDependency(ApiDependency):
         await cls.client.aclose()
 
 
-class WebscraperIoClientDependency(ApiDependency):
-    """Dependency class for the Webscraper.io Client."""
-
-    def __init__(
-        self, http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())]
-    ) -> None:
-        """Ctor."""
-        self.http_client = http_client
-        self.api_token = config("WEBSCRAPER_IO_API_KEY")
-
-    def __call__(self) -> WebscraperIoClient:
-        """Return an instance of the Client."""
-        return WebscraperIoClient(http_client=self.http_client, api_token=self.api_token)
+def get_webscraperio_client(
+    http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())]
+) -> WebscraperIoClient:
+    """Returns a configured WebscraperIO Client."""
+    return WebscraperIoClient(
+        http_client=http_client, api_token=config("WEBSCRAPER_IO_API_KEY")
+    )
 
 
 def get_openai_client() -> AsyncOpenAI:
@@ -89,7 +83,9 @@ def get_vectorstore(
 
 
 def get_service(
-    webscraper_io_client: Annotated[WebscraperIoClient, Depends(WebscraperIoClientDependency)],
+    webscraper_io_client: Annotated[
+        WebscraperIoClient, Depends(get_webscraperio_client)
+    ],
     vectorstore: Annotated[VectorStore, Depends(get_vectorstore)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""

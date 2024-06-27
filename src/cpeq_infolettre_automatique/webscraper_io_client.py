@@ -3,9 +3,9 @@
 import asyncio
 import json
 import logging
-from datetime import date
 from typing import ClassVar
 
+import dateparser
 import httpx
 
 from cpeq_infolettre_automatique.schemas import News
@@ -165,7 +165,7 @@ class WebscraperIoClient:
             News(
                 title=data["title"],
                 content=data["content"],
-                date=date.fromisoformat(data["date"]),
+                date=dateparser.parse(data["date"]),
                 rubric="",
                 summary="",
             )
@@ -182,4 +182,8 @@ class WebscraperIoClient:
         Returns:
             list[dict[str, str]]: A list of dictionaries or a list with an error message.
         """
-        return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
+        return [
+            json.loads(line)
+            for line in raw_response.strip().split("\n")
+            if line.strip()
+        ]

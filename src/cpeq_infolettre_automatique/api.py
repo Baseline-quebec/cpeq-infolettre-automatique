@@ -12,8 +12,8 @@ from fastapi.responses import JSONResponse, Response
 
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
-    WebscraperIoClientDependency,
     get_service,
+    get_webscraperio_client,
 )
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -31,13 +31,11 @@ async def lifespan() -> AsyncIterator[None]:
     coloredlogs.install()
 
     HttpClientDependency.setup()
-    WebscraperIoClientDependency.setup()
 
     yield
 
     # Shutdown events.
     await HttpClientDependency.teardown()
-    WebscraperIoClientDependency.teardown()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -46,7 +44,7 @@ app = FastAPI(lifespan=lifespan)
 @app.post("/initiate_scraping/{sitemap_id}")
 async def initiate_scraping(
     sitemap_id: str,
-    webscraper_client: Annotated[WebscraperIoClient, Depends(WebscraperIoClientDependency)],
+    webscraper_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
 ) -> str:
     """Initiate web scraping jobs and process their data.
 
@@ -68,7 +66,9 @@ def get_articles_from_scraper() -> JSONResponse:
 
 
 @app.get("/generate-newsletter")
-async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
+async def generate_newsletter(
+    service: Annotated[Service, Depends(get_service)]
+) -> Response:
     """Generate a newsletter from scraped news."""
     # TODO(jsleb333): Schedule this task to return immediately
     newsletter = await service.generate_newsletter()
