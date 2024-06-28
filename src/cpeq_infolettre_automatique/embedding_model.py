@@ -52,7 +52,14 @@ class OpenAIEmbeddingModel(EmbeddingModel):
         return embeddings
 
     def truncate_text(self, text: str) -> str:
-        """Truncate the text to the maximum length."""
+        """Truncate the text to the maximum token length.
+
+        Args:
+            text: The text to truncate.
+
+        Returns:
+            The truncated text.
+        """
         encoding = tiktoken.get_encoding(self.token_encoding)
         tokens = encoding.encode(text)
         tokens = tokens[: self.max_tokens]
