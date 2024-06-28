@@ -43,7 +43,6 @@ class OpenAIEmbeddingModel(EmbeddingModel):
         Returns:
             The embedding.
         """
-        # Call OpenAI API to get the embedding
         text_description = self.truncate_text(text_description)
         response = await self.client.embeddings.create(
             model=self.embedding_model_id,
@@ -54,7 +53,6 @@ class OpenAIEmbeddingModel(EmbeddingModel):
 
     def truncate_text(self, text: str) -> str:
         """Truncate the text to the maximum length."""
-        # Function to get trunkated embedding
         encoding = tiktoken.get_encoding(self.token_encoding)
         tokens = encoding.encode(text)
         tokens = tokens[: self.max_tokens]
