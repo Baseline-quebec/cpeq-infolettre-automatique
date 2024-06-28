@@ -7,8 +7,9 @@ from decouple import config
 from fastapi import Depends
 from openai import AsyncOpenAI
 
+from cpeq_infolettre_automatique.config import VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel, OpenAIEmbeddingModel
-from cpeq_infolettre_automatique.news_repository import NewsRepository
+from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.vectorstore import VectorStore, get_vectorstore_client
 from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
@@ -33,29 +34,34 @@ def get_embedding_model(
 
 def get_vectorstore(
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
+    embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
 ) -> VectorStore:
     """Return a VectorStore instance with the provided dependencies."""
     Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)]
-    return VectorStore(client=vectorstore_client)
+    return VectorStore(client=vectorstore_client, embedding_model=embedding_model)
 
 
-def get_news_repository(
+def get_reference_news_repository(
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
-    embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
-) -> NewsRepository:
-    """Return a NewsRepository instance."""
-    return NewsRepository(client=vectorstore_client, embedding_model=embedding_model)
+) -> ReferenceNewsRepository:
+    """Return a ReferenceNewsRepository instance."""
+    return ReferenceNewsRepository(
+        client=vectorstore_client, collection_name=VectorstoreConfig.collection_name
+    )
 
 
 def get_service(
     webscraper_io_client: Annotated[WebScraperIoClient, Depends(get_webscraper_io_client)],
     vectorstore: Annotated[VectorStore, Depends(get_vectorstore)],
-    news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
+    reference_news_repository: Annotated[
+        ReferenceNewsRepository, Depends(get_reference_news_repository)
+    ],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
     return Service(
         webscraper_io_client=webscraper_io_client,
-        news_repository=news_repository,
+        news_repository=Any,
+        reference_news_repository=reference_news_repository,
         newsletter_repository=Any,
         vectorstore=vectorstore,
         summary_generator=Any,

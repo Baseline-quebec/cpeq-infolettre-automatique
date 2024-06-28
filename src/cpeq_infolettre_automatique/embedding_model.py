@@ -1,5 +1,6 @@
 """Contains the Embedding classes."""
 
+import tiktoken
 from openai import AsyncOpenAI
 
 from cpeq_infolettre_automatique.config import EmbeddingModelConfig
@@ -30,6 +31,8 @@ class OpenAIEmbeddingModel(EmbeddingModel):
         """Initialize the OpenAIEmbeddingModel."""
         self.client = client
         self.embedding_model_id = EmbeddingModelConfig.embedding_model_id
+        self.token_encoding = EmbeddingModelConfig.token_encoding
+        self.max_tokens = EmbeddingModelConfig.max_tokens
 
     async def embed(self, text_description: str) -> list[float]:
         """Get the embedding of an image or text description.
@@ -41,9 +44,18 @@ class OpenAIEmbeddingModel(EmbeddingModel):
             The embedding.
         """
         # Call OpenAI API to get the embedding
+        text_description = self.truncate_text(text_description)
         response = await self.client.embeddings.create(
             model=self.embedding_model_id,
             input=text_description,
         )
         embeddings = response.data[0].embedding
         return embeddings
+
+    def truncate_text(self, text: str) -> str:
+        """Truncate the text to the maximum length."""
+        # Function to get trunkated embedding
+        encoding = tiktoken.get_encoding(self.token_encoding)
+        tokens = encoding.encode(text)
+        tokens = tokens[: self.max_tokens]
+        return encoding.decode(tokens)

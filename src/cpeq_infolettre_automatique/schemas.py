@@ -1,9 +1,10 @@
 """Schemas used in the application."""
 
-import uuid
-from datetime import date
+import datetime as dt
+import uuid as uuid_package
+from typing import Any, TypedDict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 from cpeq_infolettre_automatique.config import Rubric
 
@@ -13,26 +14,32 @@ class News(BaseModel):
 
     title: str
     content: str
-    date: date | None
+    datetime: dt.datetime | None
     rubric: Rubric | None
     summary: str | None
 
-    @property
-    def query(self) -> str:
-        """Query string for the news."""
-        return f"{self.title} {self.content}"
+    model_config = ConfigDict(use_enum_values=True)
 
 
-class NewsUpsert(News):
+class ReferenceNews(News):
+    """Schema for the reference news data."""
+
+    uuid: uuid_package.UUID
+    rubric: Rubric
+    datetime: dt.datetime
+
+    @staticmethod
+    @field_serializer("datetime")
+    def serialize_datetime(datetime: dt.datetime, _info: Any) -> str:
+        """Serialize the datetime to a isoformat RFC 3339."""
+        return datetime.isoformat()
+
+
+class ReferenceNewsType(TypedDict):
     """Schema for the news data."""
 
-    @property
-    def uuid(self) -> uuid.UUID:
-        """UUID of the item."""
-        return uuid.uuid5(uuid.NAMESPACE_DNS, self.query)
-
-
-class NewsGet(News):
-    """Schema for the news data."""
-
-    uuid: uuid.UUID
+    title: str
+    content: str
+    datetime: dt.datetime
+    rubric: Rubric
+    summary: str

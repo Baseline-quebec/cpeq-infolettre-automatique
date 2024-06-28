@@ -3,15 +3,14 @@
 import logging
 import operator
 from collections.abc import Iterator
-from typing import Annotated
 
 import numpy as np
 import weaviate
 from decouple import config
-from fastapi import Depends
 from weaviate.classes.aggregate import GroupByAggregate
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
+from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
 from cpeq_infolettre_automatique.schemas import News
 
 
@@ -26,7 +25,7 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
         weaviate.WeaviateClient: The vectorstore client.
     """
     client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
-        headers={"X-OpenAI-Api-key": config("OPENAI_APIKEY")}
+        persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH"),
     )
     if not client.is_ready():
         error_msg = "Vectorstore is not ready"
@@ -39,7 +38,9 @@ class VectorStore:
     """Handles vector storage and retrieval using embeddings."""
 
     def __init__(
-        self, client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)]
+        self,
+        client: weaviate.WeaviateClient,
+        embedding_model: EmbeddingModel,
     ) -> None:
         """Initialize the VectorStore with the provided Weaviate client and embedded data.
 
@@ -47,21 +48,21 @@ class VectorStore:
             client: An instance of the Weaviate client to handle API calls.
         """
         self.vectorstore_client = client
+        self.embedding_model = embedding_model
 
-    def _get_rubric_classification_scores(self, news: News) -> list[tuple[Rubric, float]]:
+    async def _get_rubric_classification_scores(self, news: News) -> list[tuple[Rubric, float]]:
         """Retrieve data from Weaviate for a specific class .
 
         Args:
             class_name(str): The name of the class to retrieve
         """
-        query: str = news.query
+        query: str = self.create_query(news)
+        embeddings = await self.embedding_model.embed(text_description=query)
 
-        collection = self.vectorstore_client.collections.get(
-            VectorstoreConfig.vectorstore_collection
-        )
+        collection = self.vectorstore_client.collections.get(VectorstoreConfig.collection_name)
 
         objects = collection.aggregate.hybrid(
-            query=query, group_by=GroupByAggregate(prop="rubric")
+            query=query, vector=embeddings, group_by=GroupByAggregate(prop="rubric")
         )
 
         rubrique_scores = [
@@ -73,14 +74,23 @@ class VectorStore:
 
         return rubrique_scores
 
+    @staticmethod
+    def create_query(news: News) -> str:
+        """Create a query for the Weaviate client.
+
+        Args:
+            news: The news to create the query for.
+        """
+        query = f"{news.title} {news.content}"
+        return query
+
     async def classify_news_rubric(self, news: News) -> Rubric | None:
         """Retrieve classification scores from Weaviate.
 
         Args:
             news: The news to classify the Rubric for.
         """
-        rubric_classification_scores = self._get_rubric_classification_scores(news)
-        if rubric_classification_scores[0][1] > (rubric_classification_scores[1][1] - 0.001):
-            return rubric_classification_scores[0][0]
-
-        return None
+        rubric_classification_scores = await self._get_rubric_classification_scores(news)
+        if len(rubric_classification_scores) == 0:
+            return None
+        return rubric_classification_scores[0][0]

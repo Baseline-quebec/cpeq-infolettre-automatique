@@ -12,7 +12,7 @@ sitemaps = [
 ]
 
 
-class Rubric(Enum):
+class Rubric(str, Enum):  # noqa: UP042
     """Rubric Enum class."""
 
     CHANGEMENT_CLIMATIQUE_ET_ENERGIE = "Changements climatiques et énergie"
@@ -70,6 +70,7 @@ class EmbeddingModelConfig:
     token_encoding: ClassVar[Literal["cl100k_base", "p50k_base", "r50k_base", "gpt2"]] = (
         "cl100k_base"
     )
+    max_tokens: ClassVar[int] = 8192
 
 
 class VectorstoreConfig:

@@ -148,7 +148,7 @@ max-doc-length = 99
 convention = "google"
 
 [tool.ruff.lint.pylint]
-max-args = 7
+max-args = 8
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
