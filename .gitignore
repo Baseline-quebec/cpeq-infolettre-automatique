@@ -12,7 +12,7 @@ reports/
 *.xls*
 *.zip*
 data/
-
+persistence_data/
 # direnv
 .envrc
 

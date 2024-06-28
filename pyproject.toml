@@ -27,6 +27,7 @@ python-decouple = "^3.8"
 openai = "^1.23.2"
 numpy = "^1.26.4"
 tiktoken = "^0.6.0"
+weaviate-client = "^4.6.5"
 httpx = {version = "^0.27.0", extras = ["http2"]}
 asyncio = "^3.4.3"
 pydantic = "^2.7.4"
@@ -69,7 +70,7 @@ source = ["src"]
 directory = "reports/htmlcov"
 
 [tool.coverage.xml]  # https://coverage.readthedocs.io/en/latest/cmd.html#cmd-xml
-directory = "reports/coverage.xml"
+output = "reports/coverage.xml"
 
 [tool.mypy]  # https://mypy.readthedocs.io/en/latest/config_file.html
 junit_xml = "reports/mypy.xml"
@@ -149,7 +150,7 @@ max-doc-length = 99
 convention = "google"
 
 [tool.ruff.lint.pylint]
-max-args = 6
+max-args = 8
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [

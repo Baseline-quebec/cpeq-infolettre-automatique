@@ -1,21 +1,23 @@
 """Service for the automatic newsletter generation that is called by the API."""
 
 import asyncio
+import datetime
 from collections.abc import Awaitable, Iterable
-from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
-NewsRepository = Any
 SummaryGenerator = Any
 NewsletterFormatter = Any
 Newsletter = Any
+NewsletterRepository = Any
+NewsRepository = Any
 
 
 class Service:
@@ -25,13 +27,17 @@ class Service:
         self,
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
+        reference_news_repository: ReferenceNewsRepository,
+        newsletter_repository: NewsletterRepository,
         vectorstore: VectorStore,
         summary_generator: SummaryGenerator,
         newsletter_formatter: NewsletterFormatter,
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
+        self.reference_news_repository = reference_news_repository
         self.news_repository = news_repository
+        self.newsletter_repository = newsletter_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
         self.formatter = newsletter_formatter
@@ -51,39 +57,49 @@ class Service:
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
-        await self.news_repository.save_news(flattened_news)
+        await self.news_repository.create(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
         newsletter = self._format_newsletter(flattened_news)
-        await self.news_repository.save_newsletter(newsletter)
+        await self.newsletter_repository.create(newsletter)
         return newsletter
 
     @staticmethod
+    def _get_current_datetime() -> datetime.datetime:
+        """Get the current date and time in the Montreal timezone.
+
+        Returns: The current date and time.
+        """
+        return datetime.datetime.now(ZoneInfo("America/Montreal"))
+
+    @classmethod
     def _prepare_dates(
-        start_date: date | None = None, end_date: date | None = None
-    ) -> tuple[date, date]:
+        cls,
+        start_date: datetime.datetime | None = None,
+        end_date: datetime.datetime | None = None,
+    ) -> tuple[datetime.datetime, datetime.datetime]:
         """Prepare the start and end dates for the newsletter.
 
         Args:
-            start_date: The start date of the newsletter.
-            end_date: The end date of the newsletter.
+            start_date: The start datetime of the newsletter.
+            end_date: The end datetime of the newsletter.
 
         Returns: The start and end dates for the newsletter.
         """
         if end_date is None:
-            current_date = datetime.now(ZoneInfo("localtime")).date()
-            end_date = current_date - timedelta(days=current_date.weekday())
+            current_date = cls._get_current_datetime()
+            end_date = current_date - datetime.timedelta(days=current_date.weekday())
         if start_date is None:
-            start_date = end_date - timedelta(days=7)
+            start_date = end_date - datetime.timedelta(days=7)
         return start_date, end_date
 
     def _prepare_scraped_news_summarization_coroutines(
-        self, start_date: date, end_date: date, job_ids: list[str]
+        self, start_date: datetime.datetime, end_date: datetime.datetime, job_ids: list[str]
     ) -> Iterable[Awaitable[Iterable[News]]]:
         """Prepare the summarization coroutines for concurrent summary generation of the news that are taken from the webscaper.
 
         Args:
-            start_date: The start date of the newsletter.
-            end_date: The end date of the newsletter.
+            start_date: The start datetime of the newsletter.
+            end_date: The end datetime of the newsletter.
             job_ids: The IDs of the scraping jobs.
 
         Returns: An iterable of summary generation coroutines to be run.
@@ -102,24 +118,24 @@ class Service:
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     async def _filter_news(
-        self, all_news: Iterable[News], start_date: date, end_date: date
+        self, all_news: Iterable[News], start_date: datetime.datetime, end_date: datetime.datetime
     ) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
             all_news: The raw news data.
-            start_date: The start date of the newsletter.
-            end_date: The end date of the newsletter.
+            start_date: The start datetime of the newsletter.
+            end_date: The end datetime of the newsletter.
 
         Returns: The filtered news data.
         """
         filtered_news = []
         for news in all_news:
-            if news.date is None:
+            if news.datetime is None:
                 continue
-            if not start_date <= news.date < end_date:
+            if not start_date <= news.datetime < end_date:
                 continue
-            news.rubric = await self.vectorstore.classify_rubric(news)
+            news.rubric = await self.vectorstore.classify_news_rubric(news)
             if news.rubric is None:
                 continue
             filtered_news.append(news)
@@ -134,7 +150,10 @@ class Service:
 
         Returns: The news data with the summary.
         """
-        examples = self.vectorstore.get_examples(news)
+        if news.rubric is None:
+            error_msg = "Rubric must be set before summarization"
+            raise ValueError(error_msg)
+        examples = self.reference_news_repository.read_many_by_rubric(news.rubric, nb_per_page=5)
         news.summary = await self.summary_generator.generate_summary(news, examples)
         return news
 
