@@ -70,7 +70,7 @@ source = ["src"]
 directory = "reports/htmlcov"
 
 [tool.coverage.xml]  # https://coverage.readthedocs.io/en/latest/cmd.html#cmd-xml
-directory = "reports/coverage.xml"
+output = "reports/coverage.xml"
 
 [tool.mypy]  # https://mypy.readthedocs.io/en/latest/config_file.html
 junit_xml = "reports/mypy.xml"
