@@ -44,20 +44,25 @@ class VectorStore:
         client: weaviate.WeaviateClient,
         collection_name: str = VectorstoreConfig.collection_name,
     ) -> None:
-        """Initialize the VectorStore with the provided Weaviate client and embedded data.
+        """Initialize the VectorStore with the provided Weaviate client and collection name.
 
         Args:
+            embedding_model: The embedding model to use for the VectorStore.
             client: An instance of the Weaviate client to handle API calls.
+            collection_name: The name of the collection to store the vectors in.
         """
         self.vectorstore_client = client
         self.embedding_model = embedding_model
         self.collection_name = collection_name
 
     async def _get_rubric_classification_scores(self, news: News) -> list[tuple[Rubric, float]]:
-        """Retrieve data from Weaviate for a specific class .
+        """Retrieve Rubric classification scores for a news.
 
         Args:
-            class_name(str): The name of the class to retrieve
+            news: The news to classify a new Rubric from.
+
+        Returns:
+            list[tuple[Rubric, float]]: A list of tuples containing the Rubric and the classification score.
         """
         query: str = self.create_query(news)
         embeddings = await self.embedding_model.embed(text_description=query)

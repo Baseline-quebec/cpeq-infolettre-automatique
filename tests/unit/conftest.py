@@ -22,7 +22,7 @@ def news_fixture() -> News:
     return News(
         title="Some title",
         content="Some content",
-        datetime=dt.datetime(2024, 1, 2, 0, 0, 0, 0, tzinfo=dt.UTC),
+        datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
         rubric=None,
         summary=None,
     )
