@@ -2,6 +2,7 @@
 
 import csv
 import tempfile
+from pathlib import Path
 
 from o365 import DriveItem
 
@@ -26,19 +27,25 @@ class NewsRepository:
         Args:
             news_list: List of News to save.
         """
-        with tempfile.NamedTemporaryFile(dir="", newline="") as csvfile:
+        with (
+            tempfile.NamedTemporaryFile(suffix=".csv", newline="") as tmpfile,
+            Path(tmpfile.name).open(encoding="utf-8") as csvfile,
+        ):
             csvwriter = csv.writer(
-                csvfile, delimiter=" ", quotechar="|", quoting=csv.QUOTE_MINIMAL
+                csvfile, delimiter="|", quotechar="|", quoting=csv.QUOTE_MINIMAL
             )
-            csvwriter.writerows(["Title", "Content", "Date", "Rubric", "Summary"])
 
-            for news in news_list:
-                csvwriter.writerows([
+            rows: list[list[str]] = [["Title", "Content", "Date", "Rubric", "Summary"]]
+            rows += [
+                [
                     news.title,
                     news.content,
                     str(news.date),
                     str(news.rubric),
                     str(news.summary),
-                ])
+                ]
+                for news in news_list
+            ]
 
-            self.folder.upload_file()
+            csvwriter.writerows(rows)
+            self.folder.upload_file(tmpfile.name)
