@@ -6,8 +6,8 @@ from collections.abc import Iterator
 
 import numpy as np
 import weaviate
+import weaviate.classes as wvc
 from decouple import config
-from weaviate.classes.aggregate import GroupByAggregate
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
@@ -25,6 +25,7 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
         weaviate.WeaviateClient: The vectorstore client.
     """
     client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
+        version=config("WEAVIATE_VERSION"),
         persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH"),
     )
     if not client.is_ready():
@@ -39,8 +40,9 @@ class VectorStore:
 
     def __init__(
         self,
-        client: weaviate.WeaviateClient,
         embedding_model: EmbeddingModel,
+        client: weaviate.WeaviateClient,
+        collection_name: str = VectorstoreConfig.collection_name,
     ) -> None:
         """Initialize the VectorStore with the provided Weaviate client and embedded data.
 
@@ -49,6 +51,7 @@ class VectorStore:
         """
         self.vectorstore_client = client
         self.embedding_model = embedding_model
+        self.collection_name = collection_name
 
     async def _get_rubric_classification_scores(self, news: News) -> list[tuple[Rubric, float]]:
         """Retrieve data from Weaviate for a specific class .
@@ -59,20 +62,30 @@ class VectorStore:
         query: str = self.create_query(news)
         embeddings = await self.embedding_model.embed(text_description=query)
 
-        collection = self.vectorstore_client.collections.get(VectorstoreConfig.collection_name)
+        collection = self.vectorstore_client.collections.get(self.collection_name)
 
-        objects = collection.aggregate.hybrid(
-            query=query, vector=embeddings, group_by=GroupByAggregate(prop="rubric")
+        objects = collection.query.hybrid(
+            query=query,
+            vector=embeddings,
+            limit=VectorstoreConfig.top_k,
+            alpha=VectorstoreConfig.hybrid_weight,
+            return_metadata=wvc.query.MetadataQuery(score=True),
+            return_properties=["rubric", "title", "summary", "content"],
         )
 
-        rubrique_scores = [
-            (Rubric(group_rubrique.grouped_by.value), np.mean([1, 2, 3], dtype=float))
-            for group_rubrique in objects.groups
+        scores: dict[Rubric, list[float]] = {Rubric(rubric.value): [] for rubric in Rubric}
+        for obj in objects.objects:
+            scores[Rubric(obj.properties["rubric"])].append(float(obj.metadata.score))  # type: ignore[arg-type]
+
+        rubric_scores = [
+            (rubric, np.mean(score, dtype=float))
+            for rubric, score in scores.items()
+            if len(score) > 0
         ]
 
-        rubrique_scores.sort(key=operator.itemgetter(1), reverse=True)
+        rubric_scores.sort(key=operator.itemgetter(1), reverse=True)
 
-        return rubrique_scores
+        return rubric_scores
 
     @staticmethod
     def create_query(news: News) -> str:
@@ -81,7 +94,7 @@ class VectorStore:
         Args:
             news: The news to create the query for.
         """
-        query = f"{news.title} {news.content}"
+        query = f"{news.title} {news.summary} {news.content}"
         return query
 
     async def classify_news_rubric(self, news: News) -> Rubric | None:

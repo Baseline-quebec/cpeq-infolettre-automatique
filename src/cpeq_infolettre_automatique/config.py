@@ -77,12 +77,6 @@ class VectorstoreConfig:
     """Configuration for the vector store client."""
 
     collection_name: ClassVar[str] = config("WEAVIATE_COLLECTION_NAME", "")
-
-
-class RetrieverConfig:
-    """Retriever Config dataclass."""
-
-    vectorstore_config: ClassVar[VectorstoreConfig] = VectorstoreConfig()
     top_k: ClassVar[int] = int(config("NB_ITEM_RETRIEVED", 5))
     hybrid_weight: ClassVar[float] = 0.75
 

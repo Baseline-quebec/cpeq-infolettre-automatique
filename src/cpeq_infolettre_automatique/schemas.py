@@ -26,7 +26,7 @@ class ReferenceNews(News):
 
     uuid: uuid_package.UUID
     rubric: Rubric
-    datetime: dt.datetime
+    datetime: dt.datetime | None
 
     @staticmethod
     @field_serializer("datetime")
@@ -40,6 +40,6 @@ class ReferenceNewsType(TypedDict):
 
     title: str
     content: str
-    datetime: dt.datetime
+    datetime: dt.datetime | None
     rubric: Rubric
     summary: str

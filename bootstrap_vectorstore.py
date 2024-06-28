@@ -5,6 +5,7 @@ import json
 import uuid as uuid_package
 from pathlib import Path
 
+import dateparser
 import weaviate
 import weaviate.classes as wvc
 from tqdm import tqdm
@@ -90,20 +91,24 @@ def get_reference_news(data_path: Path) -> list[ReferenceNews]:
     with Path.open(data_path) as f:
         data = json.load(f)
 
-    dummy_date = dt.datetime(2024, 1, 2, tzinfo=dt.UTC)  # TODO(olivier.belhumeur): Add dateparser
-    reference_news = [
-        ReferenceNews(
-            title=news_item["title"],
-            content=news_item["content"],
-            datetime=dummy_date,  # TODO(olivier.belhumeur): Add dateparser
-            rubric=Rubric(rubric_group["rubric"]),
-            summary=news_item["summary"],
-            uuid=uuid_package.uuid5(uuid_package.NAMESPACE_DNS, news_item["title"]),
-        )
-        for rubric_group in data
-        for news_item in rubric_group["examples"]
-    ]
-    return reference_news
+    references_news = []
+    for rubric_group in data:
+        for news_item in rubric_group["examples"]:
+            parsed_datetime = dateparser.parse(news_item["date"])
+            parsed_datetime = (
+                parsed_datetime.astimezone(dt.UTC) if parsed_datetime is not None else None
+            )
+            reference_news = ReferenceNews(
+                title=news_item["title"],
+                content=news_item["content"],
+                datetime=parsed_datetime,
+                rubric=Rubric(rubric_group["rubric"]),
+                summary=news_item["summary"],
+                uuid=uuid_package.uuid5(uuid_package.NAMESPACE_DNS, news_item["title"]),
+            )
+            references_news.append(reference_news)
+
+    return references_news
 
 
 async def populate_db(
@@ -150,21 +155,42 @@ async def populate_db(
     return uuids_upserted
 
 
+def upsert_vectorstore_collection(weaviate_collection: WeaviateCollection) -> None:
+    """Recreate the collection in Weaviate according to Cpeq News schema."""
+    if weaviate_collection.client.collections.exists(weaviate_collection.collection_name):
+        weaviate_collection.delete()
+    weaviate_collection.create()
+
+
+async def bootstrap_vectorstore(
+    reference_news: list[ReferenceNews],
+    weaviate_collection: WeaviateCollection,
+    embedding_model: EmbeddingModel,
+    *,
+    recreate_vectorstore_collection: bool = True,
+) -> None:
+    """Populate the vectorstore with the reference news."""
+    if recreate_vectorstore_collection:
+        upsert_vectorstore_collection(weaviate_collection)
+    await populate_db(reference_news, weaviate_collection, embedding_model)
+
+
 async def main() -> None:
     """Populate the vectorstore with the reference news."""
     data_path = Path("rubrics", "rubrics.json")
     reference_news = get_reference_news(data_path)
+    openai_client = get_openai_client()
+    embedding_model = OpenAIEmbeddingModel(openai_client)
     for weaviate_client in get_vectorstore_client():
         weavaite_collection = WeaviateCollection(
             weaviate_client, VectorstoreConfig.collection_name
         )
-        if weavaite_collection.client.collections.exists(weavaite_collection.collection_name):
-            weavaite_collection.delete()
-        weavaite_collection.create()
-
-        openai_client = get_openai_client()
-        embedding_model = OpenAIEmbeddingModel(openai_client)
-        await populate_db(reference_news, weavaite_collection, embedding_model)
+        await bootstrap_vectorstore(
+            reference_news,
+            weavaite_collection,
+            embedding_model,
+            recreate_vectorstore_collection=True,
+        )
 
 
 if __name__ == "__main__":
