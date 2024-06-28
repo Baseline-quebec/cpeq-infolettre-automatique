@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import VectorStore
-from cpeq_infolettre_automatique.webscraper_io_client import WebScraperIoClient
+from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
@@ -25,7 +25,7 @@ class Service:
 
     def __init__(
         self,
-        webscraper_io_client: WebScraperIoClient,
+        webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
         reference_news_repository: ReferenceNewsRepository,
         newsletter_repository: NewsletterRepository,
@@ -106,7 +106,7 @@ class Service:
         """
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
-            all_news = await self.webscraper_io_client.get_scraping_job_data(job_id)
+            all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
             filtered_news = await self._filter_news(
                 all_news, start_date=start_date, end_date=end_date
             )
@@ -118,7 +118,7 @@ class Service:
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     async def _filter_news(
-        self, all_news: list[News], start_date: datetime.datetime, end_date: datetime.datetime
+        self, all_news: Iterable[News], start_date: datetime.datetime, end_date: datetime.datetime
     ) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 

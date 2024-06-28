@@ -1,192 +1,186 @@
 """Client module for WebScraper.io API interaction."""
 
+import asyncio
+import json
 import logging
-from typing import Any
+from collections.abc import Iterable
+from types import MappingProxyType
 
+import dateparser
 import httpx
-from decouple import config
 
 from cpeq_infolettre_automatique.schemas import News
-from cpeq_infolettre_automatique.utils import process_raw_response
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-class WebscraperIoClientTest:
-    """A test client example for interacting with the WebScraper.io API."""
-
-    def get_endpoint(self, url: str) -> dict[str, str]:
-        """Fetches a response from the specified URL.
-
-        Args:
-            url (str): The target URL to fetch data from.
-
-        Returns:
-            dict[str, str]: The response as a dictionary.
-        """
-        response = httpx.get(url)
-        return self._handle_response(response)
-
-    @staticmethod
-    def _handle_response(response: httpx.Response) -> dict[str, Any]:
-        """Process and parse the response from an HTTP request.
-
-        Args:
-            response (httpx.Response): The HTTP response to handle.
-
-        Returns:
-            dict[str, str]: The parsed response or None if an error occurs.
-        """
-        try:
-            output: dict[str, Any] = response.json()
-        except:
-            logger.exception("Failed to parse JSON from the response")
-            raise
-        else:
-            return output
-
-
-class WebScraperIoClient:
+class WebscraperIoClient:
     """A client for interacting with the WebScraper.io API.
 
     This class provides methods to create scraping jobs,
     retrieve job details, and download job data.
     """
 
-    def __init__(self, api_token: str) -> None:
+    _base_url = "https://api.webscraper.io/api/v1"
+    _headers = MappingProxyType({"Content-Type": "application/json"})
+
+    def __init__(self, http_client: httpx.AsyncClient, api_token: str) -> None:
         """Initialize the WebScraperIoClient with the provided API token.
 
         Args:
+            http_client (httpx.AsyncClient): The AsyncClient used for API calls.
             api_token (str): The API token used for authentication.
         """
-        self.api_token = config("WEBSCRAPER_IO_API_KEY")
-        self.base_url: str = "https://api.webscraper.io/api/v1"
-        self.headers: dict[str, str] = {"Content-Type": "application/json"}
+        self._client = http_client
+        self._api_token = api_token
 
-    def create_scraping_jobs(self, sitemaps: list[str]) -> list[str]:
-        """Starts scraping jobs for multiple sitemap IDs and returns their job IDs.
+    async def create_scraping_job(self, sitemap_id: str) -> str:
+        """Creates a new scraping job for given sitemap id.
 
         Args:
-            sitemaps (list[dict[str, str]]): List of sitemaps to start jobs.
+            sitemap_id (str): ID of the Sitemap.
 
         Returns:
-            list[str]: List of job IDs created.
+            str: ID of the created job on success, empty string otherwise.
         """
-        job_ids = []
-        for sitemap_id in sitemaps:
-            url = f"{self.base_url}/scraping-job"
-            data = {
-                "sitemap_id": sitemap_id,
-                "driver": "fulljs",
-                "page_load_delay": 3000,
-                "request_interval": 3000,
-            }
-            response = httpx.post(
-                url,
-                json=data,
-                headers=self.headers,
-                params={"api_token": self.api_token},
-            )
+        url: str = f"{self._base_url}/scraping-job"
+        data: dict[str, str | int] = {
+            "sitemap_id": sitemap_id,
+            "driver": "fulljs",
+            "page_load_delay": 3000,
+            "request_interval": 3000,
+        }
+
+        job_id: str = ""
+        response = await self._client.post(
+            url,
+            json=data,
+            headers=self._headers,
+            params={"api_token": self._api_token},
+        )
+
+        try:
             response.raise_for_status()
-            job_id = response.json().get("data", {}).get("id")
-            if job_id:
-                job_ids.append(str(job_id))  # Convert job ID to string
-                logger.info("Job %s started for sitemap %s", job_id, sitemap_id)
-            else:
-                logger.warning("No job ID received for sitemap %s", sitemap_id)
-        return job_ids
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP Code %s while creating scraping job on Sitemap ID %s.",
+                e.response.status_code,
+                sitemap_id,
+            )
+        except httpx.RequestError:
+            logger.exception("Error issuing POST request at URL %s.", url)
+        else:
+            job_id = str(response.json().get("data", {}).get("id"))
+
+        return job_id
+
+    async def delete_scraping_jobs(self) -> None:
+        """Deletes all existing scraping jobs."""
+        job_ids: list[str] = await self.get_scraping_jobs()
+        coroutines = [self.delete_scraping_job(job_id) for job_id in job_ids]
+        await asyncio.gather(*coroutines)
+
+    async def delete_scraping_job(self, job_id: str) -> None:
+        """Deletes an existing job with given id.
+
+        Args:
+            job_id (str): ID of the job to delete.
+        """
+        url: str = f"{self._base_url}/scraping-job/{job_id}"
+
+        response: httpx.Response = await self._client.delete(
+            url,
+            params={"api_token": self._api_token},
+        )
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP Code %s while deleting scraping job with ID %s.",
+                e.response.status_code,
+                job_id,
+            )
+        except httpx.RequestError:
+            logger.exception("Error issuing DELETE request at URL %s.", url)
 
     async def get_scraping_jobs(self) -> list[str]:
-        """Get the list of scraping job ids available."""
-        raise NotImplementedError
-
-    def get_scraping_job_details(self, scraping_job_id: str) -> dict[str, Any]:
-        """Retrieves details of a specific scraping job.
-
-        Args:
-            scraping_job_id (str): The job ID to fetch details.
+        """Gets the list of scraping jobs from Webscraper.io.
 
         Returns:
-            dict[str, str] | dict[str, int] | None: The details of the scraping job, or an error response.
+            A list containing the IDs of all the scraping jobs.
         """
-        url = f"{self.base_url}/scraping-job/{scraping_job_id}?api_token={self.api_token}"
-        try:
-            response = httpx.get(
-                url,
-                headers=self.headers,
-                params={"api_token": self.api_token},
-            )
-            response.raise_for_status()
-            output: dict[str, Any] = response.json()
-        except httpx.HTTPStatusError:
-            logger.exception("HTTP error while fetching details for job %s", scraping_job_id)
-            raise
-        except httpx.RequestError:
-            logger.exception("Request error while fetching details for job %s", scraping_job_id)
-            raise
-        else:
-            return output
+        url: str = f"{self._base_url}/scraping-jobs"
+        job_ids: list[str] = []
 
-    def download_scraping_job_data(self, scraping_job_id: str) -> str:
+        response: httpx.Response = await self._client.get(
+            url, params={"api_token": self._api_token}
+        )
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP code %s while getting all scraping jobs.",
+                e.response.status_code,
+            )
+        except httpx.RequestError:
+            logger.exception("Error issuing GET request at URL %s.", url)
+        else:
+            job_ids = [str(job.id) for job in response.json().get("data", [])]
+
+        return job_ids
+
+    async def download_scraping_job_data(self, job_id: str) -> Iterable[News]:
         """Fetches raw JSON data for a scraping job and processes it into a structured format.
 
         Args:
-            scraping_job_id (str): The job ID whose data is to be fetched.
+            job_id (str): The job ID whose data is to be fetched.
 
         Returns:
-            str: The processed job data or an error message.
+            A list of JSON objects, represented as dictionaries.
+            The Webscraper.io API returns JSON Lines
         """
-        url = f"{self.base_url}/scraping-job/{scraping_job_id}/json?api_token={self.api_token}"
+        url: str = f"{self._base_url}/scraping-job/{job_id}/json"
+        job_data: list[dict[str, str]] = []
+
+        response = await self._client.get(url, params={"api_token": self._api_token})
         try:
-            response = httpx.get(url)
             response.raise_for_status()
-        except:
-            logger.exception("Failed to process data for job %s", scraping_job_id)
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP Code %s while downloading scraping job data on Sitemap ID %s.",
+                e.response.status_code,
+                job_id,
+            )
+            raise
+        except httpx.RequestError:
+            logger.exception("Error issuing GET request at URL %s.", url)
             raise
         else:
-            return response.text
+            job_data = self.process_raw_response(response.text)
 
-    def download_and_process_multiple_jobs(self, job_ids: list[str]) -> list[dict[str, str]]:
-        """Converts raw JSON lines into a list of dictionaries (valid JSON array) and saves it into a dictionary.
+        return tuple(
+            News(
+                title=data["title"],
+                content=data["content"],
+                date=dateparser.parse(data["date"]),
+                rubric="",
+                summary="",
+            )
+            for data in job_data
+        )
+
+    @staticmethod
+    def process_raw_response(raw_response: str) -> list[dict[str, str]]:
+        """Converts raw JSON lines into a list of dictionaries (valid JSON array).
 
         Args:
-            job_ids (list[str]): List of job IDs to process.
+        raw_response (str): The raw JSON lines to be processed.
 
         Returns:
-            list[dict[str, str]]: Processed job data from all job IDs combined.
+            list[dict[str, str]]: A list of dictionaries or a list with an error message.
         """
-        combined_data = []  # This will store all processed data
-
-        for job_id in job_ids:
-            logger.info("Starting download for Job ID: %s", job_id)
-            raw_data = self.download_scraping_job_data(job_id)
-            data = process_raw_response(raw_data)
-            combined_data.extend(data)  # Add processed data to the combined list
-            preview_limit = 2
-            logger.info(
-                "Processed data for job %s: %s",
-                job_id,
-                data[:2] if len(data) > preview_limit else data,
-            )
-
-        return combined_data
-
-    async def get_scraping_job_data(self, job_id: str) -> list[News]:
-        """Fetches the data for a scraping job.
-
-        Args:
-            job_id: The ID of the scraping job.
-
-        Returns: The scraped news.
-        """
-        raise NotImplementedError
-
-    async def delete_scraping_jobs(self) -> None:
-        """Deletes a scraping job.
-
-        Args:
-            job_id: The ID of the scraping job.
-        """
-        raise NotImplementedError
+        return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
