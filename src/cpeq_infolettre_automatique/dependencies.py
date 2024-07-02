@@ -1,13 +1,17 @@
 """Depencies injection functions for the Service class."""
 
+import datetime
+import tempfile
 from typing import Annotated, Any
 
 import httpx
 from decouple import config
 from fastapi import Depends
+from o365 import Account, DriveItem
 from openai import AsyncOpenAI
 
 from cpeq_infolettre_automatique.config import VECTORSTORE_CONTENT_FILEPATH
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -56,11 +60,47 @@ class HttpClientDependency(ApiDependency):
         await cls.client.aclose()
 
 
+class OneDriveFolderDependency(ApiDependency):
+    """Dependency class for the Singleton O365 Account client."""
+
+    onedrive: DriveItem
+
+    @classmethod
+    def setup(cls) -> None:
+        """Setup dependency."""
+        # TODO(@emileturcotte): Inject authentication
+        credentials = ("client_id", "client_secret")
+        account = Account(credentials)
+        account.authenticate(scopes=["basic", "onedrive_all"])
+        drive: DriveItem = account.get_default_drive()
+
+        # Setup folder in which to upload News ahead of time, based on date of execution
+        with tempfile.TemporaryDirectory(
+            prefix=str(datetime.datetime.now(tz=datetime.UTC).date())
+        ) as folder:
+            drive.upload_folder(folder)
+
+    def __call__(self) -> DriveItem:
+        """Returns the 0365 Account."""
+        return self.onedrive
+
+    @classmethod
+    def teardown(cls) -> Any:
+        """Free resources held by the class."""
+
+
 def get_webscraperio_client(
     http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())],
 ) -> WebscraperIoClient:
     """Returns a configured WebscraperIO Client."""
     return WebscraperIoClient(http_client=http_client, api_token=config("WEBSCRAPER_IO_API_KEY"))
+
+
+def get_news_repository(
+    onedrive: Annotated[DriveItem, Depends(OneDriveFolderDependency())],
+) -> NewsRepository:
+    """Returns a configured News Repository."""
+    return NewsRepository(onedrive)
 
 
 def get_openai_client() -> AsyncOpenAI:
@@ -81,11 +121,12 @@ def get_vectorstore(
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
     vectorstore: Annotated[VectorStore, Depends(get_vectorstore)],
+    news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
     return Service(
         webscraper_io_client=webscraper_io_client,
-        news_repository=Any,
+        news_repository=news_repository,
         vectorstore=vectorstore,
         summary_generator=Any,
         newsletter_formatter=Any,
