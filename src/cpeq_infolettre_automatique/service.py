@@ -6,8 +6,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from cpeq_inforlettre_automatique.repositories import NewsRepository
-
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -52,10 +51,10 @@ class Service:
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
-        await self.news_repository.save_news(flattened_news)
+        self.news_repository.save_news(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
         newsletter = self._format_newsletter(flattened_news)
-        await self.news_repository.save_newsletter(newsletter)
+        self.news_repository.save_newsletter(newsletter)
         return newsletter
 
     @staticmethod

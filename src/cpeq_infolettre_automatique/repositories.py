@@ -7,6 +7,7 @@ from pathlib import Path
 from o365 import DriveItem
 
 from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.service import Newsletter
 
 
 # https://github.com/O365/python-o365?tab=readme-ov-file#onedrive
@@ -22,13 +23,11 @@ class NewsRepository:
     def save_news(self, news_list: list[News]) -> None:
         """Save the list of News as a new CSV file in the OneDrive folder.
 
-        Note that a new file is created each time and will overwrite the previous one.
-
         Args:
             news_list: List of News to save.
         """
         with (
-            tempfile.NamedTemporaryFile(suffix=".csv", newline="") as tmpfile,
+            tempfile.NamedTemporaryFile(prefix="news-", suffix=".csv", newline="") as tmpfile,
             Path(tmpfile.name).open(encoding="utf-8") as csvfile,
         ):
             csvwriter = csv.writer(
@@ -49,3 +48,10 @@ class NewsRepository:
 
             csvwriter.writerows(rows)
             self.folder.upload_file(tmpfile.name)
+
+    def save_newsletter(self, newsletter: Newsletter) -> None:
+        """Save the Newsletter as a Markdown file in the OneDrive folder.
+
+        Args:
+            newsletter: The Newsletter to save.
+        """
