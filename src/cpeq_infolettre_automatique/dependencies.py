@@ -68,8 +68,10 @@ class OneDriveFolderDependency(ApiDependency):
     @classmethod
     def setup(cls) -> None:
         """Setup dependency."""
-        # TODO(@emileturcotte): Inject authentication
-        credentials = ("client_id", "client_secret")
+        credentials = (
+            "99536437-db80-4ece-8bd5-0f4e4b1cba22",
+            "zfv8Q~U.AUmeoEDQpuEqTHsBvEnrw2TUXbqo5aLn",
+        )
         account = Account(credentials)
         account.authenticate(scopes=["basic", "onedrive_all"])
         drive: DriveItem = account.get_default_drive()
