@@ -72,7 +72,11 @@ class OneDriveFolderDependency(ApiDependency):
             "99536437-db80-4ece-8bd5-0f4e4b1cba22",
             "zfv8Q~U.AUmeoEDQpuEqTHsBvEnrw2TUXbqo5aLn",
         )
-        account = Account(credentials)
+        account = Account(
+            credentials,
+            auth_flow_type="credentials",
+            tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
+        )
         account.authenticate(scopes=["basic", "onedrive_all"])
         drive: DriveItem = account.get_default_drive()
 
