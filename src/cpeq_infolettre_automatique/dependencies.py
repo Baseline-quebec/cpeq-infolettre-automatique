@@ -1,13 +1,13 @@
 """Depencies injection functions for the Service class."""
 
 import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import httpx
 from decouple import config
 from fastapi import Depends
 from O365.account import Account
-from O365.drive import Drive
+from O365.drive import Folder
 from openai import AsyncOpenAI
 
 from cpeq_infolettre_automatique.config import VECTORSTORE_CONTENT_FILEPATH
@@ -60,11 +60,10 @@ class HttpClientDependency(ApiDependency):
         await cls.client.aclose()
 
 
-class OneDriveFolderDependency(ApiDependency):
+class OneDriveDependency(ApiDependency):
     """Dependency class for the Singleton O365 Account client."""
 
-    drive: Drive
-    folder_name: str
+    news_folder: Folder
 
     @classmethod
     def setup(cls) -> None:
@@ -78,22 +77,47 @@ class OneDriveFolderDependency(ApiDependency):
             auth_flow_type="credentials",
             tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
         )
-        account.authenticate(scopes=["basic", "onedrive_all"])
-        drive_or_none = account.storage().get_default_drive()
-
-        if drive_or_none is None:
+        if not account.authenticate():
             raise RuntimeError
 
-        cls.drive = drive_or_none
-        cls.folder_name = str(datetime.datetime.now(tz=datetime.UTC).date())
+        site = account.sharepoint().get_site("baselinequebec.sharepoint.com")
+        if site is None:
+            raise RuntimeError
 
-    def __call__(self) -> tuple[Drive, str]:
+        drive = site.site_storage.get_drive(
+            "b!fslahRMOAUCsW5P8nXZ3cYwDnL6MT35NpJyHzlyxCgXt0TeRJiWPSb3gQmzCo3t2"
+        )
+        if drive is None:
+            raise RuntimeError
+
+        root_folder: Folder = cast(Folder, drive.get_root_folder())
+        news_folder: Folder = cls._get_or_create_subfolder(
+            parent_folder=root_folder, folder_name="infolettre_automatique"
+        )
+        week_folder: Folder = cls._get_or_create_subfolder(
+            parent_folder=news_folder,
+            folder_name=str(datetime.datetime.now(tz=datetime.UTC).date()),
+        )
+
+        cls.news_folder = week_folder
+
+    def __call__(self) -> Folder:
         """Returns the 0365 Account."""
-        return (self.drive, self.folder_name)
+        return self.news_folder
 
     @classmethod
     def teardown(cls) -> Any:
         """Free resources held by the class."""
+
+    @classmethod
+    def _get_or_create_subfolder(cls, parent_folder: Folder, folder_name: str) -> Folder:
+        folders = parent_folder.get_child_folders()
+        subfolder: Folder = next(filter(lambda x: x.name == folder_name, folders))
+
+        if subfolder is None:
+            subfolder = cast(Folder, parent_folder.create_child_folder(folder_name))
+
+        return subfolder
 
 
 def get_webscraperio_client(
@@ -104,10 +128,10 @@ def get_webscraperio_client(
 
 
 def get_news_repository(
-    drive_info: Annotated[tuple[Drive, str], Depends(OneDriveFolderDependency())],
+    news_folder: Annotated[Folder, Depends(OneDriveDependency())],
 ) -> NewsRepository:
     """Returns a configured News Repository."""
-    return NewsRepository(drive_info[0], drive_info[1])
+    return NewsRepository(news_folder)
 
 
 def get_openai_client() -> AsyncOpenAI:

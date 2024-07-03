@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, Response
 
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
+    OneDriveDependency,
     get_service,
     get_webscraperio_client,
 )
@@ -31,6 +32,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     coloredlogs.install()
 
     HttpClientDependency.setup()
+    OneDriveDependency.setup()
 
     yield
 
@@ -78,7 +80,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         app,
-        host=str(config("DEVLOCAL_HOST", "localhost")),
-        port=int(config("DEVLOCAL_PORT", 8000)),
+        host="localhost",
+        port=5001,
         log_level="info",
     )

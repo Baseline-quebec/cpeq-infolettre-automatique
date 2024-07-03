@@ -8,9 +8,8 @@ from zoneinfo import ZoneInfo
 
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News, Newsletter
-from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
-
+from cpeq_infolettre_automatique.vectorstore import VectorStore
 
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
 SummaryGenerator = Any
@@ -69,7 +68,7 @@ class Service:
         Returns: The start and end dates for the newsletter.
         """
         if end_date is None:
-            current_date = datetime.now(ZoneInfo("localtime")).date()
+            current_date = datetime.now(ZoneInfo("America/Montreal")).date()
             end_date = current_date - timedelta(days=current_date.weekday())
         if start_date is None:
             start_date = end_date - timedelta(days=7)
@@ -90,13 +89,13 @@ class Service:
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
-            filtered_news = await self._filter_news(
-                all_news, start_date=start_date, end_date=end_date
-            )
-            summarized_news = await asyncio.gather(
-                *(self._summarize_news(news) for news in filtered_news)
-            )
-            return summarized_news
+            # filtered_news = await self._filter_news(
+            #    all_news, start_date=start_date, end_date=end_date
+            # )
+            # summarized_news = await asyncio.gather(
+            #    *(self._summarize_news(news) for news in filtered_news)
+            # )
+            return [*all_news]
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
