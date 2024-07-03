@@ -64,8 +64,8 @@ class EmbeddingModelConfig(BaseModel):
 class VectorstoreConfig(BaseModel):
     """Configuration for the vector store client."""
 
-    collection_name: str = config("WEAVIATE_COLLECTION_NAME")
+    collection_name: str = config("WEAVIATE_COLLECTION_NAME", "")
     top_k: int = int(config("NB_ITEM_RETRIEVED", 5))
-    hybrid_weight: float = 0.75
+    hybrid_weight: float = float(config("VECTORSTORE_HYBRID_WEIGHT", 0.75))
     batch_size: int = max(int(config("BATCH_SIZE", 5)), 1)
     concurrent_requests: int = max(int(config("CONCURRENT_REQUESTS", 2)), 1)
