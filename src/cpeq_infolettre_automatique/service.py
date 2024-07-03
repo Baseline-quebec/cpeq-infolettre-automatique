@@ -137,6 +137,6 @@ class Service:
         news.summary = await self.summary_generator.generate_summary(news, examples)
         return news
 
-    def _format_newsletter(self, news: list[News]) -> Newsletter:
+    def _format_newsletter(self, _: list[News]) -> Newsletter:
         """Format the news into a newsletter."""
         raise NotImplementedError
