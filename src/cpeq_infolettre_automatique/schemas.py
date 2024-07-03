@@ -1,10 +1,9 @@
 """Schemas used in the application."""
 
 import datetime as dt
-import uuid as uuid_package
-from typing import Any, TypedDict
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, PlainSerializer
 
 from cpeq_infolettre_automatique.config import Rubric
 
@@ -12,34 +11,28 @@ from cpeq_infolettre_automatique.config import Rubric
 class News(BaseModel):
     """Schema for the news data."""
 
+    model_config = ConfigDict(use_enum_values=True)
+
     title: str
     content: str
-    datetime: dt.datetime | None
+    datetime: Annotated[
+        dt.datetime | None, PlainSerializer(lambda x: x.isoformat() if x else None)
+    ]
     rubric: Rubric | None
     summary: str | None
 
-    model_config = ConfigDict(use_enum_values=True)
 
+class ClassifiedNews(News):
+    """Schema for the classified news data."""
 
-class ReferenceNews(News):
-    """Schema for the reference news data."""
-
-    uuid: uuid_package.UUID
     rubric: Rubric
-    datetime: dt.datetime | None
-
-    @staticmethod
-    @field_serializer("datetime")
-    def serialize_datetime(datetime: dt.datetime, _info: Any) -> str:
-        """Serialize the datetime to a isoformat RFC 3339."""
-        return datetime.isoformat()
 
 
-class ReferenceNewsType(TypedDict):
-    """Schema for the news data."""
+class SummarizedNews(ClassifiedNews):
+    """Schema for the summarized news data."""
 
-    title: str
-    content: str
-    datetime: dt.datetime | None
-    rubric: Rubric
     summary: str
+
+
+class ReferenceNews(SummarizedNews):
+    """Schema for the reference news data."""

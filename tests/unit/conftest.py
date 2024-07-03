@@ -1,7 +1,6 @@
 """Configuration for pytest. Add global fixtures here."""
 
 import datetime as dt
-import uuid as uuid_package
 from collections.abc import Iterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -9,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import weaviate
 
-from cpeq_infolettre_automatique.config import Rubric
+from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.schemas import News, ReferenceNews
-from cpeq_infolettre_automatique.vectorstore import VectorStore
+from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
@@ -33,9 +32,9 @@ def reference_news_fixture(news_fixture: News) -> ReferenceNews:
     """Fixture for a News object."""
     news = news_fixture.model_dump()
     news["rubric"] = Rubric.BIODIVERSITE_MILIEUX_HUMIDES_ET_ESPECES_EN_PERIL
-    news["uuid"] = uuid_package.uuid4()
     news["summary"] = "Some summary"
-    return ReferenceNews(**news)
+    reference_news = ReferenceNews(**news)
+    return reference_news
 
 
 @pytest.fixture()
@@ -70,11 +69,22 @@ def vectorstore_client_fixture(test_collection_name: str) -> Iterator[weaviate.W
 
 
 @pytest.fixture()
-def vectorstore_fixture(news_fixture: News) -> VectorStore:
-    """Fixture for mocked VectorStore."""
-    vectorstore_fixture = MagicMock(spec=VectorStore)
-    vectorstore_fixture.classify_rubric = AsyncMock(return_value="Some rubric")
-    vectorstore_fixture.get_examples = MagicMock(return_value=[news_fixture] * 3)
+def vectorstore_config_fixture(test_collection_name: str) -> VectorstoreConfig:
+    """Fixture for VectorstoreConfig."""
+    return VectorstoreConfig(
+        collection_name=test_collection_name,
+        batch_size=10,
+        concurrent_requests=5,
+    )
+
+
+@pytest.fixture()
+def vectorstore_fixture() -> Vectorstore:
+    """Fixture for mocked Vectorstore."""
+    vectorstore_fixture = MagicMock(spec=Vectorstore)
+    vectorstore_fixture.classify_news_rubric = AsyncMock(
+        return_value=Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE
+    )
     return vectorstore_fixture
 
 
@@ -87,9 +97,13 @@ def news_repository_fixture() -> Any:
 
 
 @pytest.fixture()
-def reference_news_repository_fixture() -> Any:
+def reference_news_repository_fixture(reference_news_fixture: ReferenceNews) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
-    return AsyncMock(spec=ReferenceNewsRepository)
+    reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
+    reference_news_repository_fixture.read_many_by_rubric = AsyncMock(
+        return_value=[reference_news_fixture]
+    )
+    return reference_news_repository_fixture
 
 
 @pytest.fixture()

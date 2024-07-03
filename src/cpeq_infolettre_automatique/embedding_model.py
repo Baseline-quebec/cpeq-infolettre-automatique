@@ -27,12 +27,16 @@ class EmbeddingModel:
 class OpenAIEmbeddingModel(EmbeddingModel):
     """Embedding model using OpenAI's API."""
 
-    def __init__(self, client: AsyncOpenAI) -> None:
+    def __init__(
+        self,
+        client: AsyncOpenAI,
+        embedding_config: EmbeddingModelConfig,
+    ) -> None:
         """Initialize the OpenAIEmbeddingModel."""
         self.client = client
-        self.embedding_model_id = EmbeddingModelConfig.embedding_model_id
-        self.token_encoding = EmbeddingModelConfig.token_encoding
-        self.max_tokens = EmbeddingModelConfig.max_tokens
+        self.embedding_model_id = embedding_config.embedding_model_id
+        self.token_encoding = embedding_config.token_encoding
+        self.max_tokens = embedding_config.max_tokens
 
     async def embed(self, text_description: str) -> list[float]:
         """Get the embedding of an image or text description.

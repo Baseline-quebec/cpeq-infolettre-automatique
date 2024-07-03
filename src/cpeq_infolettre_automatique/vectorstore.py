@@ -2,12 +2,11 @@
 
 import logging
 import operator
-from collections.abc import Iterator
+import uuid
 
 import numpy as np
 import weaviate
 import weaviate.classes as wvc
-from decouple import config
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
@@ -18,42 +17,27 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
-    """Get the vectorstore client.
-
-    Returns:
-        weaviate.WeaviateClient: The vectorstore client.
-    """
-    client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
-        version=config("WEAVIATE_VERSION"),
-        persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH"),
-    )
-    if not client.is_ready():
-        error_msg = "Vectorstore is not ready"
-        raise ValueError(error_msg)
-    yield client
-    client.close()
-
-
-class VectorStore:
+class Vectorstore:
     """Handles vector storage and retrieval using embeddings."""
 
     def __init__(
         self,
         embedding_model: EmbeddingModel,
         client: weaviate.WeaviateClient,
-        collection_name: str = VectorstoreConfig.collection_name,
+        vectorstore_config: VectorstoreConfig,
     ) -> None:
-        """Initialize the VectorStore with the provided Weaviate client and collection name.
+        """Initialize the Vectorstore with the provided Weaviate client and collection name.
 
         Args:
-            embedding_model: The embedding model to use for the VectorStore.
+            embedding_model: The embedding model to use for the Vectorstore.
             client: An instance of the Weaviate client to handle API calls.
             collection_name: The name of the collection to store the vectors in.
         """
         self.vectorstore_client = client
         self.embedding_model = embedding_model
-        self.collection_name = collection_name
+        self.collection_name = vectorstore_config.collection_name
+        self.top_k = vectorstore_config.top_k
+        self.hybrid_weight = vectorstore_config.hybrid_weight
 
     async def _get_rubric_classification_scores(self, news: News) -> list[tuple[Rubric, float]]:
         """Retrieve Rubric classification scores for a news.
@@ -72,8 +56,8 @@ class VectorStore:
         objects = collection.query.hybrid(
             query=query,
             vector=embeddings,
-            limit=VectorstoreConfig.top_k,
-            alpha=VectorstoreConfig.hybrid_weight,
+            limit=self.top_k,
+            alpha=self.hybrid_weight,
             return_metadata=wvc.query.MetadataQuery(score=True),
             return_properties=["rubric", "title", "summary", "content"],
         )
@@ -101,6 +85,15 @@ class VectorStore:
         """
         query = f"{news.title} {news.summary} {news.content}"
         return query
+
+    @staticmethod
+    def create_uuid(news: News) -> uuid.UUID:
+        """Create a uuid for the news object.
+
+        Args:
+            news: The news to create the uuid for.
+        """
+        return uuid.uuid5(uuid.NAMESPACE_DNS, news.title)
 
     async def classify_news_rubric(self, news: News) -> Rubric | None:
         """Retrieve classification scores from Weaviate.

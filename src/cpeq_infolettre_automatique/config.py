@@ -1,15 +1,10 @@
 """App configuration."""
 
 from enum import Enum
-from pathlib import Path
-from typing import ClassVar, Literal
+from typing import Literal
 
 from decouple import config
-
-
-sitemaps = [
-    {"sitemap_id": "some-id"},
-]
+from pydantic import BaseModel
 
 
 class Rubric(str, Enum):  # noqa: UP042
@@ -50,40 +45,27 @@ class Rubric(str, Enum):  # noqa: UP042
     )
 
 
-VECTORSTORE_CONTENT_FILEPATH: Path = Path("rubrics", "rubrics.json")
-
-
-class EmbeddingModelConfig:
+class EmbeddingModelConfig(BaseModel):
     """Embedding Model dataclass.
 
     Notes:
     embedding models and info for OpenAI can be found at https://platform.openai.com/docs/guides/embeddings
     """
 
-    embedding_model_id: ClassVar[
-        Literal[
-            "ext-embedding-ada-002",
-            "text-embedding-3-small",
-            "text-embedding-3-large",
-        ]
+    embedding_model_id: Literal[
+        "text-embedding-ada-002",
+        "text-embedding-3-small",
+        "text-embedding-3-large",
     ] = "text-embedding-3-large"
-    token_encoding: ClassVar[Literal["cl100k_base", "p50k_base", "r50k_base", "gpt2"]] = (
-        "cl100k_base"
-    )
-    max_tokens: ClassVar[int] = 8192
+    token_encoding: Literal["cl100k_base", "p50k_base", "r50k_base", "gpt2"] = "cl100k_base"
+    max_tokens: Literal[8192] = 8192
 
 
-class VectorstoreConfig:
+class VectorstoreConfig(BaseModel):
     """Configuration for the vector store client."""
 
-    collection_name: ClassVar[str] = config("WEAVIATE_COLLECTION_NAME", "")
-    top_k: ClassVar[int] = int(config("NB_ITEM_RETRIEVED", 5))
-    hybrid_weight: ClassVar[float] = 0.75
-
-
-class WeaviateConfig:
-    """Weaviate Config dataclass."""
-
-    query_maximum_results: ClassVar[int] = max(int(config("QUERY_MAXIMUM_RESULTS", 10000)), 1)
-    batch_size: ClassVar[int] = max(int(config("BATCH_SIZE", 5)), 1)
-    concurrent_requests: ClassVar[int] = max(int(config("CONCURRENT_REQUESTS", 2)), 1)
+    collection_name: str = config("WEAVIATE_COLLECTION_NAME")
+    top_k: int = int(config("NB_ITEM_RETRIEVED", 5))
+    hybrid_weight: float = 0.75
+    batch_size: int = max(int(config("BATCH_SIZE", 5)), 1)
+    concurrent_requests: int = max(int(config("CONCURRENT_REQUESTS", 2)), 1)

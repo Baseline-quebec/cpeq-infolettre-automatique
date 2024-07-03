@@ -11,7 +11,8 @@ reports/
 *.pickle*
 *.xls*
 *.zip*
-data/
+data/*
+!data/reference_news.json
 persistence_data/
 # direnv
 .envrc

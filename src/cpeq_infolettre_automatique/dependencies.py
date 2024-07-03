@@ -1,5 +1,6 @@
 """Depencies injection functions for the Service class."""
 
+from collections.abc import Iterator
 from typing import Annotated, Any
 
 import httpx
@@ -8,11 +9,11 @@ from decouple import config
 from fastapi import Depends
 from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.config import VectorstoreConfig
+from cpeq_infolettre_automatique.config import EmbeddingModelConfig, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel, OpenAIEmbeddingModel
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.service import Service
-from cpeq_infolettre_automatique.vectorstore import VectorStore, get_vectorstore_client
+from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
@@ -59,6 +60,16 @@ class HttpClientDependency(ApiDependency):
         await cls.client.aclose()
 
 
+def get_embedding_model_config() -> EmbeddingModelConfig:
+    """Return an EmbeddingModelConfig instance."""
+    return EmbeddingModelConfig()
+
+
+def get_vectorstore_config() -> VectorstoreConfig:
+    """Return a VectorstoreConfig instance."""
+    return VectorstoreConfig()
+
+
 def get_webscraperio_client(
     http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())],
 ) -> WebscraperIoClient:
@@ -73,32 +84,55 @@ def get_openai_client() -> AsyncOpenAI:
 
 def get_embedding_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
+    embedding_config: Annotated[EmbeddingModelConfig, Depends(get_embedding_model_config)],
 ) -> EmbeddingModel:
     """Return an EmbeddingModel instance with the provided API key."""
-    return OpenAIEmbeddingModel(client=openai_client)
+    return OpenAIEmbeddingModel(client=openai_client, embedding_config=embedding_config)
+
+
+def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
+    """Get the vectorstore client.
+
+    Returns:
+        weaviate.WeaviateClient: The vectorstore client.
+    """
+    client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
+        version=config("WEAVIATE_VERSION"),
+        persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH"),
+    )
+    if not client.is_ready():
+        error_msg = "Vectorstore is not ready"
+        raise ValueError(error_msg)
+    yield client
+    client.close()
 
 
 def get_vectorstore(
+    vectorstore_config: Annotated[VectorstoreConfig, Depends(get_vectorstore_config)],
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
     embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
-) -> VectorStore:
-    """Return a VectorStore instance with the provided dependencies."""
-    Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)]
-    return VectorStore(client=vectorstore_client, embedding_model=embedding_model)
+) -> Vectorstore:
+    """Return a Vectorstore instance with the provided dependencies."""
+    return Vectorstore(
+        client=vectorstore_client,
+        embedding_model=embedding_model,
+        vectorstore_config=vectorstore_config,
+    )
 
 
 def get_reference_news_repository(
+    vectorstore_config: Annotated[VectorstoreConfig, Depends(get_vectorstore_config)],
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
 ) -> ReferenceNewsRepository:
     """Return a ReferenceNewsRepository instance."""
     return ReferenceNewsRepository(
-        client=vectorstore_client, collection_name=VectorstoreConfig.collection_name
+        client=vectorstore_client, vectorstore_config=vectorstore_config
     )
 
 
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
-    vectorstore: Annotated[VectorStore, Depends(get_vectorstore)],
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
     reference_news_repository: Annotated[
         ReferenceNewsRepository, Depends(get_reference_news_repository)
     ],

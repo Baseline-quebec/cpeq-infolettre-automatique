@@ -1,14 +1,14 @@
 """Service for the automatic newsletter generation that is called by the API."""
 
 import asyncio
-import datetime
+import datetime as dt
 from collections.abc import Awaitable, Iterable
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.schemas import News
-from cpeq_infolettre_automatique.vectorstore import VectorStore
+from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
+from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
@@ -29,7 +29,7 @@ class Service:
         news_repository: NewsRepository,
         reference_news_repository: ReferenceNewsRepository,
         newsletter_repository: NewsletterRepository,
-        vectorstore: VectorStore,
+        vectorstore: Vectorstore,
         summary_generator: SummaryGenerator,
         newsletter_formatter: NewsletterFormatter,
     ) -> None:
@@ -64,19 +64,10 @@ class Service:
         return newsletter
 
     @staticmethod
-    def _get_current_datetime() -> datetime.datetime:
-        """Get the current date and time in the Montreal timezone.
-
-        Returns: The current date and time.
-        """
-        return datetime.datetime.now(ZoneInfo("America/Montreal"))
-
-    @classmethod
     def _prepare_dates(
-        cls,
-        start_date: datetime.datetime | None = None,
-        end_date: datetime.datetime | None = None,
-    ) -> tuple[datetime.datetime, datetime.datetime]:
+        start_date: dt.datetime | None = None,
+        end_date: dt.datetime | None = None,
+    ) -> tuple[dt.datetime, dt.datetime]:
         """Prepare the start and end dates for the newsletter.
 
         Args:
@@ -86,14 +77,14 @@ class Service:
         Returns: The start and end dates for the newsletter.
         """
         if end_date is None:
-            current_date = cls._get_current_datetime()
-            end_date = current_date - datetime.timedelta(days=current_date.weekday())
+            current_date = get_current_montreal_datetime()
+            end_date = current_date - dt.timedelta(days=current_date.weekday())
         if start_date is None:
-            start_date = end_date - datetime.timedelta(days=7)
+            start_date = end_date - dt.timedelta(days=7)
         return start_date, end_date
 
     def _prepare_scraped_news_summarization_coroutines(
-        self, start_date: datetime.datetime, end_date: datetime.datetime, job_ids: list[str]
+        self, start_date: dt.datetime, end_date: dt.datetime, job_ids: list[str]
     ) -> Iterable[Awaitable[Iterable[News]]]:
         """Prepare the summarization coroutines for concurrent summary generation of the news that are taken from the webscaper.
 
@@ -118,7 +109,7 @@ class Service:
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     async def _filter_news(
-        self, all_news: Iterable[News], start_date: datetime.datetime, end_date: datetime.datetime
+        self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
     ) -> list[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 

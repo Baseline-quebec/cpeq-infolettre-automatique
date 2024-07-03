@@ -8,14 +8,14 @@ import pytest
 
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.service import Service
-from cpeq_infolettre_automatique.vectorstore import VectorStore
+from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 @pytest.fixture()
 def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
-    vectorstore_fixture: VectorStore,
+    vectorstore_fixture: Vectorstore,
     reference_news_repository_fixture: ReferenceNewsRepository,
     news_repository_fixture: Any,
     newsletter_repository_fixture: Any,
@@ -67,7 +67,7 @@ class TestService:
     def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:
         """Test that the start and end dates are correctly prepared when no arguments are provided."""
         with patch(
-            "cpeq_infolettre_automatique.service.Service._get_current_datetime"
+            "cpeq_infolettre_automatique.service.get_current_montreal_datetime"
         ) as get_current_datetime_mock:
             get_current_datetime_mock.return_value = dt.datetime(2024, 1, 9, tzinfo=dt.UTC)
             start_date, end_date = Service._prepare_dates()
