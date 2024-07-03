@@ -79,11 +79,12 @@ class OneDriveFolderDependency(ApiDependency):
             tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
         )
         account.authenticate(scopes=["basic", "onedrive_all"])
-        drive: Drive | None = account.storage().get_default_drive()
+        drive_or_none = account.storage().get_default_drive()
 
-        if drive is None:
+        if drive_or_none is None:
             raise RuntimeError
 
+        cls.drive = drive_or_none
         cls.folder_name = str(datetime.datetime.now(tz=datetime.UTC).date())
 
     def __call__(self) -> tuple[Drive, str]:
