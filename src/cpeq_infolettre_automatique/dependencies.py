@@ -60,16 +60,6 @@ class HttpClientDependency(ApiDependency):
         await cls.client.aclose()
 
 
-def get_embedding_model_config() -> EmbeddingModelConfig:
-    """Return an EmbeddingModelConfig instance."""
-    return EmbeddingModelConfig()
-
-
-def get_vectorstore_config() -> VectorstoreConfig:
-    """Return a VectorstoreConfig instance."""
-    return VectorstoreConfig()
-
-
 def get_webscraperio_client(
     http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())],
 ) -> WebscraperIoClient:
@@ -84,9 +74,9 @@ def get_openai_client() -> AsyncOpenAI:
 
 def get_embedding_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
-    embedding_config: Annotated[EmbeddingModelConfig, Depends(get_embedding_model_config)],
 ) -> EmbeddingModel:
     """Return an EmbeddingModel instance with the provided API key."""
+    embedding_config = EmbeddingModelConfig()
     return OpenAIEmbeddingModel(client=openai_client, embedding_config=embedding_config)
 
 
@@ -108,11 +98,11 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
 
 
 def get_vectorstore(
-    vectorstore_config: Annotated[VectorstoreConfig, Depends(get_vectorstore_config)],
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
     embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
 ) -> Vectorstore:
     """Return a Vectorstore instance with the provided dependencies."""
+    vectorstore_config = VectorstoreConfig()
     return Vectorstore(
         client=vectorstore_client,
         embedding_model=embedding_model,
@@ -121,10 +111,10 @@ def get_vectorstore(
 
 
 def get_reference_news_repository(
-    vectorstore_config: Annotated[VectorstoreConfig, Depends(get_vectorstore_config)],
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
 ) -> ReferenceNewsRepository:
     """Return a ReferenceNewsRepository instance."""
+    vectorstore_config = VectorstoreConfig()
     return ReferenceNewsRepository(
         client=vectorstore_client, vectorstore_config=vectorstore_config
     )
