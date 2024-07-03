@@ -7,8 +7,9 @@ from decouple import config
 from fastapi import Depends
 from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.config import VECTORSTORE_CONTENT_FILEPATH
+from cpeq_infolettre_automatique.config import VECTORSTORE_CONTENT_FILEPATH, CompletionModelConfig
 from cpeq_infolettre_automatique.service import Service
+from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -78,15 +79,28 @@ def get_vectorstore(
     )
 
 
+def get_summary_generator(
+    openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
+) -> SummaryGenerator:
+    """Return a SummaryGenerator instance with the provided OpenAI client."""
+    compile_model_config = CompletionModelConfig()
+
+    return SummaryGenerator(
+        client=openai_client,
+        completion_model_config=compile_model_config,
+    )
+
+
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
     vectorstore: Annotated[VectorStore, Depends(get_vectorstore)],
+    summary_generator: Annotated[SummaryGenerator, Depends()],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
     return Service(
         webscraper_io_client=webscraper_io_client,
         news_repository=Any,
         vectorstore=vectorstore,
-        summary_generator=Any,
+        summary_generator=summary_generator,
         newsletter_formatter=Any,
     )

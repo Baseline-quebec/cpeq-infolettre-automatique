@@ -20,5 +20,5 @@ VECTORSTORE_CONTENT_FILEPATH: Path = Path("rubrics", "rubrics.json")
 class CompletionModelConfig(BaseModel):
     """Configuration for the completion model."""
 
-    model: Literal["gpt-4o", "gpt-4-turbo"]
+    model: Literal["gpt-4o", "gpt-4-turbo"] = "gpt-4o"
     temperature: float = 0.1
