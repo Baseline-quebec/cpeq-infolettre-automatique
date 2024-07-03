@@ -7,13 +7,13 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
 NewsRepository = Any
-SummaryGenerator = Any
 NewsletterFormatter = Any
 Newsletter = Any
 
@@ -135,7 +135,7 @@ class Service:
         Returns: The news data with the summary.
         """
         examples = self.vectorstore.get_examples(news)
-        news.summary = await self.summary_generator.generate_summary(news, examples)
+        news.summary = await self.summary_generator.generate(news, examples)
         return news
 
     def _format_newsletter(self, news: list[News]) -> Newsletter:
