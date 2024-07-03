@@ -1,14 +1,4 @@
-"""News Repository module.
-
-class ReferenceNewsType(TypedDict):
-    Schema for the news data.
-
-    title: str
-    content: str
-    datetime: dt.datetime | None
-    rubric: Rubric
-summary: str
-"""
+"""News Repository module."""
 
 import datetime as dt
 from typing import TypedDict
@@ -34,7 +24,7 @@ class ReferenceNewsType(TypedDict):
 
 
 class ReferenceNewsRepository:
-    """Item Repository class.
+    """Item Repository class .
 
     Class that implements CRUD operations for items in a Weaviate vectorstore.
     """
@@ -56,7 +46,7 @@ class ReferenceNewsRepository:
 
         Args:
             rubric: The rubric to filter by.
-            nb_per_page: The number of objects to return.
+            nb_per_page: The number of objects to return .
 
         Returns:
             The list of objects with the specified rubric.

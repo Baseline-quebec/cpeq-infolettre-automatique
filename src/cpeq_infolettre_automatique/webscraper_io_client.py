@@ -167,8 +167,6 @@ class WebscraperIoClient:
                 title=data["title"],
                 content=data["content"],
                 datetime=dateparser.parse(data["date"]),
-                rubric=None,
-                summary="",
             )
             for data in job_data
         )

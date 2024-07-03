@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Iterable
 from typing import Any
 
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.schemas import ClassifiedNews, News, SummarizedNews
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -85,7 +85,7 @@ class Service:
 
     def _prepare_scraped_news_summarization_coroutines(
         self, start_date: dt.datetime, end_date: dt.datetime, job_ids: list[str]
-    ) -> Iterable[Awaitable[Iterable[News]]]:
+    ) -> Iterable[Awaitable[Iterable[SummarizedNews]]]:
         """Prepare the summarization coroutines for concurrent summary generation of the news that are taken from the webscaper.
 
         Args:
@@ -96,7 +96,7 @@ class Service:
         Returns: An iterable of summary generation coroutines to be run.
         """
 
-        async def scraped_news_coroutine(job_id: str) -> list[News]:
+        async def scraped_news_coroutine(job_id: str) -> list[SummarizedNews]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
             filtered_news = await self._filter_news(
                 all_news, start_date=start_date, end_date=end_date
@@ -110,7 +110,7 @@ class Service:
 
     async def _filter_news(
         self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
-    ) -> list[News]:
+    ) -> list[ClassifiedNews]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
@@ -120,34 +120,34 @@ class Service:
 
         Returns: The filtered news data.
         """
-        filtered_news = []
+        classified_news = []
         for news in all_news:
             if news.datetime is None:
                 continue
             if not start_date <= news.datetime < end_date:
                 continue
-            news.rubric = await self.vectorstore.classify_news_rubric(news)
-            if news.rubric is None:
-                continue
-            filtered_news.append(news)
+            rubric_classification = await self.vectorstore.classify_news_rubric(news)
+            if rubric_classification is not None:
+                classified_news.append(
+                    ClassifiedNews(rubric=rubric_classification, **news.model_dump())
+                )
 
-        return filtered_news
+        return classified_news
 
-    async def _summarize_news(self, news: News) -> News:
+    async def _summarize_news(self, classified_news: ClassifiedNews) -> SummarizedNews:
         """Generate summaries for the news data.
 
         Args:
-            news: The news data to summarize.
+            classified_news: The classified news data to summarize.
 
         Returns: The news data with the summary.
         """
-        if news.rubric is None:
-            error_msg = "Rubric must be set before summarization"
-            raise ValueError(error_msg)
-        examples = self.reference_news_repository.read_many_by_rubric(news.rubric, nb_per_page=5)
-        news.summary = await self.summary_generator.generate_summary(news, examples)
-        return news
+        examples = self.reference_news_repository.read_many_by_rubric(
+            classified_news.rubric, nb_per_page=5
+        )
+        summary = await self.summary_generator.generate_summary(classified_news, examples)
+        return SummarizedNews(summary=summary, **classified_news.model_dump())
 
-    def _format_newsletter(self, news: list[News]) -> Newsletter:
+    def _format_newsletter(self, news: list[SummarizedNews]) -> Newsletter:
         """Format the news into a newsletter."""
         raise NotImplementedError
