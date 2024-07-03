@@ -1,13 +1,13 @@
 """Depencies injection functions for the Service class."""
 
 import datetime
-import tempfile
 from typing import Annotated, Any
 
 import httpx
 from decouple import config
 from fastapi import Depends
-from o365 import Account, DriveItem
+from O365.account import Account
+from O365.drive import Drive
 from openai import AsyncOpenAI
 
 from cpeq_infolettre_automatique.config import VECTORSTORE_CONTENT_FILEPATH
@@ -63,7 +63,8 @@ class HttpClientDependency(ApiDependency):
 class OneDriveFolderDependency(ApiDependency):
     """Dependency class for the Singleton O365 Account client."""
 
-    onedrive: DriveItem
+    drive: Drive
+    folder_name: str
 
     @classmethod
     def setup(cls) -> None:
@@ -78,17 +79,16 @@ class OneDriveFolderDependency(ApiDependency):
             tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
         )
         account.authenticate(scopes=["basic", "onedrive_all"])
-        drive: DriveItem = account.get_default_drive()
+        drive: Drive | None = account.storage().get_default_drive()
 
-        # Setup folder in which to upload News ahead of time, based on date of execution
-        with tempfile.TemporaryDirectory(
-            prefix=str(datetime.datetime.now(tz=datetime.UTC).date())
-        ) as folder:
-            drive.upload_folder(folder)
+        if drive is None:
+            raise RuntimeError
 
-    def __call__(self) -> DriveItem:
+        cls.folder_name = str(datetime.datetime.now(tz=datetime.UTC).date())
+
+    def __call__(self) -> tuple[Drive, str]:
         """Returns the 0365 Account."""
-        return self.onedrive
+        return (self.drive, self.folder_name)
 
     @classmethod
     def teardown(cls) -> Any:
@@ -103,10 +103,10 @@ def get_webscraperio_client(
 
 
 def get_news_repository(
-    onedrive: Annotated[DriveItem, Depends(OneDriveFolderDependency())],
+    drive_info: Annotated[tuple[Drive, str], Depends(OneDriveFolderDependency())],
 ) -> NewsRepository:
     """Returns a configured News Repository."""
-    return NewsRepository(onedrive)
+    return NewsRepository(drive_info[0], drive_info[1])
 
 
 def get_openai_client() -> AsyncOpenAI:

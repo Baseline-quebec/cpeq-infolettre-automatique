@@ -1,10 +1,10 @@
 """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
 import csv
-import tempfile
 from pathlib import Path
+from typing import cast
 
-from o365 import DriveItem
+from O365.drive import Drive, Folder
 
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Newsletter
@@ -14,26 +14,25 @@ from cpeq_infolettre_automatique.service import Newsletter
 class NewsRepository:
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
-    def __init__(self, folder: DriveItem) -> None:
+    def __init__(self, drive: Drive, folder_name: str) -> None:
         """Ctor."""
-        self.folder = folder
+        self.drive = drive
+        self.folder_name = folder_name
 
-    # https://docs.python.org/3/library/tempfile.html#examples
-    # https://docs.python.org/3/library/csv.html
     def save_news(self, news_list: list[News]) -> None:
         """Save the list of News as a new CSV file in the OneDrive folder.
 
         Args:
             news_list: List of News to save.
         """
-        with (
-            tempfile.NamedTemporaryFile(prefix="news-", suffix=".csv", newline="") as tmpfile,
-            Path(tmpfile.name).open(encoding="utf-8") as csvfile,
-        ):
+        file_path = f"{self.folder_name}/news.csv"
+        Path(self.folder_name).mkdir(exist_ok=True)
+        Path(file_path).touch(exist_ok=True)
+
+        with Path(file_path).open(encoding="utf-8") as csvfile:
             csvwriter = csv.writer(
                 csvfile, delimiter="|", quotechar="|", quoting=csv.QUOTE_MINIMAL
             )
-
             rows: list[list[str]] = [["Title", "Content", "Date", "Rubric", "Summary"]]
             rows += [
                 [
@@ -45,11 +44,11 @@ class NewsRepository:
                 ]
                 for news in news_list
             ]
-
             csvwriter.writerows(rows)
-            self.folder.upload_file(tmpfile.name)
+            folder: Folder = cast(Folder, self.drive.get_root_folder())
+            folder.upload_file(item=file_path)
 
-    def save_newsletter(self, newsletter: Newsletter) -> None:
+    def save_newsletter(self, _: Newsletter) -> None:
         """Save the Newsletter as a Markdown file in the OneDrive folder.
 
         Args:
