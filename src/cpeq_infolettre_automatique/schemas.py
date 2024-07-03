@@ -13,3 +13,9 @@ class News(BaseModel):
     date: date | None
     rubric: str | None
     summary: str | None
+
+
+class Newsletter(BaseModel):
+    """Schema for the Newsletter."""
+
+    text: str

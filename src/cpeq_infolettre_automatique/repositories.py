@@ -6,11 +6,9 @@ from typing import cast
 
 from O365.drive import Drive, Folder
 
-from cpeq_infolettre_automatique.schemas import News
-from cpeq_infolettre_automatique.service import Newsletter
+from cpeq_infolettre_automatique.schemas import News, Newsletter
 
 
-# https://github.com/O365/python-o365?tab=readme-ov-file#onedrive
 class NewsRepository:
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 

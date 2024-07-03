@@ -7,7 +7,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from cpeq_infolettre_automatique.repositories import NewsRepository
-from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.vectorstore import VectorStore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -15,7 +15,6 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
 SummaryGenerator = Any
 NewsletterFormatter = Any
-Newsletter = Any
 
 
 class Service:
