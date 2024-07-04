@@ -19,13 +19,14 @@ class NewsletterGenerator:
 
         Returns: The newsletter.
         """
-        newsletter_header = cleandoc("""# Infolettre de la CPEQ
+        newsletter_header = cleandoc("""
+            # Infolettre de la CPEQ
 
 
-                    Date de publication: {date}
+            Date de publication: {date}
 
 
-                    Voici les nouvelles de la semaine.""").format(
+            Voici les nouvelles de la semaine.""").format(
             date=get_current_montreal_datetime().date()
         )
 
