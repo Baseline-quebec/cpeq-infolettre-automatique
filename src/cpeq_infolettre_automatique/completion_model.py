@@ -12,11 +12,11 @@ class CompletionModel(BaseModel, ABC):
     """Abstract class for completion models."""
 
     @abstractmethod
-    async def complete(self, prompt: str) -> str:
+    async def complete_message(self, system_prompt: str, user_message: str) -> str:
         """Predict the completion for the given data."""
 
 
-class OpenaiCompletionModel(CompletionModel):
+class OpenAICompletionModel(CompletionModel):
     """OpenAI completion model implementation."""
 
     def __init__(
@@ -32,11 +32,18 @@ class OpenaiCompletionModel(CompletionModel):
         self.temperature = completion_model_config.temperature
         self.model = completion_model_config.model
 
-    async def complete(self, prompt: str) -> str:
+    async def complete_message(self, system_prompt: str, user_message: str) -> str:
         """Predict the completion for the given data."""
-        response = await self._client.completions.create(
-            prompt=prompt,
+        chat_response = await self._client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
             model=self.model,
         )
-        content = response.choices[0].text
+
+        content = chat_response.choices[0].message.content
+        if content is None:
+            error_msg = "The completion model returned an empty response"
+            raise ValueError(error_msg)
         return content

@@ -26,9 +26,8 @@ class TestSummaryGenerator:
         assert isinstance(summary, str)
 
     @staticmethod
-    def test_format_prompt(
+    def test__format_system_prompt__when_references_news__return_valid_system_prompt(
         summary_generator_fixture: SummaryGenerator,
-        classified_news_fixture: ClassifiedNews,
         reference_news_fixture: ReferenceNews,
     ) -> None:
         """Test the format_prompt method."""
@@ -39,5 +38,5 @@ class TestSummaryGenerator:
             reference_news_fixture,
             reference_news_fixture_copy,
         ]
-        prompt = summary_generator_fixture.format_prompt(classified_news_fixture, reference_news)
+        prompt = summary_generator_fixture.format_system_prompt(reference_news)
         assert isinstance(prompt, str)

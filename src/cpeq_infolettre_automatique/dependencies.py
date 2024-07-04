@@ -9,7 +9,7 @@ from decouple import config
 from fastapi import Depends
 from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.completion_model import CompletionModel, OpenaiCompletionModel
+from cpeq_infolettre_automatique.completion_model import CompletionModel, OpenAICompletionModel
 from cpeq_infolettre_automatique.config import (
     CompletionModelConfig,
     EmbeddingModelConfig,
@@ -132,7 +132,7 @@ def get_completion_model(
     """Return a CompletionModel instance with the provided OpenAI client."""
     completion_model_config = CompletionModelConfig()
 
-    return OpenaiCompletionModel(
+    return OpenAICompletionModel(
         client=openai_client,
         completion_model_config=completion_model_config,
     )

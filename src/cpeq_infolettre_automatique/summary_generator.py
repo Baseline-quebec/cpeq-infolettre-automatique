@@ -21,12 +21,15 @@ class SummaryGenerator:
 
         Returns: The summary of the text.
         """
-        prompt = self.format_prompt(classified_news, reference_news)
-        summarized_news = await self.completion_model.complete(prompt=prompt)
+        system_prompt = self.format_system_prompt(reference_news)
+        user_message = classified_news.content
+        summarized_news = await self.completion_model.complete_message(
+            system_prompt=system_prompt, user_message=user_message
+        )
         return summarized_news
 
     @staticmethod
-    def format_prompt(classified_news: ClassifiedNews, reference_news: list[ReferenceNews]) -> str:
+    def format_system_prompt(reference_news: list[ReferenceNews]) -> str:
         """Format the prompt for the OpenAI API.
 
         Args:
@@ -39,11 +42,11 @@ class SummaryGenerator:
             for i, exemple in enumerate(reference_news)
         ])
 
-        raw_prompt = f"""Utilises les articles suivants pour t'inspirer afin de résumer un article. Tu auras accès au contenu des articles d'exemple, ainsi que leurs résumés respectifs.
-                         #Début des exemples:
+        raw_system_prompt = f"""Utilises les articles suivants pour t'inspirer afin de résumer un article. Tu auras accès au contenu des articles d'exemple, ainsi que leurs résumés respectifs.
+                         # Début des exemples:
                          {exemples_template}
 
-                         #Début du contenu de l'article à résumer:
-                         {classified_news.content}"""
-        prompt = "\n".join([m.lstrip() for m in raw_prompt.split("\n")])
-        return prompt
+                         Tu reçeveras en message un contenu d'article à résumer, ne retournes uniquement que le résumer de l'article, sans préfixe avec aucune autre information.
+                         """
+        system_prompt = "\n".join([m.lstrip() for m in raw_system_prompt.split("\n")])
+        return system_prompt
