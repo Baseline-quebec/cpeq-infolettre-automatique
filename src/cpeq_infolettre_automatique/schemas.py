@@ -31,6 +31,11 @@ class SummarizedNews(ClassifiedNews):
 
     summary: str
 
+    @property
+    def to_markdown(self) -> str:
+        """Convert the news to markdown."""
+        return f"# {self.title}\n\n{self.summary}"
+
 
 class ReferenceNews(SummarizedNews):
     """Schema for the reference news data."""

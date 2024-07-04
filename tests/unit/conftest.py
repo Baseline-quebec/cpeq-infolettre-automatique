@@ -10,7 +10,7 @@ import weaviate
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import News, ReferenceNews
+from cpeq_infolettre_automatique.schemas import News, ReferenceNews, SummarizedNews
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -23,6 +23,15 @@ def news_fixture() -> News:
         content="Some content",
         datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
     )
+
+
+@pytest.fixture()
+def summarized_news_fixture(news_fixture: News) -> News:
+    """Fixture for a SummarizedNews object."""
+    summarized_news = news_fixture.model_dump()
+    summarized_news["rubric"] = Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME
+    summarized_news["summary"] = "Some summary"
+    return SummarizedNews(**summarized_news)
 
 
 @pytest.fixture()
