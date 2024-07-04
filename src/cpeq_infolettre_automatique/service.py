@@ -2,7 +2,7 @@
 
 import asyncio
 import datetime as dt
-from collections.abc import Awaitable, Iterable
+from collections.abc import AsyncIterator, Awaitable, Iterable
 from csv import Error
 from typing import Any
 
@@ -100,19 +100,16 @@ class Service:
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
-            filtered_news = await self._filter_news(
-                all_news, start_date=start_date, end_date=end_date
-            )
-            summarized_news = await asyncio.gather(
-                *(self._summarize_news(news) for news in filtered_news)
-            )
+            filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
+            coroutines = [self._summarize_news(news) async for news in filtered_news]
+            summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     async def _filter_news(
         self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
-    ) -> list[News]:
+    ) -> AsyncIterator[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
@@ -122,7 +119,6 @@ class Service:
 
         Returns: The filtered news data.
         """
-        classified_news = []
         for news in all_news:
             if news.datetime is None:
                 continue
@@ -130,9 +126,8 @@ class Service:
                 continue
             rubric_classification = await self.vectorstore.classify_news_rubric(news)
             if rubric_classification is not None:
-                classified_news.append(News(rubric=rubric_classification, **news.model_dump()))
-
-        return classified_news
+                news.rubric = rubric_classification
+            yield news
 
     async def _summarize_news(self, news: News) -> News:
         """Generate summaries for the news data.

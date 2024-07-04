@@ -18,8 +18,8 @@ class News(BaseModel):
     datetime: Annotated[
         dt.datetime | None, PlainSerializer(lambda x: x.isoformat() if x else None)
     ]
-    rubric: Rubric | None
-    summary: str | None
+    rubric: Rubric | None = None
+    summary: str | None = None
 
 
 class Newsletter(BaseModel):
