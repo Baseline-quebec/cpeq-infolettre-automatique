@@ -129,7 +129,7 @@ def get_reference_news_repository(
 def get_completion_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
 ) -> CompletionModel:
-    """Return a CompletionModel instance with the provided OpenAI client."""
+    """Return a CompletionModel instance."""
     completion_model_config = CompletionModelConfig()
 
     return OpenAICompletionModel(
@@ -141,7 +141,7 @@ def get_completion_model(
 def get_summary_generator(
     completion_model: Annotated[CompletionModel, Depends(get_completion_model)],
 ) -> SummaryGenerator:
-    """Return a SummaryGenerator instance with the provided OpenAI client."""
+    """Return a SummaryGenerator instance."""
     return SummaryGenerator(
         completion_model=completion_model,
     )

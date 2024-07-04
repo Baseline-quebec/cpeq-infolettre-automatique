@@ -30,7 +30,7 @@ class OpenAICompletionModel(CompletionModel):
         """Initialize the completion model with the client and configuration.
 
         Args:
-            client: The OpenAI client.
+            client: The OpenAI async client.
             completion_model_config: The configuration for the completion model.
         """
         self._client = client
@@ -38,7 +38,12 @@ class OpenAICompletionModel(CompletionModel):
         self.model = completion_model_config.model
 
     async def complete_message(self, user_message: str, system_prompt: str | None) -> str:
-        """Predict the completion for the given data."""
+        """Predict the completion for the given data.
+
+        Args:
+            user_message: The user message to complete.
+            system_prompt: The system prompt to use for completion, optional.
+        """
         messages: list[ChatCompletionMessageParam] = []
         if system_prompt is not None:
             messages.append(ChatCompletionSystemMessageParam(role="system", content=system_prompt))
@@ -47,6 +52,7 @@ class OpenAICompletionModel(CompletionModel):
         chat_response = await self._client.chat.completions.create(
             messages=messages,
             model=self.model,
+            temperature=self.temperature,
         )
 
         content = chat_response.choices[0].message.content
