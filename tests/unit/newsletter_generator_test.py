@@ -7,7 +7,9 @@ from cpeq_infolettre_automatique.schemas import SummarizedNews
 
 
 class TestNewsletterGenerator:
-    def test_generate_newsletter(self, summarized_news_fixture: SummarizedNews) -> None:
+    @staticmethod
+    def test_generate_newsletter(summarized_news_fixture: SummarizedNews) -> None:
+        """Test the generate_newsletter method."""
         summarized_news_fixture_copy_1 = summarized_news_fixture.model_copy()
         summarized_news_fixture_copy_1.rubric = (
             Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE
