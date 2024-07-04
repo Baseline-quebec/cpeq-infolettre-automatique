@@ -3,8 +3,10 @@
 import weaviate
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
-from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import ReferenceNews
+from cpeq_infolettre_automatique.reference_news_repository import (
+    ReferenceNewsRepository,
+)
+from cpeq_infolettre_automatique.schemas import News
 
 
 class TestReferenceNewsRepository:
@@ -14,7 +16,7 @@ class TestReferenceNewsRepository:
     def test__read_many_by_rubric__when_only_one_corresponding_rubric__returns_one_rubric(
         vectorstore_client_fixture: weaviate.WeaviateClient,
         vectorstore_config_fixture: VectorstoreConfig,
-        reference_news_fixture: ReferenceNews,
+        reference_news_fixture: News,
     ) -> None:
         """Test the read_many_by_rubric method works with valid data."""
         # Arrange
