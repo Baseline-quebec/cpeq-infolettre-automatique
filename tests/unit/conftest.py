@@ -9,8 +9,10 @@ import pytest
 import weaviate
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
-from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import News, ReferenceNews
+from cpeq_infolettre_automatique.reference_news_repository import (
+    ReferenceNewsRepository,
+)
+from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -26,12 +28,12 @@ def news_fixture() -> News:
 
 
 @pytest.fixture()
-def reference_news_fixture(news_fixture: News) -> ReferenceNews:
+def reference_news_fixture(news_fixture: News) -> News:
     """Fixture for a News object."""
     news = news_fixture.model_dump()
     news["rubric"] = Rubric.BIODIVERSITE_MILIEUX_HUMIDES_ET_ESPECES_EN_PERIL
     news["summary"] = "Some summary"
-    reference_news = ReferenceNews(**news)
+    reference_news = News(**news)
     return reference_news
 
 
@@ -55,7 +57,9 @@ def test_collection_name() -> str:
 
 
 @pytest.fixture()
-def vectorstore_client_fixture(test_collection_name: str) -> Iterator[weaviate.WeaviateClient]:
+def vectorstore_client_fixture(
+    test_collection_name: str,
+) -> Iterator[weaviate.WeaviateClient]:
     """Fixture for mocked Weaviate client."""
     client: weaviate.WeaviateClient = weaviate.connect_to_embedded()
     if not client.is_ready():
@@ -95,7 +99,7 @@ def news_repository_fixture() -> Any:
 
 
 @pytest.fixture()
-def reference_news_repository_fixture(reference_news_fixture: ReferenceNews) -> Any:
+def reference_news_repository_fixture(reference_news_fixture: News) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
     reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
     reference_news_repository_fixture.read_many_by_rubric = AsyncMock(
