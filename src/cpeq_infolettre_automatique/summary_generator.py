@@ -1,5 +1,7 @@
 """Implement the news summary generator."""
 
+from inspect import cleandoc
+
 from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.schemas import ClassifiedNews, ReferenceNews
 
@@ -42,11 +44,11 @@ class SummaryGenerator:
             for i, exemple in enumerate(reference_news)
         ])
 
-        raw_system_prompt = f"""Utilises les articles suivants pour t'inspirer afin de résumer un article. Tu auras accès au contenu des articles d'exemple, ainsi que leurs résumés respectifs.
-                         # Début des exemples:
-                         {exemples_template}
+        system_prompt = cleandoc("""
+            Utilises les articles suivants pour t'inspirer afin de résumer un article. Tu auras accès au contenu des articles d'exemple, ainsi que leurs résumés respectifs.
+            # Début des exemples:
+            {exemples_template}
 
-                         Tu reçeveras en message un contenu d'article à résumer, ne retournes uniquement que le résumer de l'article, sans préfixe avec aucune autre information.
-                         """
-        system_prompt = "\n".join([m.lstrip() for m in raw_system_prompt.split("\n")])
+            Tu reçeveras en message un contenu d'article à résumer, ne retournes uniquement que le résumer de l'article, sans préfixe avec aucune autre information.
+                         """).format(exemples_template=exemples_template)
         return system_prompt
