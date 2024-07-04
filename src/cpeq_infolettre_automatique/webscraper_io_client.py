@@ -167,6 +167,8 @@ class WebscraperIoClient:
                 title=data["title"],
                 content=data["content"],
                 datetime=dateparser.parse(data["date"]),
+                rubric=None,
+                summary=None,
             )
             for data in job_data
         )
@@ -181,6 +183,6 @@ class WebscraperIoClient:
         Returns:
             list[dict[str, str]]: A list of dictionaries or a list with an error message.
         """
-        if raw_response is None:
+        if not raw_response:
             return []
         return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]

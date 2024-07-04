@@ -212,7 +212,6 @@ def get_service(
         webscraper_io_client=webscraper_io_client,
         news_repository=news_repository,
         reference_news_repository=reference_news_repository,
-        newsletter_repository=Any,
         vectorstore=vectorstore,
         summary_generator=Any,
         newsletter_formatter=Any,
