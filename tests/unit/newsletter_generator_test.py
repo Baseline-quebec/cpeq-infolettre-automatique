@@ -1,4 +1,5 @@
 import datetime as dt
+from inspect import cleandoc
 from unittest.mock import patch
 
 from cpeq_infolettre_automatique.config import Rubric
@@ -29,25 +30,47 @@ class TestNewsletterGenerator:
         summarized_news_fixture_copy_3.title = "Title 3"
         summarized_news_fixture_copy_3.summary = "Summary 3"
 
-        summarized_news = [summarized_news_fixture_copy_1, summarized_news_fixture_copy_2]
+        summarized_news = [
+            summarized_news_fixture_copy_1,
+            summarized_news_fixture_copy_2,
+            summarized_news_fixture_copy_3,
+        ]
 
-        fixed_date = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
-        expected_newsletter = f"""# Infolettre de la CPEQ\n\n
-                    Date de publication: {fixed_date.date()}\n\n
-                    Voici les nouvelles de la semaine.\n\n
-                    ## {Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE.value}\n\n
-                    Title 1\n\n
-                    Summary 1\n\n
-                    Title 3\n\n
-                    Summary 3\n\n
-                    ## {Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value}\n\n
-                    Title 2\n\n
-                    Summary 2\n\n"""
+        fixed_datetime = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
+        expected_newsletter = cleandoc(
+            """# Infolettre de la CPEQ
+
+
+               Date de publication: {date}
+
+
+               Voici les nouvelles de la semaine.
+
+               ## {rubric_1}
+
+               ### Title 1
+
+               Summary 1
+
+               ### Title 3
+
+               Summary 3
+
+               ## {rubric_2}
+
+               ### Title 2
+
+               Summary 2"""
+        ).format(
+            rubric_1=Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE.value,
+            rubric_2=Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value,
+            date=fixed_datetime.date(),
+        )
 
         with patch(
-            "cpeq_infolettre_automatique.service.get_current_montreal_datetime"
+            "cpeq_infolettre_automatique.newsletter_generator.get_current_montreal_datetime"
         ) as get_current_datetime_mock:
-            get_current_datetime_mock.return_value = fixed_date
+            get_current_datetime_mock.return_value = fixed_datetime
 
             newsletter = NewsletterGenerator.generate_newsletter(summarized_news)
         assert newsletter == expected_newsletter
