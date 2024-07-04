@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 import coloredlogs
+from decouple import config
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse, Response
 
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         app,
-        host="localhost",
-        port=5001,
+        host=str(config("DEVLOCAL_HOST", "localhost")),
+        port=int(config("DEVLOCAL_PORT", 8000)),
         log_level="info",
     )

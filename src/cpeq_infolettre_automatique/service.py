@@ -96,7 +96,7 @@ class Service:
             summarized_news = await asyncio.gather(
                 *(self._summarize_news(news) for news in filtered_news)
             )
-            return [*summarized_news]
+            return summarized_news
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
