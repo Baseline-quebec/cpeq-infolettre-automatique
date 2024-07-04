@@ -3,6 +3,11 @@
 from abc import ABC, abstractmethod
 
 from openai import AsyncOpenAI
+from openai.types.chat import (
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
 from pydantic import BaseModel
 
 from cpeq_infolettre_automatique.config import CompletionModelConfig
@@ -12,7 +17,7 @@ class CompletionModel(BaseModel, ABC):
     """Abstract class for completion models."""
 
     @abstractmethod
-    async def complete_message(self, system_prompt: str, user_message: str) -> str:
+    async def complete_message(self, user_message: str, system_prompt: str | None) -> str:
         """Predict the completion for the given data."""
 
 
@@ -32,13 +37,15 @@ class OpenAICompletionModel(CompletionModel):
         self.temperature = completion_model_config.temperature
         self.model = completion_model_config.model
 
-    async def complete_message(self, system_prompt: str, user_message: str) -> str:
+    async def complete_message(self, user_message: str, system_prompt: str | None) -> str:
         """Predict the completion for the given data."""
+        messages: list[ChatCompletionMessageParam] = []
+        if system_prompt is not None:
+            messages.append(ChatCompletionSystemMessageParam(role="system", content=system_prompt))
+        messages.append(ChatCompletionUserMessageParam(role="user", content=user_message))
+
         chat_response = await self._client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
+            messages=messages,
             model=self.model,
         )
 
