@@ -1,21 +1,23 @@
 """Service for the automatic newsletter generation that is called by the API."""
 
 import asyncio
+import datetime as dt
 from collections.abc import Awaitable, Iterable
-from datetime import date, datetime, timedelta
 from typing import Any
-from zoneinfo import ZoneInfo
 
-from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
+from cpeq_infolettre_automatique.schemas import ClassifiedNews, News, SummarizedNews
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
-from cpeq_infolettre_automatique.vectorstore import VectorStore
+from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
+from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
-NewsRepository = Any
-NewsletterFormatter = Any
-Newsletter = Any
+type NewsRepository = Any  # type: ignore[valid-type]
+type NewsletterRepository = Any  # type: ignore[valid-type]
+type NewsletterFormatter = Any  # type: ignore[valid-type]
+type Newsletter = Any  # type: ignore[valid-type]
 
 
 class Service:
@@ -25,13 +27,17 @@ class Service:
         self,
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
-        vectorstore: VectorStore,
+        reference_news_repository: ReferenceNewsRepository,
+        newsletter_repository: NewsletterRepository,
+        vectorstore: Vectorstore,
         summary_generator: SummaryGenerator,
         newsletter_formatter: NewsletterFormatter,
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
+        self.reference_news_repository = reference_news_repository
         self.news_repository = news_repository
+        self.newsletter_repository = newsletter_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
         self.formatter = newsletter_formatter
@@ -51,45 +57,46 @@ class Service:
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
-        await self.news_repository.save_news(flattened_news)
+        await self.news_repository.create(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
         newsletter = self._format_newsletter(flattened_news)
-        await self.news_repository.save_newsletter(newsletter)
+        await self.newsletter_repository.create(newsletter)
         return newsletter
 
     @staticmethod
     def _prepare_dates(
-        start_date: date | None = None, end_date: date | None = None
-    ) -> tuple[date, date]:
+        start_date: dt.datetime | None = None,
+        end_date: dt.datetime | None = None,
+    ) -> tuple[dt.datetime, dt.datetime]:
         """Prepare the start and end dates for the newsletter.
 
         Args:
-            start_date: The start date of the newsletter.
-            end_date: The end date of the newsletter.
+            start_date: The start datetime of the newsletter.
+            end_date: The end datetime of the newsletter.
 
         Returns: The start and end dates for the newsletter.
         """
         if end_date is None:
-            current_date = datetime.now(ZoneInfo("localtime")).date()
-            end_date = current_date - timedelta(days=current_date.weekday())
+            current_date = get_current_montreal_datetime()
+            end_date = current_date - dt.timedelta(days=current_date.weekday())
         if start_date is None:
-            start_date = end_date - timedelta(days=7)
+            start_date = end_date - dt.timedelta(days=7)
         return start_date, end_date
 
     def _prepare_scraped_news_summarization_coroutines(
-        self, start_date: date, end_date: date, job_ids: list[str]
-    ) -> Iterable[Awaitable[Iterable[News]]]:
+        self, start_date: dt.datetime, end_date: dt.datetime, job_ids: list[str]
+    ) -> Iterable[Awaitable[Iterable[SummarizedNews]]]:
         """Prepare the summarization coroutines for concurrent summary generation of the news that are taken from the webscaper.
 
         Args:
-            start_date: The start date of the newsletter.
-            end_date: The end date of the newsletter.
+            start_date: The start datetime of the newsletter.
+            end_date: The end datetime of the newsletter.
             job_ids: The IDs of the scraping jobs.
 
         Returns: An iterable of summary generation coroutines to be run.
         """
 
-        async def scraped_news_coroutine(job_id: str) -> list[News]:
+        async def scraped_news_coroutine(job_id: str) -> list[SummarizedNews]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
             filtered_news = await self._filter_news(
                 all_news, start_date=start_date, end_date=end_date
@@ -102,42 +109,46 @@ class Service:
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     async def _filter_news(
-        self, all_news: Iterable[News], start_date: date, end_date: date
-    ) -> list[News]:
+        self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
+    ) -> list[ClassifiedNews]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
             all_news: The raw news data.
-            start_date: The start date of the newsletter.
-            end_date: The end date of the newsletter.
+            start_date: The start datetime of the newsletter.
+            end_date: The end datetime of the newsletter.
 
         Returns: The filtered news data.
         """
-        filtered_news = []
+        classified_news = []
         for news in all_news:
-            if news.date is None:
+            if news.datetime is None:
                 continue
-            if not start_date <= news.date < end_date:
+            if not start_date <= news.datetime < end_date:
                 continue
-            news.rubric = await self.vectorstore.classify_rubric(news)
-            if news.rubric is None:
-                continue
-            filtered_news.append(news)
+            rubric_classification = await self.vectorstore.classify_news_rubric(news)
+            if rubric_classification is not None:
+                classified_news.append(
+                    ClassifiedNews(rubric=rubric_classification, **news.model_dump())
+                )
 
-        return filtered_news
+        return classified_news
 
-    async def _summarize_news(self, news: News) -> News:
+    async def _summarize_news(self, classified_news: ClassifiedNews) -> SummarizedNews:
         """Generate summaries for the news data.
 
         Args:
-            news: The news data to summarize.
+            classified_news: The classified news data to summarize.
 
         Returns: The news data with the summary.
         """
-        examples = self.vectorstore.get_examples(news)
-        news.summary = await self.summary_generator.generate(news, examples)
-        return news
+        examples = self.reference_news_repository.read_many_by_rubric(
+            classified_news.rubric, nb_per_page=5
+        )
+        summary = await self.summary_generator.generate(classified_news, examples)
+        summarized_news = SummarizedNews(summary=summary, **classified_news.model_dump())
+        return summarized_news
 
-    def _format_newsletter(self, news: list[News]) -> Newsletter:
+    def _format_newsletter(self, news: list[SummarizedNews]) -> Newsletter:
         """Format the news into a newsletter."""
         raise NotImplementedError

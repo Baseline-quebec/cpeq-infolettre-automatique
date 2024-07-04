@@ -1,11 +1,7 @@
 """Implement the news summary generator."""
 
 from cpeq_infolettre_automatique.completion_model import CompletionModel
-from cpeq_infolettre_automatique.schemas import News
-
-
-ClassifiedNews = News
-ReferenceNews = News
+from cpeq_infolettre_automatique.schemas import ClassifiedNews, ReferenceNews
 
 
 class SummaryGenerator:
@@ -39,14 +35,15 @@ class SummaryGenerator:
         Returns: The formatted prompt.
         """
         exemples_template = "\n\n".join([
-            f"Exemple {i + 1}: {exemple.content}\nRésumé {i + 1}"
+            f"""## Exemple {i + 1}\nContenu: {exemple.content}\nRésumé: {exemple.summary}"""
             for i, exemple in enumerate(reference_news)
         ])
 
-        prompt = f"""Utilises les articles suivants pour t'inspirer afin de résumer un article. Tu auras accès au contenu des articles d'exemple, ainsi que leurs résumés respectifs.
-                    #Début des exemples:
-                    {exemples_template}
+        raw_prompt = f"""Utilises les articles suivants pour t'inspirer afin de résumer un article. Tu auras accès au contenu des articles d'exemple, ainsi que leurs résumés respectifs.
+                         #Début des exemples:
+                         {exemples_template}
 
-                    #Début de l'article à résumer:
-                    {classified_news.content}"""
+                         #Début du contenu de l'article à résumer:
+                         {classified_news.content}"""
+        prompt = "\n".join([m.lstrip() for m in raw_prompt.split("\n")])
         return prompt
