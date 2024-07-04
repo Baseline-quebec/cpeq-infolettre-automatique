@@ -112,12 +112,12 @@ class OneDriveDependency(ApiDependency):
     @classmethod
     def _get_or_create_subfolder(cls, parent_folder: Folder, folder_name: str) -> Folder:
         folders = parent_folder.get_child_folders()
-        subfolder: Folder = next(filter(lambda x: x.name == folder_name, folders))
-
-        if subfolder is None:
-            subfolder = cast(Folder, parent_folder.create_child_folder(folder_name))
-
-        return subfolder
+        filtered_folders = list(filter(lambda x: x.name == folder_name, folders))
+        if len(filtered_folders) == 1:
+            return cast(Folder, filtered_folders[0])
+        if len(filtered_folders) == 0:
+            return cast(Folder, parent_folder.create_child_folder(folder_name))
+        raise RuntimeError
 
 
 def get_webscraperio_client(

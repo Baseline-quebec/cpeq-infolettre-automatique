@@ -21,12 +21,11 @@ class NewsRepository:
         Args:
             news_list: List of News to save.
         """
-
         file_name = "news.csv"
         with Path(file_name).open(mode="w", encoding="utf-8", newline="") as csvfile:
             csvwriter = csv.writer(
                 csvfile,
-                delimiter="|",
+                delimiter=",",
                 quotechar="|",
                 quoting=csv.QUOTE_MINIMAL,
                 dialect="excel",

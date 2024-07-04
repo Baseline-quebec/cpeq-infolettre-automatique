@@ -8,8 +8,9 @@ from zoneinfo import ZoneInfo
 
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News, Newsletter
-from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 from cpeq_infolettre_automatique.vectorstore import VectorStore
+from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
+
 
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
 SummaryGenerator = Any
@@ -89,13 +90,13 @@ class Service:
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
-            # filtered_news = await self._filter_news(
-            #    all_news, start_date=start_date, end_date=end_date
-            # )
-            # summarized_news = await asyncio.gather(
-            #    *(self._summarize_news(news) for news in filtered_news)
-            # )
-            return [*all_news]
+            filtered_news = await self._filter_news(
+                all_news, start_date=start_date, end_date=end_date
+            )
+            summarized_news = await asyncio.gather(
+                *(self._summarize_news(news) for news in filtered_news)
+            )
+            return [*summarized_news]
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 

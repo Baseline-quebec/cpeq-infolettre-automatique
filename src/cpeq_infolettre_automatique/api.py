@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 import coloredlogs
-from decouple import config
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse, Response
 
