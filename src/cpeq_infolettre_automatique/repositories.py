@@ -35,7 +35,7 @@ class NewsRepository:
                 [
                     news.title,
                     news.content,
-                    str(news.date),
+                    str(news.datetime),
                     str(news.rubric),
                     str(news.summary),
                 ]
