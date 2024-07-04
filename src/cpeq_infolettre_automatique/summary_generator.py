@@ -10,16 +10,21 @@ class SummaryGenerator:
     """Service for summarizing news articles."""
 
     def __init__(self, completion_model: CompletionModel) -> None:
-        """Initialize the service with the client."""
+        """Initialize the SummaryGenerator.
+
+        Args:
+            completion_model: The completion model to use for summarization.
+        """
         self.completion_model = completion_model
 
     async def generate(
         self, classified_news: ClassifiedNews, reference_news: list[ReferenceNews]
     ) -> str:
-        """Summarize the given text.
+        """Summarize the given news based on reference news exemples.
 
         Args:
-            text: The text to summarize.
+            classified_news: The news to summarize.
+            reference_news: The reference news exemples to use for summarization.
 
         Returns: The summary of the text.
         """
@@ -35,7 +40,7 @@ class SummaryGenerator:
         """Format the prompt for the OpenAI API.
 
         Args:
-            text: The text to summarize.
+            reference_news: The reference news exemples used to create a prompt for the summarization.
 
         Returns: The formatted prompt.
         """
@@ -49,6 +54,7 @@ class SummaryGenerator:
             # Début des exemples:
             {exemples_template}
 
-            Tu reçeveras en message un contenu d'article à résumer, ne retournes uniquement que le résumer de l'article, sans préfixe avec aucune autre information.
-                         """).format(exemples_template=exemples_template)
+            Tu reçeveras en message un contenu d'article à résumer, ne retournes uniquement que le résumer de l'article, sans préfixe avec aucune autre information.""").format(
+            exemples_template=exemples_template
+        )
         return system_prompt
