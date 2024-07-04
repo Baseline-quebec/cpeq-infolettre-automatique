@@ -1,9 +1,8 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.config import CompletionModelConfig
+from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.summary_generator import (
     SummaryGenerator,
@@ -15,10 +14,9 @@ class TestSummaryGenerator:
     @pytest.fixture()
     def summary_generator_fixture() -> SummaryGenerator:
         """Fixture for the SummaryGenerator."""
-        client = AsyncMock(AsyncOpenAI)
-        config_mock = MagicMock(spec=CompletionModelConfig)
-        config_mock.model = "mock-model"
-        return SummaryGenerator(client, completion_model_config=config_mock)
+        completion_model_mock = MagicMock(spec=CompletionModel)
+        completion_model_mock.complete = AsyncMock(return_value="This is a summary")
+        return SummaryGenerator(completion_model=completion_model_mock)
 
     @staticmethod
     @pytest.mark.asyncio()
@@ -36,8 +34,7 @@ class TestSummaryGenerator:
             news_fixture_copy1,
             news_fixture_copy2,
         ]
-        with patch.object(SummaryGenerator, "_summarize_news", return_value="This is a summary"):
-            summary = await summary_generator_fixture.generate(news_fixture, reference_news)
+        summary = await summary_generator_fixture.generate(news_fixture, reference_news)
         assert isinstance(summary, str)
 
     @staticmethod

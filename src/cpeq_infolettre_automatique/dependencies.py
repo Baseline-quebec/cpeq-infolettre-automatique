@@ -7,6 +7,7 @@ from decouple import config
 from fastapi import Depends
 from openai import AsyncOpenAI
 
+from cpeq_infolettre_automatique.completion_model import CompletionModel, OpenaiCompletionModel
 from cpeq_infolettre_automatique.config import VECTORSTORE_CONTENT_FILEPATH, CompletionModelConfig
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -79,15 +80,24 @@ def get_vectorstore(
     )
 
 
-def get_summary_generator(
+def get_completion_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
+) -> CompletionModel:
+    """Return a CompletionModel instance with the provided OpenAI client."""
+    completion_model_config = CompletionModelConfig()
+
+    return OpenaiCompletionModel(
+        client=openai_client,
+        completion_model_config=completion_model_config,
+    )
+
+
+def get_summary_generator(
+    completion_model: Annotated[CompletionModel, Depends(get_completion_model)],
 ) -> SummaryGenerator:
     """Return a SummaryGenerator instance with the provided OpenAI client."""
-    compile_model_config = CompletionModelConfig()
-
     return SummaryGenerator(
-        client=openai_client,
-        completion_model_config=compile_model_config,
+        completion_model=completion_model,
     )
 
 

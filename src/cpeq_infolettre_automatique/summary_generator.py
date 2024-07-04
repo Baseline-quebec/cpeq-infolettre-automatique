@@ -1,8 +1,6 @@
 """Implement the news summary generator."""
 
-from openai import AsyncOpenAI
-
-from cpeq_infolettre_automatique.config import CompletionModelConfig
+from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.schemas import News
 
 
@@ -13,12 +11,9 @@ ReferenceNews = News
 class SummaryGenerator:
     """Service for summarizing news articles."""
 
-    def __init__(
-        self, client: AsyncOpenAI, completion_model_config: CompletionModelConfig
-    ) -> None:
+    def __init__(self, completion_model: CompletionModel) -> None:
         """Initialize the service with the client."""
-        self._client = client
-        self.model = completion_model_config.model
+        self.completion_model = completion_model
 
     async def generate(
         self, classified_news: ClassifiedNews, reference_news: list[ReferenceNews]
@@ -31,16 +26,8 @@ class SummaryGenerator:
         Returns: The summary of the text.
         """
         prompt = self.format_prompt(classified_news, reference_news)
-        summarized_news = await self._generate(prompt=prompt)
+        summarized_news = await self.completion_model.complete(prompt=prompt)
         return summarized_news
-
-    async def _generate(self, prompt: str) -> str:
-        summarized_news_response = await self._client.completions.create(
-            prompt=prompt,
-            model=self.model,
-        )
-        summarized_news_response_content = summarized_news_response.choices[0].text
-        return summarized_news_response_content
 
     @staticmethod
     def format_prompt(classified_news: ClassifiedNews, reference_news: list[ReferenceNews]) -> str:
