@@ -66,14 +66,14 @@ class WeaviateCollection:
                     name="content",
                     data_type=wvc.config.DataType.TEXT,
                     index_filterable=True,
-                    index_searchable=True,
+                    index_searchable=False,
                     vectorize_property_name=False,
                 ),
                 wvc.config.Property(
                     name="summary",
                     data_type=wvc.config.DataType.TEXT,
                     index_filterable=True,
-                    index_searchable=True,
+                    index_searchable=False,
                     vectorize_property_name=False,
                 ),
                 wvc.config.Property(
