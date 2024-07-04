@@ -9,6 +9,7 @@ import pytest
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
 )
+from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -51,7 +52,7 @@ class TestService:
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        service_fixture._format_newsletter = lambda news: news
+        service_fixture._format_newsletter = lambda _: Newsletter(text="")
         await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
         assert service_fixture.vectorstore.classify_news_rubric.called
@@ -59,7 +60,7 @@ class TestService:
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
         assert service_fixture.summary_generator.generate_summary.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
-        assert service_fixture.news_repository.save_newsletter.called
+        assert service_fixture.news_repository.save_news.called
 
     @staticmethod
     def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:
