@@ -141,8 +141,8 @@ class Service:
             raise Error
 
         examples = self.reference_news_repository.read_many_by_rubric(news.rubric, nb_per_page=5)
-        summary = await self.summary_generator.generate_summary(news, examples)
-        return News(summary=summary, **news.model_dump())
+        news.summary = await self.summary_generator.generate_summary(news, examples)
+        return news
 
     def _format_newsletter(self, _: list[News]) -> Newsletter:
         """Format the news into a newsletter."""
