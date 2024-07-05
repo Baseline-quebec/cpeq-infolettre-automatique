@@ -111,7 +111,6 @@ preview = true
 line-length = 99
 src = ["src", "tests"]
 target-version = "py312"
-lint.ignore-init-module-imports = true
 lint.select = ["ALL"]
 lint.ignore = [
     "ANN002", # Missing type annotation for args. Complicates the code too much with the current annotation system.
