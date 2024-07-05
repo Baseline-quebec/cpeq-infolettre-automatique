@@ -1,23 +1,32 @@
 """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
 import csv
+import datetime
 from pathlib import Path
 
 from O365.drive import Folder
 
 from cpeq_infolettre_automatique.schemas import News, Newsletter
+from cpeq_infolettre_automatique.utils import get_or_create_subfolder
 
 
 class NewsRepository:
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
-    def __init__(self, news_folder: Folder) -> None:
+    def __init__(self, parent_folder: Folder) -> None:
         """Initializes the News repository.
 
         Args:
             news_folder: The O365 OneDrive Folder in which to store the News.
         """
-        self.news_folder = news_folder
+        self.parent_folder = parent_folder
+
+    def setup(self) -> None:
+        """Initializes the Sharepoint subfolder in which to store this week's newsletter and news."""
+        self.news_folder = get_or_create_subfolder(
+            parent_folder=self.parent_folder,
+            folder_name=str(datetime.datetime.now(tz=datetime.UTC).date()),
+        )
 
     def create_news(self, news_list: list[News]) -> None:
         """Save the list of News as a new CSV file in the OneDrive folder.

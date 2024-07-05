@@ -1,6 +1,5 @@
 """Depencies injection functions for the Service class."""
 
-import datetime
 from collections.abc import Iterator
 from typing import Annotated, Any, cast
 
@@ -25,6 +24,7 @@ from cpeq_infolettre_automatique.reference_news_repository import (
 )
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.service import Service
+from cpeq_infolettre_automatique.utils import get_or_create_subfolder
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -106,31 +106,15 @@ class OneDriveDependency(ApiDependency):
             raise RuntimeError
 
         root_folder: Folder = cast(Folder, drive.get_root_folder())
-        news_folder: Folder = cls._get_or_create_subfolder(
+        news_folder: Folder = get_or_create_subfolder(
             parent_folder=root_folder, folder_name="infolettre_automatique"
         )
-        week_folder: Folder = cls._get_or_create_subfolder(
-            parent_folder=news_folder,
-            folder_name=str(datetime.datetime.now(tz=datetime.UTC).date()),
-        )
 
-        cls.news_folder = week_folder
+        cls.news_folder = news_folder
 
     def __call__(self) -> Folder:
         """Returns the 0365 Account."""
         return self.news_folder
-
-    @classmethod
-    def _get_or_create_subfolder(cls, parent_folder: Folder, folder_name: str) -> Folder:
-        """Returns the subfolder with name $folder_name from the $parent_folder, creating it before if not found."""
-        folders = parent_folder.get_child_folders()
-        filtered_folders = tuple(filter(lambda x: x.name == folder_name, folders))
-        if len(filtered_folders) == 1:
-            return cast(Folder, filtered_folders[0])
-        if len(filtered_folders) == 0:
-            return cast(Folder, parent_folder.create_child_folder(folder_name))
-        msg = f"More than one folder with the name {folder_name} exist in the requested parent folder."
-        raise RuntimeError(msg)
 
 
 def get_webscraperio_client(

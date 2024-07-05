@@ -48,6 +48,7 @@ class Service:
 
         Returns: The formatted newsletter.
         """
+        self.news_repository.setup()
         start_date, end_date = self._prepare_dates()
 
         # For the moment, only the coroutine for scraped news is implemented.
