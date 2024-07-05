@@ -55,9 +55,13 @@ class Service:
         flattened_news = [news for news_list in summarized_news for news in news_list]
         await self.news_repository.create(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
-        newsletter = self._format_newsletter(flattened_news)
+        newsletter = Newsletter(
+            news=flattened_news,
+            news_datetime_range=(start_date, end_date),
+            publication_datetime=end_date,
+        )
         await self.newsletter_repository.create(newsletter)
-        return newsletter.to_markdown
+        return newsletter.to_markdown()
 
     @staticmethod
     def _prepare_dates(
@@ -138,17 +142,11 @@ class Service:
 
         Returns: The news data with the summary.
         """
+        if classified_news.rubric is None:
+            error_msg = "The news must have a rubric to be summarized."
+            raise ValueError(error_msg)
         examples = self.reference_news_repository.read_many_by_rubric(
             classified_news.rubric, nb_per_page=5
         )
         summary = await self.summary_generator.generate_summary(classified_news, examples)
         return SummarizedNews(summary=summary, **classified_news.model_dump())
-
-    @staticmethod
-    def _format_newsletter(news: list[SummarizedNews]) -> Newsletter:
-        """Format the news into a newsletter.
-
-        Args:
-            news: The summarized news data.
-        """
-        return Newsletter(news=news)

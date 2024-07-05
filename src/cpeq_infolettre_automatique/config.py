@@ -7,7 +7,7 @@ from decouple import config
 from pydantic import BaseModel
 
 
-class Rubric(str, Enum):  # noqa: UP042
+class Rubric(Enum):
     """Rubric Enum class."""
 
     CHANGEMENT_CLIMATIQUE_ET_ENERGIE = "Changements climatiques et énergie"

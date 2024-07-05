@@ -29,18 +29,18 @@ def news_fixture() -> News:
 def summarized_news_fixture(news_fixture: News) -> News:
     """Fixture for a SummarizedNews object."""
     summarized_news = news_fixture.model_dump()
-    summarized_news["rubric"] = Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME
     summarized_news["summary"] = "Some summary"
-    return SummarizedNews(**summarized_news)
+    return SummarizedNews(rubric=Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME, **summarized_news)
 
 
 @pytest.fixture()
 def reference_news_fixture(news_fixture: News) -> ReferenceNews:
     """Fixture for a News object."""
     news = news_fixture.model_dump()
-    news["rubric"] = Rubric.BIODIVERSITE_MILIEUX_HUMIDES_ET_ESPECES_EN_PERIL
     news["summary"] = "Some summary"
-    reference_news = ReferenceNews(**news)
+    reference_news = ReferenceNews(
+        rubric=Rubric.BIODIVERSITE_MILIEUX_HUMIDES_ET_ESPECES_EN_PERIL, **news
+    )
     return reference_news
 
 
@@ -107,9 +107,7 @@ def news_repository_fixture() -> Any:
 def reference_news_repository_fixture(reference_news_fixture: ReferenceNews) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
     reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
-    reference_news_repository_fixture.read_many_by_rubric = AsyncMock(
-        return_value=[reference_news_fixture]
-    )
+    reference_news_repository_fixture.read_many_by_rubric.return_value = [reference_news_fixture]
     return reference_news_repository_fixture
 
 

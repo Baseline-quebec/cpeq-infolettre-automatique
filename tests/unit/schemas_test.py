@@ -36,17 +36,18 @@ class TestNewsletter:
             summarized_news_fixture_copy_3,
         ]
 
-        fixed_datetime = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
+        start_datetime = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
+        end_datetime = dt.datetime(2024, 1, 7, tzinfo=dt.UTC)
         expected_newsletter = cleandoc(
-            """# Infolettre de la CPEQ
+            f"""# Infolettre de la CPEQ
 
 
-               Date de publication: {date}
+               Date de publication: {end_datetime.date()}
 
 
-               Voici les nouvelles de la semaine.
+               Voici les nouvelles de la semaine du {start_datetime.date()} au {end_datetime.date()}.
 
-               ## {rubric_1}
+               ## {Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE.value}
 
                ### Title 1
 
@@ -56,17 +57,17 @@ class TestNewsletter:
 
                Summary 3
 
-               ## {rubric_2}
+               ## {Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value}
 
                ### Title 2
 
                Summary 2"""
-        ).format(
-            rubric_1=Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE.value,
-            rubric_2=Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value,
-            date=fixed_datetime.date(),
         )
 
-        newsletter = Newsletter(news=summarized_news, publication_datetime=fixed_datetime)
-        newsletter_content = newsletter.to_markdown
+        newsletter = Newsletter(
+            news=summarized_news,
+            news_datetime_range=(start_datetime, end_datetime),
+            publication_datetime=end_datetime,
+        )
+        newsletter_content = newsletter.to_markdown()
         assert newsletter_content == expected_newsletter
