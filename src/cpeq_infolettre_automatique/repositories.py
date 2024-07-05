@@ -34,19 +34,8 @@ class NewsRepository:
                 quoting=csv.QUOTE_MINIMAL,
                 dialect="excel",
             )
-            rows: list[tuple[str, str, str, str, str]] = [
-                ("Title", "Content", "Date", "Rubric", "Summary")
-            ]
-            rows.append(
-                (
-                    news.title,
-                    news.content,
-                    str(news.datetime),
-                    str(news.rubric),
-                    str(news.summary),
-                )
-                for news in news_list
-            )
+            rows: list[list[str]] = [[name.capitalize() for name, _ in news] for news in news_list]
+            rows += [[str(value) for _, value in news] for news in news_list]
             csvwriter.writerows(rows)
             self.news_folder.upload_file(item=file_name)
 
