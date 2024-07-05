@@ -90,16 +90,19 @@ class OneDriveDependency(ApiDependency):
             tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
         )
         if not account.authenticate():
-            raise RuntimeError
+            msg = "Authentication with Office365 failed."
+            raise RuntimeError(msg)
 
-        site = account.sharepoint().get_site("baselinequebec.sharepoint.com")
+        site_url = "baselinequebec.sharepoint.com"
+        site = account.sharepoint().get_site(site_url)
         if site is None:
-            raise RuntimeError
+            msg = f"The requested Sharepoint Site {site_url} was not found."
+            raise RuntimeError(msg)
 
-        drive = site.site_storage.get_drive(
-            "b!fslahRMOAUCsW5P8nXZ3cYwDnL6MT35NpJyHzlyxCgXt0TeRJiWPSb3gQmzCo3t2"
-        )
+        drive_id = "b!fslahRMOAUCsW5P8nXZ3cYwDnL6MT35NpJyHzlyxCgXt0TeRJiWPSb3gQmzCo3t2"
+        drive = site.site_storage.get_drive(drive_id)
         if drive is None:
+            msg = f"The requested OneDrive instance with id {drive_id} was not found."
             raise RuntimeError
 
         root_folder: Folder = cast(Folder, drive.get_root_folder())
@@ -118,18 +121,16 @@ class OneDriveDependency(ApiDependency):
         return self.news_folder
 
     @classmethod
-    def teardown(cls) -> Any:
-        """Free resources held by the class."""
-
-    @classmethod
     def _get_or_create_subfolder(cls, parent_folder: Folder, folder_name: str) -> Folder:
+        """Returns the subfolder with name $folder_name from the $parent_folder, creating it before if not found."""
         folders = parent_folder.get_child_folders()
         filtered_folders = tuple(filter(lambda x: x.name == folder_name, folders))
         if len(filtered_folders) == 1:
             return cast(Folder, filtered_folders[0])
         if len(filtered_folders) == 0:
             return cast(Folder, parent_folder.create_child_folder(folder_name))
-        raise RuntimeError
+        msg = f"More than one folder with the name {folder_name} exist in the requested parent folder."
+        raise RuntimeError(msg)
 
 
 def get_webscraperio_client(

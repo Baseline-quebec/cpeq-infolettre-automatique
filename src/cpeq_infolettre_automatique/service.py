@@ -3,7 +3,6 @@
 import asyncio
 import datetime as dt
 from collections.abc import AsyncIterator, Awaitable, Iterable
-from csv import Error
 from typing import Any
 
 from cpeq_infolettre_automatique.reference_news_repository import (
@@ -138,7 +137,7 @@ class Service:
         Returns: The news data with the summary.
         """
         if news.rubric is None:
-            raise Error
+            raise ValueError
 
         examples = self.reference_news_repository.read_many_by_rubric(news.rubric, nb_per_page=5)
         news.summary = await self.summary_generator.generate_summary(news, examples)

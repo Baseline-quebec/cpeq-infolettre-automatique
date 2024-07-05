@@ -2,6 +2,7 @@
 
 import datetime as dt
 import json
+import logging
 import uuid
 from pathlib import Path
 
@@ -24,6 +25,10 @@ from cpeq_infolettre_automatique.embedding_model import (
 )
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class WeaviateCollection:
@@ -136,6 +141,9 @@ async def populate_db(
         concurrent_requests=weaviate_collection.concurrent_requests,
     ) as batch:
         for reference_news in tqdm(references_news):
+            if reference_news.rubric is None:
+                logger.warning("Reference News with title %s had no rubric.", reference_news.title)
+                continue
             text_to_embed = Vectorstore.create_query(reference_news)
             object_id = Vectorstore.create_uuid(reference_news)
             vectorized_item = await embedding_model.embed(text_description=text_to_embed)
