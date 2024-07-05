@@ -147,10 +147,11 @@ class Service:
         summary = await self.summary_generator.generate_summary(classified_news, examples)
         return SummarizedNews(summary=summary, **classified_news.model_dump())
 
-    def _format_newsletter(self, news: list[SummarizedNews]) -> Newsletter:
+    @staticmethod
+    def _format_newsletter(news: list[SummarizedNews]) -> str:
         """Format the news into a newsletter.
 
         Args:
             news: The summarized news data.
         """
-        return self.newsletter_formatter.format_newletter(news)
+        return Newsletter(news=news).to_markdown
