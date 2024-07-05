@@ -95,8 +95,9 @@ def vectorstore_fixture() -> Vectorstore:
 @pytest.fixture()
 def news_repository_fixture() -> Any:
     """Fixture for mocked NewsRepository."""
-    news_repository_fixture = AsyncMock()
-    news_repository_fixture.create = AsyncMock()
+    news_repository_fixture = MagicMock()
+    news_repository_fixture.create_news = MagicMock()
+    news_repository_fixture.create_newsletter = MagicMock()
     return news_repository_fixture
 
 
@@ -108,14 +109,6 @@ def reference_news_repository_fixture(reference_news_fixture: News) -> Any:
         return_value=[reference_news_fixture]
     )
     return reference_news_repository_fixture
-
-
-@pytest.fixture()
-def newsletter_repository_fixture() -> Any:
-    """Fixture for mocked NewsletterRepository."""
-    newsletter_repository_fixture = AsyncMock()
-    newsletter_repository_fixture.create = AsyncMock()
-    return newsletter_repository_fixture
 
 
 @pytest.fixture()

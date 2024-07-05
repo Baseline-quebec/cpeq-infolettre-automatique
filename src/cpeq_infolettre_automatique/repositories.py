@@ -12,10 +12,14 @@ class NewsRepository:
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
     def __init__(self, news_folder: Folder) -> None:
-        """Ctor."""
+        """Initializes the News repository.
+
+        Args:
+            news_folder: The O365 OneDrive Folder in which to store the News.
+        """
         self.news_folder = news_folder
 
-    def save_news(self, news_list: list[News]) -> None:
+    def create_news(self, news_list: list[News]) -> None:
         """Save the list of News as a new CSV file in the OneDrive folder.
 
         Args:
@@ -44,7 +48,7 @@ class NewsRepository:
             csvwriter.writerows(rows)
             self.news_folder.upload_file(item=file_name)
 
-    def save_newsletter(self, _: Newsletter) -> None:
+    def create_newsletter(self, _: Newsletter) -> None:
         """Save the Newsletter as a Markdown file in the OneDrive folder.
 
         Args:
