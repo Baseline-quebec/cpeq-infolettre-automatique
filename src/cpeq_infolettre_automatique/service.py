@@ -5,19 +5,18 @@ import datetime as dt
 from collections.abc import Awaitable, Iterable
 from typing import Any
 
+from cpeq_infolettre_automatique.newsletter_formatter import NewsletterFormatter
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import ClassifiedNews, News, SummarizedNews
+from cpeq_infolettre_automatique.schemas import ClassifiedNews, News, Newsletter, SummarizedNews
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 # TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
-SummaryGenerator = Any
-NewsletterFormatter = Any
-Newsletter = Any
 NewsletterRepository = Any
 NewsRepository = Any
+SummaryGenerator = Any
 
 
 class Service:
@@ -40,7 +39,7 @@ class Service:
         self.newsletter_repository = newsletter_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
-        self.formatter = newsletter_formatter
+        self.newsletter_formatter = newsletter_formatter
 
     async def generate_newsletter(self) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
@@ -149,5 +148,9 @@ class Service:
         return SummarizedNews(summary=summary, **classified_news.model_dump())
 
     def _format_newsletter(self, news: list[SummarizedNews]) -> Newsletter:
-        """Format the news into a newsletter."""
-        raise NotImplementedError
+        """Format the news into a newsletter.
+
+        Args:
+            news: The summarized news data.
+        """
+        return self.newsletter_formatter.format_newletter(news)

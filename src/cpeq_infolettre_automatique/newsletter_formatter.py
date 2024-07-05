@@ -3,15 +3,15 @@
 from inspect import cleandoc
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.schemas import SummarizedNews
+from cpeq_infolettre_automatique.schemas import Newsletter, SummarizedNews
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 
 
-class NewsletterGenerator:
-    """Generates the newsletter."""
+class NewsletterFormatter:
+    """The newsletter formatter."""
 
     @staticmethod
-    def generate_newsletter(summarized_news: list[SummarizedNews]) -> str:
+    def format_newletter(summarized_news: list[SummarizedNews]) -> Newsletter:
         """Generate the newsletter from the news.
 
         Args:
@@ -48,4 +48,4 @@ class NewsletterGenerator:
         newsletter_news = "\n\n".join(formated_news_per_rubric)
         newsletter = f"{newsletter_header}\n\n{newsletter_news}"
 
-        return newsletter
+        return Newsletter(text=newsletter)

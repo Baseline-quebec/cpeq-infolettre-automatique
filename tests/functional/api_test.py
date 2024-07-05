@@ -12,6 +12,7 @@ from cpeq_infolettre_automatique.dependencies import (
     get_vectorstore,
     get_webscraperio_client,
 )
+from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
 
 
@@ -23,7 +24,7 @@ SUCCESS_HTTP_STATUS_CODE = 200
 def service_fixture() -> Service:
     """Fixture for mocked service."""
     service_mock = AsyncMock()
-    service_mock.generate_newsletter.return_value = EXPECTED_NEWSLETTER
+    service_mock.generate_newsletter.return_value = Newsletter(text=EXPECTED_NEWSLETTER)
     return service_mock
 
 
@@ -50,5 +51,5 @@ def test_generate_newsletter__when_happy_path__returns_successful_response(
     """Test generating a newsletter."""
     response = client_fixture.get("/generate-newsletter")
     assert response.status_code == SUCCESS_HTTP_STATUS_CODE
-    assert response.text == EXPECTED_NEWSLETTER
+    assert Newsletter(**response.json()).text == EXPECTED_NEWSLETTER
     assert service_fixture.generate_newsletter.called

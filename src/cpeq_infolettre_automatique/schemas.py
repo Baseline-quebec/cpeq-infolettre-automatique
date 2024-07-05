@@ -39,3 +39,9 @@ class SummarizedNews(ClassifiedNews):
 
 class ReferenceNews(SummarizedNews):
     """Schema for the reference news data."""
+
+
+class Newsletter(BaseModel):
+    """Schema for the newsletter."""
+
+    text: str
