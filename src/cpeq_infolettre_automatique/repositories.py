@@ -34,7 +34,7 @@ class NewsRepository:
                 quoting=csv.QUOTE_MINIMAL,
                 dialect="excel",
             )
-            rows: list[list[str]] = [[name.capitalize() for name, _ in news] for news in news_list]
+            rows: list[list[str]] = [[keys.capitalize() for keys in News.model_fields]]
             rows += [[str(value) for _, value in news] for news in news_list]
             csvwriter.writerows(rows)
             self.news_folder.upload_file(item=file_name)
