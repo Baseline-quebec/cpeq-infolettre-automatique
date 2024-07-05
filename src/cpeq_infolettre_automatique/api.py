@@ -8,14 +8,13 @@ from typing import Annotated
 import coloredlogs
 from decouple import config
 from fastapi import Depends, FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
     get_service,
     get_webscraperio_client,
 )
-from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -67,11 +66,11 @@ def get_articles_from_scraper() -> JSONResponse:
 
 
 @app.get("/generate-newsletter")
-async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Newsletter:
+async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
     """Generate a newsletter from scraped news."""
     # TODO(jsleb333): Schedule this task to return immediately
-    newsletter = await service.generate_newsletter()
-    return newsletter
+    newsletter_md = await service.generate_newsletter()
+    return Response(content=newsletter_md)
 
 
 if __name__ == "__main__":

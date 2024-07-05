@@ -9,7 +9,6 @@ import pytest
 import weaviate
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
-from cpeq_infolettre_automatique.newsletter_formatter import NewsletterFormatter
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.schemas import News, ReferenceNews, SummarizedNews
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
@@ -128,10 +127,3 @@ def summary_generator_fixture() -> Any:
     summary_generator_fixture = AsyncMock()
     summary_generator_fixture.generate_summary = AsyncMock(return_value="Some summary")
     return summary_generator_fixture
-
-
-@pytest.fixture()
-def newsletter_formatter_fixture() -> NewsletterFormatter:
-    """Fixture for mocked NewsLetterFormater."""
-    newsletter_formater = NewsletterFormatter()
-    return newsletter_formater

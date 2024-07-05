@@ -5,7 +5,6 @@ import datetime as dt
 from collections.abc import Awaitable, Iterable
 from typing import Any
 
-from cpeq_infolettre_automatique.newsletter_formatter import NewsletterFormatter
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
 from cpeq_infolettre_automatique.schemas import ClassifiedNews, News, Newsletter, SummarizedNews
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
@@ -30,7 +29,6 @@ class Service:
         newsletter_repository: NewsletterRepository,
         vectorstore: Vectorstore,
         summary_generator: SummaryGenerator,
-        newsletter_formatter: NewsletterFormatter,
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
@@ -39,9 +37,8 @@ class Service:
         self.newsletter_repository = newsletter_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
-        self.newsletter_formatter = newsletter_formatter
 
-    async def generate_newsletter(self) -> Newsletter:
+    async def generate_newsletter(self) -> str:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
         Returns: The formatted newsletter.
@@ -60,7 +57,7 @@ class Service:
         await self.webscraper_io_client.delete_scraping_jobs()
         newsletter = self._format_newsletter(flattened_news)
         await self.newsletter_repository.create(newsletter)
-        return newsletter
+        return newsletter.to_markdown
 
     @staticmethod
     def _prepare_dates(
@@ -148,10 +145,10 @@ class Service:
         return SummarizedNews(summary=summary, **classified_news.model_dump())
 
     @staticmethod
-    def _format_newsletter(news: list[SummarizedNews]) -> str:
+    def _format_newsletter(news: list[SummarizedNews]) -> Newsletter:
         """Format the news into a newsletter.
 
         Args:
             news: The summarized news data.
         """
-        return Newsletter(news=news).to_markdown
+        return Newsletter(news=news)

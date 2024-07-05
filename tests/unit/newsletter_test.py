@@ -1,15 +1,13 @@
 import datetime as dt
 from inspect import cleandoc
-from unittest.mock import patch
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.newsletter_formatter import NewsletterFormatter
-from cpeq_infolettre_automatique.schemas import SummarizedNews
+from cpeq_infolettre_automatique.schemas import Newsletter, SummarizedNews
 
 
-class TestNewsletterGenerator:
+class TestNewsletter:
     @staticmethod
-    def test__format_newletter__when_differrent_rubric__generates_proper_newletter(
+    def test__to_markdown__when_differrent_rubrics__generates_proper_newletter(
         summarized_news_fixture: SummarizedNews,
     ) -> None:
         """Test the generate_newsletter method."""
@@ -69,10 +67,6 @@ class TestNewsletterGenerator:
             date=fixed_datetime.date(),
         )
 
-        with patch(
-            "cpeq_infolettre_automatique.newsletter_formatter.get_current_montreal_datetime"
-        ) as get_current_datetime_mock:
-            get_current_datetime_mock.return_value = fixed_datetime
-
-            newsletter = NewsletterFormatter.format_newletter(summarized_news)
-        assert newsletter.text == expected_newsletter
+        newsletter = Newsletter(news=summarized_news, publication_datetime=fixed_datetime)
+        newsletter_content = newsletter.to_markdown
+        assert newsletter_content == expected_newsletter

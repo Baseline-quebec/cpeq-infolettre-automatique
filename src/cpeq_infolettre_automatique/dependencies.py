@@ -135,5 +135,4 @@ def get_service(
         newsletter_repository=Any,
         vectorstore=vectorstore,
         summary_generator=Any,
-        newsletter_formatter=Any,
     )

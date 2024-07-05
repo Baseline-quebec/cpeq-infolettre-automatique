@@ -6,9 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cpeq_infolettre_automatique.newsletter_formatter import NewsletterFormatter
 from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -22,7 +20,6 @@ def service_fixture(
     news_repository_fixture: Any,
     newsletter_repository_fixture: Any,
     summary_generator_fixture: Any,
-    newsletter_formatter_fixture: NewsletterFormatter,
 ) -> Service:
     """Fixture for mocked service."""
     service = Service(
@@ -32,7 +29,6 @@ def service_fixture(
         newsletter_repository=newsletter_repository_fixture,
         vectorstore=vectorstore_fixture,
         summary_generator=summary_generator_fixture,
-        newsletter_formatter=newsletter_formatter_fixture,
     )
     service._prepare_dates = lambda *_: (
         dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
@@ -54,7 +50,7 @@ class TestService:
         TODO(jsleb333): Remove called assertions with specific tests.
         """
         newletter = await service_fixture.generate_newsletter()
-        assert isinstance(newletter, Newsletter)
+        assert isinstance(newletter, str)
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
         assert service_fixture.vectorstore.classify_news_rubric.called
         assert service_fixture.reference_news_repository.read_many_by_rubric.called
