@@ -7,9 +7,10 @@ from decouple import config
 from pydantic import BaseModel
 
 
-class Rubric(str, Enum):  # noqa: UP042
+class Rubric(Enum):
     """Rubric Enum class."""
 
+    AUTRE = "Autre"
     CHANGEMENT_CLIMATIQUE_ET_ENERGIE = "Changements climatiques et énergie"
     ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE = (
         "Acceptabilité sociale, bruit et troubles de voisinage"
@@ -64,8 +65,19 @@ class EmbeddingModelConfig(BaseModel):
 class VectorstoreConfig(BaseModel):
     """Configuration for the vector store client."""
 
-    collection_name: str = config("WEAVIATE_COLLECTION_NAME", "")
-    top_k: int = int(config("NB_ITEM_RETRIEVED", 5))
-    hybrid_weight: float = float(config("VECTORSTORE_HYBRID_WEIGHT", 0.75))
-    batch_size: int = max(int(config("BATCH_SIZE", 5)), 1)
-    concurrent_requests: int = max(int(config("CONCURRENT_REQUESTS", 2)), 1)
+    collection_name: str = config(
+        "WEAVIATE_COLLECTION_NAME",
+        "",
+        cast=str,
+    )
+    nb_items_retrieved: int = config("NB_ITEM_RETRIEVED", 5, cast=int)
+    hybrid_weight: float = config("VECTORSTORE_HYBRID_WEIGHT", 0.75, cast=float)
+    batch_size: int = max(config("BATCH_SIZE", 5, cast=int), 1)
+    concurrent_requests: int = max(config("CONCURRENT_REQUESTS", 2, cast=int), 1)
+
+
+class CompletionModelConfig(BaseModel):
+    """Configuration for the completion model."""
+
+    model: Literal["gpt-4o", "gpt-4-turbo"] = config("COMPLETION_MODEL_ID", "gpt-4o", cast=str)
+    temperature: float = config("COMPLETION_MODEL_TEMPERATURE", 0.1, cast=float)

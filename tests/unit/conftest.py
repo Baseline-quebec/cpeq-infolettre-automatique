@@ -8,11 +8,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import weaviate
 
+from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
 )
 from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -30,13 +32,19 @@ def news_fixture() -> News:
 
 
 @pytest.fixture()
-def reference_news_fixture(news_fixture: News) -> News:
-    """Fixture for a News object."""
-    news = news_fixture.model_dump()
-    news["rubric"] = Rubric.BIODIVERSITE_MILIEUX_HUMIDES_ET_ESPECES_EN_PERIL
-    news["summary"] = "Some summary"
-    reference_news = News(**news)
-    return reference_news
+def classified_news_fixture(news_fixture: News) -> News:
+    """Fixture for a News object with a classification."""
+    classified_news = news_fixture.model_copy()
+    classified_news.rubric = Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME
+    return classified_news
+
+
+@pytest.fixture()
+def summarized_news_fixture(classified_news_fixture: News) -> News:
+    """Fixture for a News object with a summary."""
+    summarized_news = classified_news_fixture.model_copy()
+    summarized_news.summary = "Some summary"
+    return summarized_news
 
 
 @pytest.fixture()
@@ -79,6 +87,7 @@ def vectorstore_config_fixture(test_collection_name: str) -> VectorstoreConfig:
         collection_name=test_collection_name,
         batch_size=10,
         concurrent_requests=5,
+        nb_items_retrieved=2,
     )
 
 
@@ -102,24 +111,23 @@ def news_repository_fixture() -> Any:
 
 
 @pytest.fixture()
-def reference_news_repository_fixture(reference_news_fixture: News) -> Any:
+def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
     reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
-    reference_news_repository_fixture.read_many_by_rubric = AsyncMock(
-        return_value=[reference_news_fixture]
-    )
+    reference_news_repository_fixture.read_many_by_rubric.return_value = [summarized_news_fixture]
     return reference_news_repository_fixture
-
-
-@pytest.fixture()
-def summary_generator_fixture() -> Any:
-    """Fixture for mocked SummaryGenerator."""
-    summary_generator_fixture = AsyncMock()
-    summary_generator_fixture.generate_summary = AsyncMock(return_value="Some summary")
-    return summary_generator_fixture
 
 
 @pytest.fixture()
 def newsletter_formatter_fixture() -> Any:
     """Fixture for mocked NewsLetterFormater."""
     return MagicMock()
+
+
+@pytest.fixture()
+def summary_generator_fixture() -> SummaryGenerator:
+    """Fixture for the SummaryGenerator."""
+    completion_model_mock = MagicMock(spec=CompletionModel)
+    summary_generator_fixture = SummaryGenerator(completion_model=completion_model_mock)
+    summary_generator_fixture.generate = AsyncMock(return_value="This is a summary")
+    return summary_generator_fixture
