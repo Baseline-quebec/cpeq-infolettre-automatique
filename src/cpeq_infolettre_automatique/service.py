@@ -118,7 +118,7 @@ class Service:
         Returns: The filtered news data.
         """
         for news in all_news:
-            if news.datetime is None:
+            if news.datetime is None or isinstance(news.datetime, str):
                 continue
             if not start_date <= news.datetime < end_date:
                 continue
