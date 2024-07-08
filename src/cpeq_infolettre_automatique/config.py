@@ -10,6 +10,7 @@ from pydantic import BaseModel
 class Rubric(Enum):
     """Rubric Enum class."""
 
+    NON_CATEGORISE = "Non catégorisé"
     CHANGEMENT_CLIMATIQUE_ET_ENERGIE = "Changements climatiques et énergie"
     ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE = (
         "Acceptabilité sociale, bruit et troubles de voisinage"

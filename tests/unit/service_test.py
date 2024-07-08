@@ -6,9 +6,11 @@ from unittest.mock import patch
 
 import pytest
 
+from cpeq_infolettre_automatique.config import Rubric
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
 )
+from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -42,15 +44,27 @@ class TestService:
 
     @staticmethod
     @pytest.mark.asyncio()
-    async def test_generate_newsletter__when_happy_path__returns_list_of_news(
+    async def test_generate_newsletter__when_provided_with_news__returns_proper_newsletter(
+        service_fixture: Service,
+        news_fixture: News,
+        rubric_classification_fixture: Rubric,
+    ) -> None:
+        """Test that the generate_newsletter outputs newsletter with proper content."""
+        newsletter = await service_fixture.generate_newsletter()
+        newsletter_content = newsletter.to_markdown()
+        assert rubric_classification_fixture.value in newsletter_content
+        assert news_fixture.title in newsletter_content
+
+    @staticmethod
+    @pytest.mark.asyncio()
+    async def test_generate_newsletter__when_happy_path__all_subservices_are_called(
         service_fixture: Service,
     ) -> None:
         """Test that the newsletter generation flow and logic operates as intented given expected situation.
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        newletter = await service_fixture.generate_newsletter()
-        assert isinstance(newletter, str)
+        _ = await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
         assert service_fixture.vectorstore.classify_news_rubric.called
         assert service_fixture.reference_news_repository.read_many_by_rubric.called

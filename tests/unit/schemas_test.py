@@ -1,73 +1,43 @@
 import datetime as dt
-from inspect import cleandoc
 
-from cpeq_infolettre_automatique.config import Rubric
 from cpeq_infolettre_automatique.schemas import News, Newsletter
 
 
 class TestNewsletter:
     @staticmethod
-    def test__to_markdown__when_differrent_rubrics__generates_proper_newletter(
-        summarized_news_fixture: News,
+    def test__to_markdown__when_differrent_rubrics__generates_proper_newsletter(
+        multiple_summarized_news_fixture: list[News],
+        newsletter_fixture: Newsletter,
     ) -> None:
-        """Test the generate_newsletter method."""
-        summarized_news_fixture_copy_1 = summarized_news_fixture.model_copy()
-        summarized_news_fixture_copy_1.rubric = (
-            Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE
-        )
-        summarized_news_fixture_copy_1.title = "Title 1"
-        summarized_news_fixture_copy_1.summary = "Summary 1"
-
-        summarized_news_fixture_copy_2 = summarized_news_fixture.model_copy()
-        summarized_news_fixture_copy_2.rubric = Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME
-        summarized_news_fixture_copy_2.title = "Title 2"
-        summarized_news_fixture_copy_2.summary = "Summary 2"
-
-        summarized_news_fixture_copy_3 = summarized_news_fixture.model_copy()
-        summarized_news_fixture_copy_3.rubric = (
-            Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE
-        )
-        summarized_news_fixture_copy_3.title = "Title 3"
-        summarized_news_fixture_copy_3.summary = "Summary 3"
-
-        summarized_news = [
-            summarized_news_fixture_copy_1,
-            summarized_news_fixture_copy_2,
-            summarized_news_fixture_copy_3,
-        ]
+        """Test that the to_markdown method generates a proper markdown formatted newsleter, when more than one of the same rubric, they are grouped toghter."""
+        expected_newsletter_content = newsletter_fixture.to_markdown()
 
         start_datetime = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
         end_datetime = dt.datetime(2024, 1, 7, tzinfo=dt.UTC)
-        expected_newsletter = cleandoc(
-            f"""# Infolettre de la CPEQ
-
-
-               Date de publication: {end_datetime.date()}
-
-
-               Voici les nouvelles de la semaine du {start_datetime.date()} au {end_datetime.date()}.
-
-               ## {Rubric.ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE.value}
-
-               ### Title 1
-
-               Summary 1
-
-               ### Title 3
-
-               Summary 3
-
-               ## {Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value}
-
-               ### Title 2
-
-               Summary 2"""
-        )
 
         newsletter = Newsletter(
-            news=summarized_news,
+            news=multiple_summarized_news_fixture,
             news_datetime_range=(start_datetime, end_datetime),
             publication_datetime=end_datetime,
         )
         newsletter_content = newsletter.to_markdown()
-        assert newsletter_content == expected_newsletter
+        assert newsletter_content == expected_newsletter_content
+
+    @staticmethod
+    def test__to_markdown__when_rubrics_is_none__generates_newsletter_non_classified_at_the_end(
+        multiple_summarized_news_with_unclassified_rubric_fixture: list[News],
+        newsletter_fixture_with_unclassified_rubric: Newsletter,
+    ) -> None:
+        """Test that the to_markdown method generates a markdown formatted newsleter with non classified rubric at the end."""
+        expected_newsletter_content = newsletter_fixture_with_unclassified_rubric.to_markdown()
+
+        start_datetime = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
+        end_datetime = dt.datetime(2024, 1, 7, tzinfo=dt.UTC)
+
+        newsletter = Newsletter(
+            news=multiple_summarized_news_with_unclassified_rubric_fixture,
+            news_datetime_range=(start_datetime, end_datetime),
+            publication_datetime=end_datetime,
+        )
+        newsletter_content = newsletter.to_markdown()
+        assert newsletter_content == expected_newsletter_content

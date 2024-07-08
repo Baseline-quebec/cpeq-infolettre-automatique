@@ -18,7 +18,7 @@ class TestReferenceNewsRepository:
         vectorstore_config_fixture: VectorstoreConfig,
         summarized_news_fixture: News,
     ) -> None:
-        """Test the read_many_by_rubric method works with valid data."""
+        """Test read_many_by_rubric returns proper news with specified rubric when queried with rubric."""
         # Arrange
         news_repository = ReferenceNewsRepository(
             vectorstore_client_fixture, vectorstore_config_fixture

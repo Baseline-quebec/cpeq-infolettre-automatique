@@ -39,7 +39,7 @@ class Service:
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
 
-    async def generate_newsletter(self) -> str:
+    async def generate_newsletter(self) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
         Returns: The formatted newsletter.
@@ -64,7 +64,7 @@ class Service:
             publication_datetime=end_date,
         )
         self.news_repository.create_newsletter(newsletter)
-        return newsletter.to_markdown()
+        return newsletter
 
     @staticmethod
     def _prepare_dates(

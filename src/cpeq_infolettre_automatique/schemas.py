@@ -26,10 +26,8 @@ class News(BaseModel):
 
     def to_markdown(self) -> str:
         """Convert the news to markdown."""
-        if self.summary is None or self.rubric is None or self.title is None:
-            error_msg = (
-                "The news must have a summary, a rubric and a title to be converted to markdown."
-            )
+        if self.summary is None or self.title is None:
+            error_msg = "The news must have a summary and a title to be converted to markdown."
             raise ValueError(error_msg)
         return f"### {self.title}\n\n{self.summary}"
 
@@ -56,23 +54,17 @@ class Newsletter(BaseModel):
 
     def _formatted_news_per_rubric(self) -> list[str]:
         """Get the formatted news per rubric."""
-        news_per_rubric: dict[Rubric, list[News]] = defaultdict(list)
+        news_per_rubric: dict[Rubric, str] = defaultdict(str)
         for news_item in self.news:
-            if news_item.rubric is not None:
-                news_per_rubric[news_item.rubric].append(news_item)
+            rubric = news_item.rubric if news_item.rubric is not None else Rubric.NON_CATEGORISE
+            if news_per_rubric.get(rubric) is None:
+                news_per_rubric[rubric] = f"## {rubric.value}"
+            news_per_rubric[rubric] += f"\n\n{news_item.to_markdown()}"
 
-        formatted_news_per_rubric: list[str] = []
-        for rubric, news_items in news_per_rubric.items():
-            if len(news_items) > 0:
-                newsletter_rubric_title = f"## {rubric.value}"
-                newsletters_rubric_news = "\n\n".join([
-                    news_item.to_markdown() for news_item in news_items
-                ])
-                formatted_news_per_rubric.append(
-                    f"{newsletter_rubric_title}\n\n{newsletters_rubric_news}"
-                )
-
-        return formatted_news_per_rubric
+        non_classified_news = news_per_rubric.pop(Rubric.NON_CATEGORISE, None)
+        return list(news_per_rubric.values()) + (
+            [non_classified_news] if non_classified_news else []
+        )
 
     def to_markdown(self) -> str:
         """Convert the newsletter to markdown."""

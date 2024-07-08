@@ -71,8 +71,8 @@ def get_articles_from_scraper() -> JSONResponse:
 async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
     """Generate a newsletter from scraped news."""
     # TODO(jsleb333): Schedule this task to return immediately
-    newsletter_md = await service.generate_newsletter()
-    return Response(content=newsletter_md)
+    newsletter = await service.generate_newsletter()
+    return Response(content=newsletter.to_markdown())
 
 
 if __name__ == "__main__":
