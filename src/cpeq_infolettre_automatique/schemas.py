@@ -6,10 +6,32 @@ from collections import defaultdict
 from inspect import cleandoc
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator
+import dateparser
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    field_validator,
+)
 
 from cpeq_infolettre_automatique.config import Rubric
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
+
+
+CustomDatetime = Annotated[
+    dt.datetime | None | str,
+    BeforeValidator(
+        lambda x: dateparser.parse(
+            x,
+            settings={"TIMEZONE": "America/Montreal", "RETURN_AS_TIMEZONE_AWARE": True},
+        )
+        if isinstance(x, str)
+        else x,
+    ),
+    PlainSerializer(lambda x: x.isoformat() if x else None),
+]
 
 
 class News(BaseModel):
@@ -19,9 +41,7 @@ class News(BaseModel):
 
     title: str
     content: str
-    datetime: Annotated[
-        dt.datetime | None, PlainSerializer(lambda x: x.isoformat() if x else None)
-    ]
+    datetime: CustomDatetime
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
 

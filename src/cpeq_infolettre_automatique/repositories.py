@@ -51,9 +51,12 @@ class NewsRepository:
             csvwriter.writerows(rows)
             self.news_folder.upload_file(item=file_name)
 
-    def create_newsletter(self, _: Newsletter) -> None:
+    def create_newsletter(self, newsletter: Newsletter) -> None:
         """Save the Newsletter as a Markdown file in the OneDrive folder.
 
         Args:
             newsletter: The Newsletter to save.
         """
+        file_name = "newsletter.md"
+        Path(file_name).write_text(newsletter.to_markdown(), encoding="utf-8")
+        self.news_folder.upload_file(item=file_name)

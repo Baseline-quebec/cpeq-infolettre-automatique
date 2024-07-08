@@ -6,7 +6,6 @@ import logging
 from collections.abc import Iterable
 from types import MappingProxyType
 
-import dateparser
 import httpx
 
 from cpeq_infolettre_automatique.schemas import News
@@ -166,10 +165,7 @@ class WebscraperIoClient:
             News(
                 title=data["title"],
                 content=data["content"],
-                datetime=dateparser.parse(
-                    data["date"],
-                    settings={"TIMEZONE": "America/Montreal", "RETURN_AS_TIMEZONE_AWARE": True},
-                ),
+                datetime=data.get("date"),
                 rubric=None,
                 summary=None,
             )
