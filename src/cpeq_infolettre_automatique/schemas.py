@@ -45,14 +45,24 @@ class News(BaseModel):
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
 
-    @field_validator("title", "content", "summary")
+    @field_validator("title", "content")
     @classmethod
-    def validate_texts(cls, values: str | None) -> str | None:
+    def validate_mandatory_texts(cls, value: str) -> str:
+        """Validate that the mandatory text fields are not empty."""
+        if not value.strip() or value is None:
+            error_msg = "The title and content fields must not be empty."
+            raise ValueError(error_msg)
+        cleaned_value = unicodedata.normalize("NFKC", value)
+        return cleaned_value
+
+    @field_validator("summary")
+    @classmethod
+    def validate_texts(cls, value: str | None) -> str | None:
         """Validate that the text fields are properly formatted."""
-        if values is None:
-            return values
-        cleaned_values = unicodedata.normalize("NFKC", values)
-        return cleaned_values
+        if value is None:
+            return value
+        cleaned_value = unicodedata.normalize("NFKC", value)
+        return cleaned_value
 
     def to_markdown(self) -> str:
         """Convert the news to markdown."""
