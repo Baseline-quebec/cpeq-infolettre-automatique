@@ -166,7 +166,10 @@ class WebscraperIoClient:
             News(
                 title=data["title"],
                 content=data["content"],
-                datetime=dateparser.parse(data["date"]),
+                datetime=dateparser.parse(
+                    data["date"],
+                    settings={"TIMEZONE": "America/Montreal", "RETURN_AS_TIMEZONE_AWARE": True},
+                ),
                 rubric=None,
                 summary=None,
             )
