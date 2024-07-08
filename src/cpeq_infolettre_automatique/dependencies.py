@@ -11,7 +11,9 @@ from O365.account import Account
 from O365.drive import Folder
 from openai import AsyncOpenAI
 
+from cpeq_infolettre_automatique.completion_model import CompletionModel, OpenAICompletionModel
 from cpeq_infolettre_automatique.config import (
+    CompletionModelConfig,
     EmbeddingModelConfig,
     VectorstoreConfig,
 )
@@ -24,6 +26,7 @@ from cpeq_infolettre_automatique.reference_news_repository import (
 )
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.service import Service
+from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.utils import get_or_create_subfolder
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -184,8 +187,30 @@ def get_reference_news_repository(
     )
 
 
+def get_completion_model(
+    openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
+) -> CompletionModel:
+    """Return a CompletionModel instance."""
+    completion_model_config = CompletionModelConfig()
+
+    return OpenAICompletionModel(
+        client=openai_client,
+        completion_model_config=completion_model_config,
+    )
+
+
+def get_summary_generator(
+    completion_model: Annotated[CompletionModel, Depends(get_completion_model)],
+) -> SummaryGenerator:
+    """Return a SummaryGenerator instance."""
+    return SummaryGenerator(
+        completion_model=completion_model,
+    )
+
+
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
+    summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
     reference_news_repository: Annotated[
@@ -198,6 +223,6 @@ def get_service(
         news_repository=news_repository,
         reference_news_repository=reference_news_repository,
         vectorstore=vectorstore,
-        summary_generator=Any,
+        summary_generator=summary_generator,
         newsletter_formatter=Any,
     )

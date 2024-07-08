@@ -36,7 +36,7 @@ class Vectorstore:
         self.vectorstore_client = client
         self.embedding_model = embedding_model
         self.collection_name = vectorstore_config.collection_name
-        self.top_k = vectorstore_config.top_k
+        self.nb_items_retrieved = vectorstore_config.nb_items_retrieved
         self.hybrid_weight = vectorstore_config.hybrid_weight
 
     async def _get_rubric_classification_scores(self, news: News) -> list[tuple[Rubric, float]]:
@@ -56,7 +56,7 @@ class Vectorstore:
         objects = collection.query.hybrid(
             query=query,
             vector=embeddings,
-            limit=self.top_k,
+            limit=self.nb_items_retrieved,
             alpha=self.hybrid_weight,
             return_metadata=wvc.query.MetadataQuery(score=True),
             return_properties=["rubric", "title", "summary", "content"],

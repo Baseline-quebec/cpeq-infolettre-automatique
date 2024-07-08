@@ -11,6 +11,7 @@ from cpeq_infolettre_automatique.reference_news_repository import (
 )
 from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
+from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -21,7 +22,7 @@ def service_fixture(
     vectorstore_fixture: Vectorstore,
     reference_news_repository_fixture: ReferenceNewsRepository,
     news_repository_fixture: Any,
-    summary_generator_fixture: Any,
+    summary_generator_fixture: SummaryGenerator,
     newsletter_formatter_fixture: Any,
 ) -> Service:
     """Fixture for mocked service."""
@@ -58,7 +59,7 @@ class TestService:
         assert service_fixture.vectorstore.classify_news_rubric.called
         assert service_fixture.reference_news_repository.read_many_by_rubric.called
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
-        assert service_fixture.summary_generator.generate_summary.called
+        assert service_fixture.summary_generator.generate.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
         assert service_fixture.news_repository.create_news.called
 
