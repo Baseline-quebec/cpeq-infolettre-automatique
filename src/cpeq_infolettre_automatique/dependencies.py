@@ -1,18 +1,30 @@
 """Depencies injection functions for the Service class."""
 
 from collections.abc import Iterator
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import httpx
 import weaviate
 from decouple import config
 from fastapi import Depends
+from O365.account import Account
+from O365.drive import Folder
 from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.config import EmbeddingModelConfig, VectorstoreConfig
-from cpeq_infolettre_automatique.embedding_model import EmbeddingModel, OpenAIEmbeddingModel
-from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
+from cpeq_infolettre_automatique.config import (
+    EmbeddingModelConfig,
+    VectorstoreConfig,
+)
+from cpeq_infolettre_automatique.embedding_model import (
+    EmbeddingModel,
+    OpenAIEmbeddingModel,
+)
+from cpeq_infolettre_automatique.reference_news_repository import (
+    ReferenceNewsRepository,
+)
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.service import Service
+from cpeq_infolettre_automatique.utils import get_or_create_subfolder
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -60,11 +72,63 @@ class HttpClientDependency(ApiDependency):
         await cls.client.aclose()
 
 
+class OneDriveDependency(ApiDependency):
+    """Dependency class for the Singleton O365 Account client."""
+
+    news_folder: Folder
+
+    @classmethod
+    def setup(cls) -> None:
+        """Setup dependency."""
+        credentials = (
+            "99536437-db80-4ece-8bd5-0f4e4b1cba22",
+            "zfv8Q~U.AUmeoEDQpuEqTHsBvEnrw2TUXbqo5aLn",
+        )
+        account = Account(
+            credentials,
+            auth_flow_type="credentials",
+            tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
+        )
+        if not account.authenticate():
+            msg = "Authentication with Office365 failed."
+            raise RuntimeError(msg)
+
+        site_url = "baselinequebec.sharepoint.com"
+        site = account.sharepoint().get_site(site_url)
+        if site is None:
+            msg = f"The requested Sharepoint Site {site_url} was not found."
+            raise RuntimeError(msg)
+
+        drive_id = "b!fslahRMOAUCsW5P8nXZ3cYwDnL6MT35NpJyHzlyxCgXt0TeRJiWPSb3gQmzCo3t2"
+        drive = site.site_storage.get_drive(drive_id)
+        if drive is None:
+            msg = f"The requested OneDrive instance with id {drive_id} was not found."
+            raise RuntimeError
+
+        root_folder: Folder = cast(Folder, drive.get_root_folder())
+        news_folder: Folder = get_or_create_subfolder(
+            parent_folder=root_folder, folder_name="infolettre_automatique"
+        )
+
+        cls.news_folder = news_folder
+
+    def __call__(self) -> Folder:
+        """Returns the 0365 Account."""
+        return self.news_folder
+
+
 def get_webscraperio_client(
     http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())],
 ) -> WebscraperIoClient:
     """Returns a configured WebscraperIO Client."""
     return WebscraperIoClient(http_client=http_client, api_token=config("WEBSCRAPER_IO_API_KEY"))
+
+
+def get_news_repository(
+    news_folder: Annotated[Folder, Depends(OneDriveDependency())],
+) -> NewsRepository:
+    """Returns a configured News Repository."""
+    return NewsRepository(news_folder)
 
 
 def get_openai_client() -> AsyncOpenAI:
@@ -122,6 +186,7 @@ def get_reference_news_repository(
 
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
+    news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
     reference_news_repository: Annotated[
         ReferenceNewsRepository, Depends(get_reference_news_repository)
@@ -130,9 +195,8 @@ def get_service(
     """Return a Service instance with the provided dependencies."""
     return Service(
         webscraper_io_client=webscraper_io_client,
-        news_repository=Any,
+        news_repository=news_repository,
         reference_news_repository=reference_news_repository,
-        newsletter_repository=Any,
         vectorstore=vectorstore,
         summary_generator=Any,
     )

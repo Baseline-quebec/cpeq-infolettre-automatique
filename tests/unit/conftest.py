@@ -9,8 +9,10 @@ import pytest
 import weaviate
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
-from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import News, ReferenceNews, SummarizedNews
+from cpeq_infolettre_automatique.reference_news_repository import (
+    ReferenceNewsRepository,
+)
+from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -22,26 +24,25 @@ def news_fixture() -> News:
         title="Some title",
         content="Some content",
         datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
+        rubric=None,
+        summary=None,
     )
 
 
 @pytest.fixture()
-def summarized_news_fixture(news_fixture: News) -> News:
-    """Fixture for a SummarizedNews object."""
-    summarized_news = news_fixture.model_dump()
-    summarized_news["summary"] = "Some summary"
-    return SummarizedNews(rubric=Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME, **summarized_news)
+def classified_news_fixture(news_fixture: News) -> News:
+    """Fixture for a News object with a classification."""
+    classified_news = news_fixture.model_copy()
+    classified_news.rubric = Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME
+    return classified_news
 
 
 @pytest.fixture()
-def reference_news_fixture(news_fixture: News) -> ReferenceNews:
-    """Fixture for a News object."""
-    news = news_fixture.model_dump()
-    news["summary"] = "Some summary"
-    reference_news = ReferenceNews(
-        rubric=Rubric.BIODIVERSITE_MILIEUX_HUMIDES_ET_ESPECES_EN_PERIL, **news
-    )
-    return reference_news
+def summarized_news_fixture(classified_news_fixture: News) -> News:
+    """Fixture for a News object with a summary."""
+    summarized_news = classified_news_fixture.model_copy()
+    summarized_news.summary = "Some summary"
+    return summarized_news
 
 
 @pytest.fixture()
@@ -64,7 +65,9 @@ def test_collection_name() -> str:
 
 
 @pytest.fixture()
-def vectorstore_client_fixture(test_collection_name: str) -> Iterator[weaviate.WeaviateClient]:
+def vectorstore_client_fixture(
+    test_collection_name: str,
+) -> Iterator[weaviate.WeaviateClient]:
     """Fixture for mocked Weaviate client."""
     client: weaviate.WeaviateClient = weaviate.connect_to_embedded()
     if not client.is_ready():
@@ -98,25 +101,18 @@ def vectorstore_fixture() -> Vectorstore:
 @pytest.fixture()
 def news_repository_fixture() -> Any:
     """Fixture for mocked NewsRepository."""
-    news_repository_fixture = AsyncMock()
-    news_repository_fixture.create = AsyncMock()
+    news_repository_fixture = MagicMock()
+    news_repository_fixture.create_news = MagicMock()
+    news_repository_fixture.create_newsletter = MagicMock()
     return news_repository_fixture
 
 
 @pytest.fixture()
-def reference_news_repository_fixture(reference_news_fixture: ReferenceNews) -> Any:
+def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
     reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
-    reference_news_repository_fixture.read_many_by_rubric.return_value = [reference_news_fixture]
+    reference_news_repository_fixture.read_many_by_rubric.return_value = [summarized_news_fixture]
     return reference_news_repository_fixture
-
-
-@pytest.fixture()
-def newsletter_repository_fixture() -> Any:
-    """Fixture for mocked NewsletterRepository."""
-    newsletter_repository_fixture = AsyncMock()
-    newsletter_repository_fixture.create = AsyncMock()
-    return newsletter_repository_fixture
 
 
 @pytest.fixture()

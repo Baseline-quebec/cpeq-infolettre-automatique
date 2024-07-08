@@ -21,32 +21,23 @@ class News(BaseModel):
     datetime: Annotated[
         dt.datetime | None, PlainSerializer(lambda x: x.isoformat() if x else None)
     ]
-
-
-class ClassifiedNews(News):
-    """Schema for the classified news data."""
-
-    rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)]
-
-
-class SummarizedNews(ClassifiedNews):
-    """Schema for the summarized news data."""
-
-    summary: str
+    rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
+    summary: str | None = None
 
     def to_markdown(self) -> str:
         """Convert the news to markdown."""
+        if self.summary is None or self.rubric is None or self.title is None:
+            error_msg = (
+                "The news must have a summary, a rubric and a title to be converted to markdown."
+            )
+            raise ValueError(error_msg)
         return f"### {self.title}\n\n{self.summary}"
-
-
-class ReferenceNews(SummarizedNews):
-    """Schema for the reference news data."""
 
 
 class Newsletter(BaseModel):
     """Schema for the newsletter."""
 
-    news: list[SummarizedNews]
+    news: list[News]
     news_datetime_range: tuple[dt.datetime, dt.datetime]
     publication_datetime: dt.datetime = Field(default_factory=get_current_montreal_datetime)
 
@@ -65,7 +56,7 @@ class Newsletter(BaseModel):
 
     def _formatted_news_per_rubric(self) -> list[str]:
         """Get the formatted news per rubric."""
-        news_per_rubric: dict[Rubric, list[SummarizedNews]] = defaultdict(list)
+        news_per_rubric: dict[Rubric, list[News]] = defaultdict(list)
         for news_item in self.news:
             if news_item.rubric is not None:
                 news_per_rubric[news_item.rubric].append(news_item)

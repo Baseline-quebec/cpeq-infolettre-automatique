@@ -129,7 +129,7 @@ class WebscraperIoClient:
         except httpx.RequestError:
             logger.exception("Error issuing GET request at URL %s.", url)
         else:
-            job_ids = [str(job.id) for job in response.json().get("data", [])]
+            job_ids = [str(job["id"]) for job in response.json().get("data", [])]
 
         return job_ids
 
@@ -167,6 +167,8 @@ class WebscraperIoClient:
                 title=data["title"],
                 content=data["content"],
                 datetime=dateparser.parse(data["date"]),
+                rubric=None,
+                summary=None,
             )
             for data in job_data
         )
@@ -181,4 +183,6 @@ class WebscraperIoClient:
         Returns:
             list[dict[str, str]]: A list of dictionaries or a list with an error message.
         """
+        if not raw_response:
+            return []
         return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]

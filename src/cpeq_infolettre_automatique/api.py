@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, Response
 
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
+    OneDriveDependency,
     get_service,
     get_webscraperio_client,
 )
@@ -31,6 +32,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     coloredlogs.install()
 
     HttpClientDependency.setup()
+    OneDriveDependency.setup()
 
     yield
 

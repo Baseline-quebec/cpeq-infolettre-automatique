@@ -2,19 +2,22 @@
 
 import asyncio
 import datetime as dt
-from collections.abc import Awaitable, Iterable
+from collections.abc import AsyncIterator, Awaitable, Iterable
 from typing import Any
 
-from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
-from cpeq_infolettre_automatique.schemas import ClassifiedNews, News, Newsletter, SummarizedNews
+from cpeq_infolettre_automatique.reference_news_repository import (
+    ReferenceNewsRepository,
+)
+from cpeq_infolettre_automatique.repositories import NewsRepository
+from cpeq_infolettre_automatique.schemas import (
+    News,
+    Newsletter,
+)
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
-# TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
-NewsletterRepository = Any
-NewsRepository = Any
 SummaryGenerator = Any
 
 
@@ -26,7 +29,6 @@ class Service:
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
         reference_news_repository: ReferenceNewsRepository,
-        newsletter_repository: NewsletterRepository,
         vectorstore: Vectorstore,
         summary_generator: SummaryGenerator,
     ) -> None:
@@ -34,7 +36,6 @@ class Service:
         self.webscraper_io_client = webscraper_io_client
         self.reference_news_repository = reference_news_repository
         self.news_repository = news_repository
-        self.newsletter_repository = newsletter_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
 
@@ -43,6 +44,7 @@ class Service:
 
         Returns: The formatted newsletter.
         """
+        self.news_repository.setup()
         start_date, end_date = self._prepare_dates()
 
         # For the moment, only the coroutine for scraped news is implemented.
@@ -53,14 +55,15 @@ class Service:
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
-        await self.news_repository.create(flattened_news)
+        self.news_repository.create_news(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
+
         newsletter = Newsletter(
             news=flattened_news,
             news_datetime_range=(start_date, end_date),
             publication_datetime=end_date,
         )
-        await self.newsletter_repository.create(newsletter)
+        self.news_repository.create_newsletter(newsletter)
         return newsletter.to_markdown()
 
     @staticmethod
@@ -85,7 +88,7 @@ class Service:
 
     def _prepare_scraped_news_summarization_coroutines(
         self, start_date: dt.datetime, end_date: dt.datetime, job_ids: list[str]
-    ) -> Iterable[Awaitable[Iterable[SummarizedNews]]]:
+    ) -> Iterable[Awaitable[Iterable[News]]]:
         """Prepare the summarization coroutines for concurrent summary generation of the news that are taken from the webscaper.
 
         Args:
@@ -96,21 +99,18 @@ class Service:
         Returns: An iterable of summary generation coroutines to be run.
         """
 
-        async def scraped_news_coroutine(job_id: str) -> list[SummarizedNews]:
+        async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
-            filtered_news = await self._filter_news(
-                all_news, start_date=start_date, end_date=end_date
-            )
-            summarized_news = await asyncio.gather(
-                *(self._summarize_news(news) for news in filtered_news)
-            )
+            filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
+            coroutines = [self._summarize_news(news) async for news in filtered_news]
+            summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
     async def _filter_news(
         self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
-    ) -> list[ClassifiedNews]:
+    ) -> AsyncIterator[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
@@ -120,7 +120,6 @@ class Service:
 
         Returns: The filtered news data.
         """
-        classified_news = []
         for news in all_news:
             if news.datetime is None:
                 continue
@@ -128,13 +127,10 @@ class Service:
                 continue
             rubric_classification = await self.vectorstore.classify_news_rubric(news)
             if rubric_classification is not None:
-                classified_news.append(
-                    ClassifiedNews(rubric=rubric_classification, **news.model_dump())
-                )
+                news.rubric = rubric_classification
+            yield news
 
-        return classified_news
-
-    async def _summarize_news(self, classified_news: ClassifiedNews) -> SummarizedNews:
+    async def _summarize_news(self, news: News) -> News:
         """Generate summaries for the news data.
 
         Args:
@@ -142,11 +138,9 @@ class Service:
 
         Returns: The news data with the summary.
         """
-        if classified_news.rubric is None:
+        if news.rubric is None:
             error_msg = "The news must have a rubric to be summarized."
             raise ValueError(error_msg)
-        examples = self.reference_news_repository.read_many_by_rubric(
-            classified_news.rubric, nb_per_page=5
-        )
-        summary = await self.summary_generator.generate_summary(classified_news, examples)
-        return SummarizedNews(summary=summary, **classified_news.model_dump())
+        examples = self.reference_news_repository.read_many_by_rubric(news.rubric, nb_per_page=5)
+        news.summary = await self.summary_generator.generate_summary(news, examples)
+        return news

@@ -2,13 +2,13 @@ import datetime as dt
 from inspect import cleandoc
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.schemas import Newsletter, SummarizedNews
+from cpeq_infolettre_automatique.schemas import News, Newsletter
 
 
 class TestNewsletter:
     @staticmethod
     def test__to_markdown__when_differrent_rubrics__generates_proper_newletter(
-        summarized_news_fixture: SummarizedNews,
+        summarized_news_fixture: News,
     ) -> None:
         """Test the generate_newsletter method."""
         summarized_news_fixture_copy_1 = summarized_news_fixture.model_copy()

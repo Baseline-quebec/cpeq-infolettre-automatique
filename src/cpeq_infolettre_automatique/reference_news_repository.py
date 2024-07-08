@@ -7,7 +7,7 @@ import weaviate
 import weaviate.classes as wvc
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
-from cpeq_infolettre_automatique.schemas import ReferenceNews
+from cpeq_infolettre_automatique.schemas import News
 
 
 class ReferenceNewsType(TypedDict):
@@ -41,7 +41,7 @@ class ReferenceNewsRepository:
         self.client = client
         self.collection_name = vectorstore_config.collection_name
 
-    def read_many_by_rubric(self, rubric: Rubric, nb_per_page: int) -> list[ReferenceNews]:
+    def read_many_by_rubric(self, rubric: Rubric, nb_per_page: int) -> list[News]:
         """Get objects with specific rubric from the repository.
 
         Args:
@@ -58,5 +58,5 @@ class ReferenceNewsRepository:
             limit=nb_per_page,
             return_properties=ReferenceNewsType,
         ).objects
-        news = [ReferenceNews(**object_.properties) for object_ in objects]
+        news = [News(**object_.properties) for object_ in objects]
         return news
