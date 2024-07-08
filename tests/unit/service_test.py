@@ -65,7 +65,7 @@ class TestService:
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        _ = await service_fixture.generate_newsletter()
+        await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
         assert service_fixture.vectorstore.classify_news_rubric.called
         assert service_fixture.reference_news_repository.read_many_by_rubric.called

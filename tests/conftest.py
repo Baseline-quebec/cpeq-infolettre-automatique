@@ -167,7 +167,7 @@ def newsletter_fixture_with_unclassified_rubric() -> Newsletter:
 
                Summary 3
 
-               ## {Rubric.NON_CATEGORISE.value}
+               ## {Rubric.AUTRE.value}
 
                ### Title 2
 

@@ -56,12 +56,12 @@ class Newsletter(BaseModel):
         """Get the formatted news per rubric."""
         news_per_rubric: dict[Rubric, str] = defaultdict(str)
         for news_item in self.news:
-            rubric = news_item.rubric if news_item.rubric is not None else Rubric.NON_CATEGORISE
+            rubric = news_item.rubric if news_item.rubric is not None else Rubric.AUTRE
             if news_per_rubric.get(rubric) is None:
                 news_per_rubric[rubric] = f"## {rubric.value}"
             news_per_rubric[rubric] += f"\n\n{news_item.to_markdown()}"
 
-        non_classified_news = news_per_rubric.pop(Rubric.NON_CATEGORISE, None)
+        non_classified_news = news_per_rubric.pop(Rubric.AUTRE, None)
         return list(news_per_rubric.values()) + (
             [non_classified_news] if non_classified_news else []
         )
