@@ -67,3 +67,6 @@ __pycache__/
 
 # Remove any file including local in its name
 **local**
+
+# Remove o365 token file
+o365_token.txt

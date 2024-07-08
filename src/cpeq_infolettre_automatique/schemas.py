@@ -1,11 +1,12 @@
 """Schemas used in the application."""
 
 import datetime as dt
+import unicodedata
 from collections import defaultdict
 from inspect import cleandoc
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator
 
 from cpeq_infolettre_automatique.config import Rubric
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
@@ -23,6 +24,15 @@ class News(BaseModel):
     ]
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
+
+    @field_validator("title", "content", "summary")
+    @classmethod
+    def validate_texts(cls, values: str | None) -> str | None:
+        """Validate that the text fields are properly formatted."""
+        if values is None:
+            return values
+        cleaned_values = unicodedata.normalize("NFKC", values)
+        return cleaned_values
 
     def to_markdown(self) -> str:
         """Convert the news to markdown."""
