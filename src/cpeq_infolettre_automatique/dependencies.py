@@ -224,5 +224,4 @@ def get_service(
         reference_news_repository=reference_news_repository,
         vectorstore=vectorstore,
         summary_generator=summary_generator,
-        newsletter_formatter=Any,
     )

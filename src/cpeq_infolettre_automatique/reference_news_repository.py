@@ -40,8 +40,9 @@ class ReferenceNewsRepository:
         """
         self.client = client
         self.collection_name = vectorstore_config.collection_name
+        self.nb_items_retrieved = vectorstore_config.nb_items_retrieved
 
-    def read_many_by_rubric(self, rubric: Rubric, nb_per_page: int) -> list[News]:
+    def read_many_by_rubric(self, rubric: Rubric) -> list[News]:
         """Get objects with specific rubric from the repository.
 
         Args:
@@ -55,7 +56,7 @@ class ReferenceNewsRepository:
 
         objects = collection.query.fetch_objects(
             filters=wvc.query.Filter.by_property("rubric").equal(rubric.value),
-            limit=nb_per_page,
+            limit=self.nb_items_retrieved,
             return_properties=ReferenceNewsType,
         ).objects
         news = [News(**object_.properties) for object_ in objects]

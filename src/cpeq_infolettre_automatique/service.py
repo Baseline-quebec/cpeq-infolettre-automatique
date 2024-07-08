@@ -3,7 +3,6 @@
 import asyncio
 import datetime as dt
 from collections.abc import AsyncIterator, Awaitable, Iterable
-from typing import Any
 
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
@@ -19,10 +18,6 @@ from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
-# TODO: replace the following with actual type. Names are subject to change.  # noqa: TD002
-type NewsletterFormatter = Any  # type: ignore[valid-type]
-
-
 class Service:
     """Service for the automatic newsletter generation that is called by the API."""
 
@@ -33,7 +28,6 @@ class Service:
         reference_news_repository: ReferenceNewsRepository,
         vectorstore: Vectorstore,
         summary_generator: SummaryGenerator,
-        newsletter_formatter: NewsletterFormatter,
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
@@ -41,7 +35,6 @@ class Service:
         self.news_repository = news_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
-        self.formatter = newsletter_formatter
 
     async def generate_newsletter(self) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
@@ -61,7 +54,12 @@ class Service:
         flattened_news = [news for news_list in summarized_news for news in news_list]
         self.news_repository.create_news(flattened_news)
         await self.webscraper_io_client.delete_scraping_jobs()
-        newsletter = self._format_newsletter(flattened_news)
+
+        newsletter = Newsletter(
+            news=flattened_news,
+            news_datetime_range=(start_date, end_date),
+            publication_datetime=end_date,
+        )
         self.news_repository.create_newsletter(newsletter)
         return newsletter
 
@@ -141,12 +139,6 @@ class Service:
             error_msg = "The news must be classified before summarization"
             raise ValueError(error_msg)
 
-        examples = self.reference_news_repository.read_many_by_rubric(
-            classified_news.rubric, nb_per_page=5
-        )
+        examples = self.reference_news_repository.read_many_by_rubric(classified_news.rubric)
         classified_news.summary = await self.summary_generator.generate(classified_news, examples)
         return classified_news
-
-    def _format_newsletter(self, _: list[News]) -> Newsletter:
-        """Format the news into a newsletter."""
-        raise NotImplementedError

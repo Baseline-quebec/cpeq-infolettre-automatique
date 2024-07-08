@@ -87,6 +87,7 @@ def vectorstore_config_fixture(test_collection_name: str) -> VectorstoreConfig:
         collection_name=test_collection_name,
         batch_size=10,
         concurrent_requests=5,
+        nb_items_retrieved=2,
     )
 
 
