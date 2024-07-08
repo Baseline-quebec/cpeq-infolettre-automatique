@@ -34,7 +34,7 @@ class TestReferenceNewsRepository:
 
         for data in [summarized_news_fixture_copy_1, summarized_news_fixture_copy_2]:
             collection.data.insert(properties=data.model_dump())
-        news_by_rubric = news_repository.read_many_by_rubric(Rubric.DOMAINE_AGRICOLE, 2)
+        news_by_rubric = news_repository.read_many_by_rubric(Rubric.DOMAINE_AGRICOLE)
         # Assert
         excepted_news_count = 1
         assert len(news_by_rubric) == excepted_news_count

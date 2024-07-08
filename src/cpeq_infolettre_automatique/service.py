@@ -3,7 +3,6 @@
 import asyncio
 import datetime as dt
 from collections.abc import AsyncIterator, Awaitable, Iterable
-from typing import Any
 
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
@@ -13,12 +12,10 @@ from cpeq_infolettre_automatique.schemas import (
     News,
     Newsletter,
 )
+from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
-
-
-SummaryGenerator = Any
 
 
 class Service:
@@ -130,7 +127,7 @@ class Service:
                 news.rubric = rubric_classification
             yield news
 
-    async def _summarize_news(self, news: News) -> News:
+    async def _summarize_news(self, classified_news: News) -> News:
         """Generate summaries for the news data.
 
         Args:
@@ -138,9 +135,10 @@ class Service:
 
         Returns: The news data with the summary.
         """
-        if news.rubric is None:
-            error_msg = "The news must have a rubric to be summarized."
+        if classified_news.rubric is None:
+            error_msg = "The news must be classified before summarization"
             raise ValueError(error_msg)
-        examples = self.reference_news_repository.read_many_by_rubric(news.rubric, nb_per_page=5)
-        news.summary = await self.summary_generator.generate_summary(news, examples)
-        return news
+
+        examples = self.reference_news_repository.read_many_by_rubric(classified_news.rubric)
+        classified_news.summary = await self.summary_generator.generate(classified_news, examples)
+        return classified_news
