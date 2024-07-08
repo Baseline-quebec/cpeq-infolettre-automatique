@@ -60,7 +60,7 @@ class Service:
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
         self.news_repository.create_news(flattened_news)
-        await self.webscraper_io_client.delete_scraping_jobs()
+        # await self.webscraper_io_client.delete_scraping_jobs() # noqa: ERA001 (Temporary disable for demo purposes)
         newsletter = self._format_newsletter(flattened_news)
         self.news_repository.create_newsletter(newsletter)
         return newsletter
