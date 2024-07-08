@@ -2,6 +2,7 @@
 
 import datetime as dt
 import json
+import logging
 import uuid
 from pathlib import Path
 
@@ -14,10 +15,20 @@ from cpeq_infolettre_automatique.config import (
     EmbeddingModelConfig,
     VectorstoreConfig,
 )
-from cpeq_infolettre_automatique.dependencies import get_openai_client, get_vectorstore_client
-from cpeq_infolettre_automatique.embedding_model import EmbeddingModel, OpenAIEmbeddingModel
-from cpeq_infolettre_automatique.schemas import ReferenceNews
+from cpeq_infolettre_automatique.dependencies import (
+    get_openai_client,
+    get_vectorstore_client,
+)
+from cpeq_infolettre_automatique.embedding_model import (
+    EmbeddingModel,
+    OpenAIEmbeddingModel,
+)
+from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class WeaviateCollection:
@@ -91,7 +102,7 @@ class WeaviateCollection:
         self.client.collections.delete(self.collection_name)
 
 
-def get_reference_news(data_path: Path) -> list[ReferenceNews]:
+def get_reference_news(data_path: Path) -> list[News]:
     """Get the reference news from the data file."""
     with Path.open(data_path) as f:
         data = json.load(f)
@@ -105,14 +116,14 @@ def get_reference_news(data_path: Path) -> list[ReferenceNews]:
             )
             news_item["datetime"] = parsed_datetime
             news_item["rubric"] = rubric_group["rubric"]
-            reference_news = ReferenceNews(**news_item)
+            reference_news = News(**news_item)
             references_news.append(reference_news)
 
     return references_news
 
 
 async def populate_db(
-    references_news: list[ReferenceNews],
+    references_news: list[News],
     weaviate_collection: WeaviateCollection,
     embedding_model: EmbeddingModel,
 ) -> list[uuid.UUID | str]:
@@ -130,6 +141,9 @@ async def populate_db(
         concurrent_requests=weaviate_collection.concurrent_requests,
     ) as batch:
         for reference_news in tqdm(references_news):
+            if reference_news.rubric is None:
+                logger.warning("Reference News with title %s had no rubric.", reference_news.title)
+                continue
             text_to_embed = Vectorstore.create_query(reference_news)
             object_id = Vectorstore.create_uuid(reference_news)
             vectorized_item = await embedding_model.embed(text_description=text_to_embed)
@@ -157,7 +171,7 @@ def upsert_vectorstore_collection(weaviate_collection: WeaviateCollection) -> No
 
 
 async def bootstrap_vectorstore(
-    reference_news: list[ReferenceNews],
+    reference_news: list[News],
     weaviate_collection: WeaviateCollection,
     embedding_model: EmbeddingModel,
     *,

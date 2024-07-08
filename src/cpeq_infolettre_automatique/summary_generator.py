@@ -3,7 +3,7 @@
 from inspect import cleandoc
 
 from cpeq_infolettre_automatique.completion_model import CompletionModel
-from cpeq_infolettre_automatique.schemas import ClassifiedNews, ReferenceNews
+from cpeq_infolettre_automatique.schemas import News
 
 
 class SummaryGenerator:
@@ -17,9 +17,7 @@ class SummaryGenerator:
         """
         self.completion_model = completion_model
 
-    async def generate(
-        self, classified_news: ClassifiedNews, reference_news: list[ReferenceNews]
-    ) -> str:
+    async def generate(self, classified_news: News, reference_news: list[News]) -> str:
         """Summarize the given news based on reference news exemples.
 
         Args:
@@ -28,6 +26,14 @@ class SummaryGenerator:
 
         Returns: The summary of the text.
         """
+        if classified_news.rubric is None:
+            error_msg = "The news must be classified to generate a summary."
+            raise ValueError(error_msg)
+
+        if any(news.summary is None for news in reference_news):
+            error_msg = "All reference news must have a summary as an exemple."
+            raise ValueError(error_msg)
+
         system_prompt = self.format_system_prompt(reference_news)
         user_message = classified_news.content
         summarized_news = await self.completion_model.complete_message(
@@ -36,7 +42,7 @@ class SummaryGenerator:
         return summarized_news
 
     @staticmethod
-    def format_system_prompt(reference_news: list[ReferenceNews]) -> str:
+    def format_system_prompt(reference_news: list[News]) -> str:
         """Format the prompt for the OpenAI API.
 
         Args:

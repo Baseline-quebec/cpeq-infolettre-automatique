@@ -6,7 +6,10 @@ from unittest.mock import patch
 
 import pytest
 
-from cpeq_infolettre_automatique.reference_news_repository import ReferenceNewsRepository
+from cpeq_infolettre_automatique.reference_news_repository import (
+    ReferenceNewsRepository,
+)
+from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
@@ -19,7 +22,6 @@ def service_fixture(
     vectorstore_fixture: Vectorstore,
     reference_news_repository_fixture: ReferenceNewsRepository,
     news_repository_fixture: Any,
-    newsletter_repository_fixture: Any,
     summary_generator_fixture: SummaryGenerator,
     newsletter_formatter_fixture: Any,
 ) -> Service:
@@ -28,7 +30,6 @@ def service_fixture(
         webscraper_io_client=webscraper_io_client_fixture,
         news_repository=news_repository_fixture,
         reference_news_repository=reference_news_repository_fixture,
-        newsletter_repository=newsletter_repository_fixture,
         vectorstore=vectorstore_fixture,
         summary_generator=summary_generator_fixture,
         newsletter_formatter=newsletter_formatter_fixture,
@@ -52,17 +53,15 @@ class TestService:
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        service_fixture._format_newsletter = lambda news: news
-        news_list = await service_fixture.generate_newsletter()
-        expected_number_of_news = 4
-        assert len(news_list) == expected_number_of_news
+        service_fixture._format_newsletter = lambda _: Newsletter(text="")
+        await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
         assert service_fixture.vectorstore.classify_news_rubric.called
         assert service_fixture.reference_news_repository.read_many_by_rubric.called
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
         assert service_fixture.summary_generator.generate.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
-        assert service_fixture.news_repository.create.called
+        assert service_fixture.news_repository.create_news.called
 
     @staticmethod
     def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:
