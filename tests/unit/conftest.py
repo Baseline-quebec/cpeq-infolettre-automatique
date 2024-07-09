@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import weaviate
+from pydantic_core import Url
 
 from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
@@ -25,6 +26,7 @@ def news_fixture() -> News:
     return News(
         title="Some title",
         content="Some content",
+        link=Url("https://somelink.com"),
         datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
         rubric=None,
         summary=None,
