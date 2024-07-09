@@ -97,7 +97,7 @@ class News(BaseModel):
         if self.summary is None or self.title is None:
             error_msg = "The news must have a summary and a title to be converted to markdown."
             raise ValueError(error_msg)
-        return f"### {self.title}\n\n{self.summary}\n\n[Lien vers l'article]({self.link})"
+        return f"### {self.title}\n\n{self.summary}\n\nPour en connaître davantage, nous vous invitons à consulter cet [hyperlien]({self.link})."
 
 
 class Newsletter(BaseModel):

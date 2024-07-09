@@ -127,13 +127,13 @@ def newsletter_fixture() -> Newsletter:
 
             Summary 1
 
-            [Lien vers l'article](https://somelink.com/)
+            Pour en connaître davantage, nous vous invitons à consulter cet [hyperlien](https://somelink.com/).
 
             ### Title 3
 
             Summary 3
 
-            [Lien vers l'article](https://somelink.com/)
+            Pour en connaître davantage, nous vous invitons à consulter cet [hyperlien](https://somelink.com/).
 
             ## {Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value}
 
@@ -141,7 +141,7 @@ def newsletter_fixture() -> Newsletter:
 
             Summary 2
 
-            [Lien vers l'article](https://somelink.com/)"""
+            Pour en connaître davantage, nous vous invitons à consulter cet [hyperlien](https://somelink.com/)."""
     )
 
     newsletter = MagicMock(spec=Newsletter)
@@ -169,7 +169,7 @@ def newsletter_fixture_with_unclassified_rubric() -> Newsletter:
 
                Summary 1
 
-               [Lien vers l'article](https://somelink.com/)
+               Pour en connaître davantage, nous vous invitons à consulter cet [hyperlien](https://somelink.com/).
 
                ## {Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value}
 
@@ -177,7 +177,7 @@ def newsletter_fixture_with_unclassified_rubric() -> Newsletter:
 
                Summary 3
 
-               [Lien vers l'article](https://somelink.com/)
+               Pour en connaître davantage, nous vous invitons à consulter cet [hyperlien](https://somelink.com/).
 
                ## {Rubric.AUTRE.value}
 
@@ -185,7 +185,7 @@ def newsletter_fixture_with_unclassified_rubric() -> Newsletter:
 
                Summary 2
 
-               [Lien vers l'article](https://somelink.com/)"""
+               Pour en connaître davantage, nous vous invitons à consulter cet [hyperlien](https://somelink.com/)."""
     )
 
     newsletter = MagicMock(spec=Newsletter)
