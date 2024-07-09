@@ -13,9 +13,12 @@ from pydantic import (
     ConfigDict,
     Field,
     PlainSerializer,
+    UrlConstraints,
+    ValidationError,
     field_serializer,
     field_validator,
 )
+from pydantic_core import Url
 
 from cpeq_infolettre_automatique.config import Rubric
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
@@ -28,9 +31,22 @@ class News(BaseModel):
 
     title: str
     content: str
+    link: Annotated[Url, UrlConstraints(allowed_schemes=["https"])] = Field(
+        validation_alias="articleLink-href"
+    )
     datetime: dt.datetime | None = Field(validation_alias=AliasChoices("datetime", "date"))
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
+
+    @field_validator("link")
+    @classmethod
+    def valide_link(cls, value: str) -> Url:
+        """Validate the link field."""
+        try:
+            return Url(url=value)
+        except ValidationError as e:
+            msg = f"Unable to parse article Url {value}."
+            raise ValueError(msg) from e
 
     @field_validator("datetime", mode="before")
     @classmethod
@@ -39,7 +55,10 @@ class News(BaseModel):
         parsed_value = (
             search_dates(
                 value,
-                settings={"TIMEZONE": "America/Montreal", "RETURN_AS_TIMEZONE_AWARE": True},
+                settings={
+                    "TIMEZONE": "America/Montreal",
+                    "RETURN_AS_TIMEZONE_AWARE": True,
+                },
             )
             if isinstance(value, str)
             else value
@@ -78,7 +97,7 @@ class News(BaseModel):
         if self.summary is None or self.title is None:
             error_msg = "The news must have a summary and a title to be converted to markdown."
             raise ValueError(error_msg)
-        return f"### {self.title}\n\n{self.summary}"
+        return f"### {self.title}\n\n{self.summary}\n\n[Lien vers l'article]({self.link})"
 
 
 class Newsletter(BaseModel):
@@ -91,14 +110,16 @@ class Newsletter(BaseModel):
     @property
     def header(self) -> str:
         """Get the header of the newsletter."""
-        newsletter_header = cleandoc(f"""
+        newsletter_header = cleandoc(
+            f"""
             # Infolettre de la CPEQ
 
 
             Date de publication: {self.publication_datetime.date()}
 
 
-            Voici les nouvelles de la semaine du {self.news_datetime_range[0].date()} au {self.news_datetime_range[1].date()}.""")
+            Voici les nouvelles de la semaine du {self.news_datetime_range[0].date()} au {self.news_datetime_range[1].date()}."""
+        )
         return newsletter_header
 
     def _formatted_news_per_rubric(self) -> list[str]:
