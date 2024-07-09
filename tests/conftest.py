@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import weaviate
+from pydantic_core import Url
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.reference_news_repository import (
@@ -24,6 +25,7 @@ def news_fixture() -> News:
     return News(
         title="Some title",
         content="Some content",
+        link=Url("https://someurl.com/"),
         datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
         rubric=None,
         summary=None,
@@ -111,7 +113,7 @@ def newsletter_fixture() -> Newsletter:
     start_datetime = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
     end_datetime = dt.datetime(2024, 1, 7, tzinfo=dt.UTC)
     expected_newsletter_content = cleandoc(
-        f"""# Infolettre de la CPEQ
+        f"""# Infolettre du CPEQ
 
 
             Date de publication: {end_datetime.date()}
@@ -125,15 +127,21 @@ def newsletter_fixture() -> Newsletter:
 
             Summary 1
 
+            [Lien vers l'article](https://somelink.com/)
+
             ### Title 3
 
             Summary 3
+
+            [Lien vers l'article](https://somelink.com/)
 
             ## {Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value}
 
             ### Title 2
 
-            Summary 2"""
+            Summary 2
+
+            [Lien vers l'article](https://somelink.com/)"""
     )
 
     newsletter = MagicMock(spec=Newsletter)
@@ -147,7 +155,7 @@ def newsletter_fixture_with_unclassified_rubric() -> Newsletter:
     start_datetime = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
     end_datetime = dt.datetime(2024, 1, 7, tzinfo=dt.UTC)
     expected_newsletter_content = cleandoc(
-        f"""# Infolettre de la CPEQ
+        f"""# Infolettre du CPEQ
 
 
                Date de publication: {end_datetime.date()}
@@ -161,17 +169,23 @@ def newsletter_fixture_with_unclassified_rubric() -> Newsletter:
 
                Summary 1
 
+               [Lien vers l'article](https://somelink.com/)
+
                ## {Rubric.AMENAGEMENT_DU_TERRITOIRE_ET_URBANISME.value}
 
                ### Title 3
 
                Summary 3
 
+               [Lien vers l'article](https://somelink.com/)
+
                ## {Rubric.AUTRE.value}
 
                ### Title 2
 
-               Summary 2"""
+               Summary 2
+
+               [Lien vers l'article](https://somelink.com/)"""
     )
 
     newsletter = MagicMock(spec=Newsletter)

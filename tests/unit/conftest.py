@@ -122,7 +122,7 @@ def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
 
 @pytest.fixture()
 def newsletter_formatter_fixture() -> Any:
-    """Fixture for mocked NewsLetterFormater."""
+    """Fixture for mocked NewsletterFormater."""
     return MagicMock()
 
 

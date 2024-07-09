@@ -31,8 +31,8 @@ class News(BaseModel):
 
     title: str
     content: str
-    link: Annotated[Url, UrlConstraints(allowed_schemes=["https"])] = Field(
-        validation_alias="articleLink-href"
+    link: Annotated[Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)] = Field(
+        validation_alias=AliasChoices("link", "articleLink-href")
     )
     datetime: dt.datetime | None = Field(validation_alias=AliasChoices("datetime", "date"))
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
@@ -112,7 +112,7 @@ class Newsletter(BaseModel):
         """Get the header of the newsletter."""
         newsletter_header = cleandoc(
             f"""
-            # Infolettre de la CPEQ
+            # Infolettre du CPEQ
 
 
             Date de publication: {self.publication_datetime.date()}
