@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from types import MappingProxyType
 
 import httpx
+from pydantic import ValidationError
 
 from cpeq_infolettre_automatique.schemas import News
 
@@ -161,16 +162,13 @@ class WebscraperIoClient:
         else:
             job_data = self.process_raw_response(response.text)
 
-        return tuple(
-            News(
-                title=data["title"],
-                content=data["content"],
-                datetime=data.get("date"),
-                rubric=None,
-                summary=None,
-            )
-            for data in job_data
-        )
+        news = []
+        for data in job_data:
+            try:
+                news.append(News.model_validate(data))
+            except ValidationError:
+                logger.exception("Error while processing news data")
+        return tuple(news)
 
     @staticmethod
     def process_raw_response(raw_response: str) -> list[dict[str, str]]:

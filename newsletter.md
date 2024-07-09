@@ -6,102 +6,48 @@ Date de publication: 2024-07-08
 
 Voici les nouvelles de la semaine du 2024-07-01 au 2024-07-08.
 
-## Domaine agricole
-
-### CÉRSÉ collabore avec le Centre d’innovation sociale en agriculture (CISA) pour le premier Rendez-vous annuel du Réseau Racines
-
-Le CÉRSÉ et le Centre d’innovation sociale en agriculture (CISA) du Cégep de Victoriaville organisent le premier Rendez-vous annuel du Réseau Racines, le nouveau réseau québécois des incubateurs d’entreprises agricoles, le 19 mars au Pavillon Arthabaska à Victoriaville.
-
-## Développement durable, RSE et critères ESG
-
-### IFRS Foundation Conference 2024—Key highlights
-
-La conférence de la Fondation IFRS 2024, tenue les 24 et 25 juin, a réuni plus de 400 délégués de plus de 60 juridictions. Les discours principaux ont été prononcés par Andreas Barckow, président de l'IASB, et Emmanuel Faber, président de l'ISSB, qui ont abordé les défis de la complexité dans le reporting financier et les progrès des normes de divulgation de durabilité, respectivement. Carine Smith Ihenacho de Norges Bank Investment Management a discuté de l'investissement responsable et de l'importance de normes harmonisées. Une mise à jour conjointe de l'IASB et de l'ISSB a présenté les projets actuels et les priorités futures des deux conseils. La conférence a également inclus des sessions de discussion et des ateliers sur divers sujets liés aux normes IFRS et à la divulgation de durabilité.
-
 ## Aménagement du territoire et urbanisme
 
 ### OMM: avec 36 jours d’existence, le cyclone tropical Freddy est le plus long jamais observé
 
-L’Organisation météorologique mondiale (OMM) a annoncé que le cyclone tropical Freddy a établi un record mondial de longévité pour un cyclone tropical, avec une durée de 36 jours. Formé au large des côtes du nord-ouest de l’Australie, Freddy a traversé l’océan Indien et touché l’Afrique australe en février et mars 2023, causant des pertes humaines et économiques importantes, notamment à Madagascar, au Malawi et au Mozambique. Freddy a également parcouru une distance de 12 785 km, se classant au deuxième rang en termes de distance parcourue. L’OMM mettra à jour ses archives des extrêmes météorologiques pour inclure ce nouveau record.
+Le cyclone tropical Freddy a établi un record mondial de longévité avec 36 jours à l'état de tempête tropicale ou supérieur, surpassant le précédent record du cyclone John en 1994. Formé au large de l'Australie, Freddy a traversé l'océan Indien et frappé l'Afrique australe, causant des pertes humaines et économiques significatives, notamment à Madagascar, au Malawi et au Mozambique. L'OMM a confirmé ces données après une analyse détaillée et mettra à jour ses archives des extrêmes météorologiques. Freddy a également établi un record d'énergie cyclonique accumulée dans l'hémisphère sud.
 
 ### Ouragans dans l’Atlantique : vers une saison extrême en 2024 ?
 
-La saison des ouragans, qui s'étend jusqu'à fin novembre, s'annonce particulièrement active en raison de températures record dans l'océan Atlantique Nord et du possible retour de La Niña. L'ouragan Béryl, exceptionnellement puissant et précoce, a déjà atteint la catégorie 5 fin juin, causant 11 morts dans les Caraïbes et des dégâts importants au Texas. Les températures élevées de l'Atlantique favorisent la formation d'ouragans, présageant une saison intense en 2024.
+La saison des ouragans 2024 s'annonce particulièrement active, potentiellement record, en raison de températures océaniques atlantiques sans précédent et du possible retour de La Niña. L'ouragan Béryl, exceptionnellement puissant et précoce, a atteint la catégorie 5 dès fin juin, causant 12 morts et d'importants dégâts dans les Caraïbes, le Mexique et le sud-est des États-Unis. Les températures record de l'Atlantique favorisent la formation d'ouragans, présageant une saison intense.
 
 ## Développement nordique
 
 ### Retour de La  Niña : Quand le refroidissement naturel se heurte au réchauffement climatique
 
-L'Organisation météorologique mondiale (OMM) prévoit une transition d'El Niño à La Niña en 2024, avec une probabilité de 60 % entre juillet et septembre, augmentant à 70 % entre août et novembre. Malgré le retour de La Niña, les températures mondiales annuelles devraient rester élevées, dépassant de 1,1 °C à 1,9 °C les valeurs de 1850 à 1900, et il y a 80 % de chances que le seuil de 1,5 °C de l'Accord de Paris soit franchi d'ici 2028. La Niña, caractérisée par le refroidissement des eaux du Pacifique équatorial, influence les régimes climatiques mondiaux, entraînant des températures plus fraîches et des précipitations variables selon les régions. Elle favorise également la formation d'ouragans dans l'Atlantique, ce qui pourrait intensifier les saisons d'ouragans en raison du réchauffement climatique.
+L'Organisation météorologique mondiale (OMM) prévoit une transition d'El Niño à La Niña en 2024, avec une probabilité de 60 % entre juillet et septembre, augmentant à 70 % entre août et novembre. Malgré le retour de La Niña, qui tend à refroidir les températures mondiales, le réchauffement climatique pourrait atténuer cet effet. L'OMM anticipe que la température moyenne mondiale annuelle entre 2024 et 2028 dépassera de 1,1 °C à 1,9 °C les valeurs de 1850 à 1900, avec 80 % de chances de franchir le seuil de 1,5 °C fixé par l'Accord de Paris. La Niña, caractérisée par le refroidissement des eaux de surface dans le Pacifique équatorial, influence les régimes climatiques mondiaux, entraînant des températures plus fraîches et des précipitations variables selon les régions. Elle favorise également la formation d'ouragans dans l'Atlantique, ce qui pourrait intensifier les saisons d'ouragans en raison du réchauffement des océans.
 
 ## Domaine aérospatial
 
 ### Comment l’intelligence numérique peut soutenir la transition vers une économie circulaire ?
 
-Des experts du CIRODD, du RRECQ et du GERAD ont souligné l'importance de l'intelligence numérique pour faciliter la transition vers une économie circulaire lors du symposium « L’intelligence numérique au service de l’économie circulaire » tenu le 13 mars. Les analyses de Jessy Anglehart-Nunes, Emmanuel Raufflet, Mathias Glaus et Olivier Bahn, publiées par La Conversation Canada, mettent en lumière l'utilisation des données et des méthodes mathématiques pour mieux gérer les ressources, réduire les déchets et optimiser les processus industriels. L'article insiste sur la nécessité de développer des outils d'analyse de données sophistiqués pour créer des systèmes économiques plus résilients et respectueux de l'environnement, tout en stimulant l'innovation dans le domaine de la durabilité.
+L’intelligence numérique joue un rôle crucial dans la transition vers une économie circulaire, comme l'ont souligné des experts lors du symposium « L’intelligence numérique au service de l’économie circulaire ». Les présentations ont mis en avant l'importance des données et des méthodes mathématiques pour gérer les ressources, réduire les déchets et optimiser les processus industriels. La modélisation mathématique est essentielle pour simuler et prévoir les impacts environnementaux des décisions économiques. L'article de La Conversation Canada insiste sur le développement d'outils d'analyse de données sophistiqués pour créer des systèmes économiques plus résilients et respectueux de l'environnement, tout en favorisant l'innovation en durabilité.
 
-## Nouvelles administratives
+## Domaine agricole
 
-### 
+### CÉRSÉ collabore avec le Centre d’innovation sociale en agriculture (CISA) pour le premier Rendez-vous annuel du Réseau Racines
 
-Le CPEQ annonce la publication d'un nouveau billet, sur son blogue « Le Pupitre du CPEQ ». Dans le cadre de ce billet, qui s'intitule « Mise à jour concernant le coût social du carbone », le CPEQ aborde la notion du « coût social du carbone » et de la méthode de calcul de ce coût, au Canada. Le billet fourni également quelques exemples d'application de ce concept. Le billet peut être consulté en accédant à cet hyperlien. Les autres billets publiés sur le blogue « Le Pupitre du CPEQ » peuvent être consultés en accédant à cet hyperlien.
+Le CÉRSÉ et le CISA du Cégep de Victoriaville organisent le premier Rendez-vous annuel du Réseau Racines, un réseau québécois des incubateurs d’entreprises agricoles, le 19 mars au Pavillon Arthabaska à Victoriaville.
 
-### 
+## Technologies propres
 
-Le CPEQ a publié un billet sur son blogue intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explique la notion de « coût social du carbone » et ses méthodes de calcul au Canada. Il fournit également des exemples d'application de ce concept, notamment dans des projets de loi et des règlements au Québec, au Canada et aux États-Unis. Le billet souligne l'importance de cette notion pour évaluer les avantages et les inconvénients des politiques et des projets liés aux émissions de gaz à effet de serre, et met en lumière l'évolution récente du coût social du carbone, qui a augmenté de manière significative ces dernières années.
+### Hydro-Québec – émission d’obligations échéant le 15 février 2063 sur le marché canadien
 
-### 
+Hydro-Québec annonce l'émission de 500 millions de dollars canadiens d'obligations, série JS, sur le marché canadien, avec une échéance au 15 février 2063. Les obligations porteront un intérêt de 4,00 % payable semestriellement et seront offertes à un prix de 92,564, avec un rendement de 4,402 %. Le groupe de preneurs fermes inclut plusieurs institutions financières, avec la Financière Banque Nationale Inc. comme chef de file. Cette émission marque la treizième réouverture de la série JS, portant la valeur nominale totale à 7 milliards de dollars canadiens.
 
+## Carrières et sablières
 
+### Jusqu’à 3 000 MW de capacité éolienne : un grand partenariat entre la Première Nation des Pekuakamiulnuatsh, les Atikamekw de Wemotaci, la MRC du Domaine-du-Roy et Hydro-Québec
 
-### 
+La Première Nation des Pekuakamiulnuatsh, les Atikamekw de Wemotaci, la MRC du Domaine-du-Roy et Hydro-Québec annoncent un partenariat pour développer jusqu’à 3 000 MW de capacité éolienne dans la zone Chamouchouane, au Saguenay–Lac-Saint-Jean. Ce projet, représentant un investissement de neuf milliards de dollars, est une étape clé de la Stratégie de développement éolien d’Hydro-Québec. Les partenaires communautaires et Hydro-Québec partageront équitablement les bénéfices et la planification. Ce partenariat vise à promouvoir le développement durable et l’acceptabilité sociale, tout en respectant les traditions et l’environnement des communautés impliquées.
 
-Le CPEQ annonce la publication d'un nouveau billet, sur son blogue « Le Pupitre du CPEQ ». Dans le cadre de ce billet, qui s'intitule « Mise à jour concernant le coût social du carbone », le CPEQ aborde la notion du « coût social du carbone » et de la méthode de calcul de ce coût, au Canada. Le billet fourni également quelques exemples d'application de ce concept. Le billet peut être consulté en accédant à cet hyperlien. Les autres billets publiés sur le blogue « Le Pupitre du CPEQ » peuvent être consultés en accédant à cet hyperlien.
+## Développement durable, RSE et critères ESG
 
-### 
+### IFRS Foundation Conference 2024—Key highlights
 
-Le CPEQ annonce la publication d'un nouveau billet sur son blogue « Le Pupitre du CPEQ » intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explore la notion de « coût social du carbone » et la méthode de calcul de ce coût au Canada. Il fournit également des exemples d'application de ce concept. Le billet est accessible via un hyperlien, tout comme les autres billets publiés sur le blogue.
-
-### 
-
-Le coût social du carbone (CSC) est une estimation monétaire des dommages causés par l'émission d'une tonne de CO2 dans l'atmosphère. Utilisé pour évaluer les politiques climatiques, il inclut des impacts sur la santé, l'agriculture, les infrastructures et les écosystèmes. Les estimations du CSC augmentent avec le temps en raison de l'accumulation des émissions de GES. Au Canada, le CSC est passé de 41 $/tonne en 2016 à des valeurs allant jusqu'à 443 $/tonne en 2020. Des exemples d'application incluent des projets de loi et des règlements sur les combustibles et l'efficacité énergétique, démontrant l'importance croissante de cet outil dans les analyses coûts-avantages des politiques environnementales.
-
-### 
-
-
-
-### 
-
-Le CPEQ a publié un nouveau billet sur son blogue intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explique la notion de « coût social du carbone » et détaille les méthodes de calcul utilisées au Canada. Il présente également des exemples d'application de ce concept dans divers contextes réglementaires et de projets, soulignant son importance croissante dans l'analyse des politiques climatiques et des projets susceptibles d'affecter les émissions de gaz à effet de serre. Le billet met en lumière l'évolution ascendante du coût social du carbone et son impact potentiel sur les entreprises.
-
-### 
-
-Le CPEQ a publié un nouveau billet sur son blogue intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explique la notion de « coût social du carbone » et détaille les méthodes de calcul utilisées au Canada. Il fournit également des exemples d'application de ce concept, notamment dans le cadre de projets de loi et de règlements au Québec, au Canada et aux États-Unis. Le billet souligne l'importance de cette notion pour évaluer les avantages et les inconvénients des politiques et des projets liés aux émissions de gaz à effet de serre, tout en notant l'évolution ascendante du coût social du carbone au fil des années.
-
-### 
-
-L'article du CPEQ explique la notion de « coût social du carbone » (CSC), qui représente la valeur monétaire des dommages causés par l'émission d'une tonne supplémentaire de CO2. Il détaille les méthodes de calcul du CSC, qui incluent l'évaluation des impacts climatiques et économiques des émissions de gaz à effet de serre. Le CSC est utilisé pour analyser les avantages et inconvénients des politiques et projets visant à réduire les émissions de GES. L'article donne des exemples d'application du CSC au Québec, au Canada et aux États-Unis, et souligne son importance croissante dans les analyses coûts-avantages des réglementations environnementales.
-
-### 
-
-
-
-### 
-
-Le CPEQ annonce la publication d'un nouveau billet, sur son blogue « Le Pupitre du CPEQ ». Dans le cadre de ce billet, qui s'intitule « Mise à jour concernant le coût social du carbone », le CPEQ aborde la notion du « coût social du carbone » et de la méthode de calcul de ce coût, au Canada. Le billet fourni également quelques exemples d'application de ce concept. Le billet peut être consulté en accédant à cet hyperlien. Les autres billets publiés sur le blogue « Le Pupitre du CPEQ » peuvent être consultés en accédant à cet hyperlien.
-
-### 
-
-Le CPEQ a publié un nouveau billet sur son blogue intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explique la notion de « coût social du carbone », son importance et les méthodes de calcul utilisées au Canada. Il fournit également des exemples d'application de ce concept au Québec, au Canada et aux États-Unis, et discute de l'impact de l'évolution récente du coût social du carbone pour les entreprises. Le billet peut être consulté via un hyperlien fourni.
-
-### 
-
-Le CPEQ annonce la publication d'un nouveau billet sur son blogue « Le Pupitre du CPEQ » intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explore la notion de « coût social du carbone » et la méthode de calcul de ce coût au Canada. Il fournit également des exemples d'application de ce concept. Le billet est accessible via un hyperlien, tout comme les autres billets publiés sur le blogue.
-
-### 
-
-Le CPEQ a publié un billet sur son blogue intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explique la notion de « coût social du carbone », son importance, et les méthodes de calcul utilisées au Canada. Il fournit également des exemples d'application de ce concept au Québec, au Canada et aux États-Unis, et discute de l'impact de son évolution pour les entreprises. Le coût social du carbone représente la valeur monétaire des dommages causés par une tonne supplémentaire de CO2 émise, et son estimation a augmenté significativement ces dernières années.
-
-### 
-
-Le CPEQ a publié un nouveau billet sur son blogue intitulé « Mise à jour concernant le coût social du carbone ». Ce billet explique la notion de « coût social du carbone » et détaille les méthodes de calcul utilisées au Canada. Il fournit également des exemples d'application de ce concept dans divers contextes réglementaires et de projets. Le billet met en lumière l'importance croissante de ce coût dans l'analyse des politiques climatiques et son impact potentiel sur les entreprises.
+The IFRS Foundation Conference 2024, held on 24-25 June, gathered over 400 delegates from 60+ jurisdictions to discuss the latest from the IASB and ISSB. IASB Chair Andreas Barckow addressed the challenges of complexity in financial reporting, urging stakeholder engagement. ISSB Chair Emmanuel Faber highlighted the board’s progress on sustainability disclosure standards and future plans. Carine Smith Ihenacho from Norges Bank emphasized the need for harmonized standards for responsible investing. Updates from IASB and ISSB leaders covered new standards, climate-related projects, and future priorities. The conference featured panel discussions, breakout sessions, and an interactive Q&A, fostering dialogue on improving financial and sustainability reporting.

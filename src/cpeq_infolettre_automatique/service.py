@@ -36,7 +36,7 @@ class Service:
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
 
-    async def generate_newsletter(self) -> Newsletter:
+    async def generate_newsletter(self, *, delete_scraping_jobs: bool = True) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
         Returns: The formatted newsletter.
@@ -53,7 +53,8 @@ class Service:
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
         self.news_repository.create_news(flattened_news)
-        await self.webscraper_io_client.delete_scraping_jobs()
+        if delete_scraping_jobs:
+            await self.webscraper_io_client.delete_scraping_jobs()
 
         newsletter = Newsletter(
             news=flattened_news,
@@ -118,7 +119,7 @@ class Service:
         Returns: The filtered news data.
         """
         for news in all_news:
-            if news.datetime is None or isinstance(news.datetime, str):
+            if news.datetime is None:
                 continue
             if not start_date <= news.datetime < end_date:
                 continue
