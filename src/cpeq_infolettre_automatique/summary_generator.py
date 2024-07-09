@@ -58,7 +58,6 @@ class SummaryGenerator:
         exemples_template = "\n\n".join([
             f"""## Exemple {i + 1}\n\n### Contenu: {exemple.content}\n\n### Résumé: {exemple.summary}"""
             for i, exemple in enumerate(filtered_reference_news)
-            if exemple.summary and exemple.content
         ])
 
         system_prompt = cleandoc("""

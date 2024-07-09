@@ -70,3 +70,7 @@ __pycache__/
 
 # Remove o365 token file
 o365_token.txt
+
+# Remove news and newsletter files
+news.csv
+newsletter.md
