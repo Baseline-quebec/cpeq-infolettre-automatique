@@ -50,14 +50,20 @@ class SummaryGenerator:
 
         Returns: The formatted prompt.
         """
+        filtered_reference_news = [
+            reference_news
+            for reference_news in reference_news
+            if reference_news.summary and reference_news.content
+        ]
         exemples_template = "\n\n".join([
-            f"""## Exemple {i + 1}\nContenu: {exemple.content}\nRésumé: {exemple.summary}"""
-            for i, exemple in enumerate(reference_news)
+            f"""## Exemple {i + 1}\n\n### Contenu: {exemple.content}\n\n### Résumé: {exemple.summary}"""
+            for i, exemple in enumerate(filtered_reference_news)
         ])
 
         system_prompt = cleandoc("""
             Utilises les articles suivants pour t'inspirer afin de résumer un article. Tu auras accès au contenu des articles d'exemple, ainsi que leurs résumés respectifs.
             # Début des exemples:
+
             {exemples_template}
 
             Tu reçeveras en message un contenu d'article à résumer, ne retournes uniquement que le résumer de l'article, sans préfixe avec aucune autre information.""").format(

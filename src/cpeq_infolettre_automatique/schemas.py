@@ -1,11 +1,21 @@
 """Schemas used in the application."""
 
 import datetime as dt
+import unicodedata
 from collections import defaultdict
 from inspect import cleandoc
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
+from dateparser.search import search_dates
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    field_serializer,
+    field_validator,
+)
 
 from cpeq_infolettre_automatique.config import Rubric
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
@@ -14,15 +24,54 @@ from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 class News(BaseModel):
     """Schema for the news data."""
 
-    model_config = ConfigDict(use_enum_values=False)
+    model_config = ConfigDict(use_enum_values=False, extra="ignore")
 
     title: str
     content: str
-    datetime: Annotated[
-        dt.datetime | None, PlainSerializer(lambda x: x.isoformat() if x else None)
-    ]
+    datetime: dt.datetime | None = Field(validation_alias=AliasChoices("datetime", "date"))
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
+
+    @field_validator("datetime", mode="before")
+    @classmethod
+    def validate_datetime(cls, value: dt.datetime | None | str) -> dt.datetime | None:
+        """Validate the datetime field."""
+        parsed_value = (
+            search_dates(
+                value,
+                settings={"TIMEZONE": "America/Montreal", "RETURN_AS_TIMEZONE_AWARE": True},
+            )
+            if isinstance(value, str)
+            else value
+        )
+        if parsed_value is None or isinstance(parsed_value, dt.datetime):
+            return parsed_value
+        return parsed_value[0][1]
+
+    @field_serializer("datetime")
+    @staticmethod
+    def serialize_datetime(datetime: dt.datetime | None) -> str | None:
+        """Serialize the datetime field."""
+        return datetime.isoformat() if datetime else None
+
+    @field_validator("title", "content")
+    @classmethod
+    def validate_mandatory_texts(cls, value: str) -> str:
+        """Validate that the mandatory text fields are not empty."""
+        if not value.strip() or value is None:
+            error_msg = "The title and content fields must not be empty."
+            raise ValueError(error_msg)
+        cleaned_value = unicodedata.normalize("NFKC", value)
+        return cleaned_value
+
+    @field_validator("summary")
+    @classmethod
+    def validate_texts(cls, value: str | None) -> str | None:
+        """Validate that the text fields are properly formatted."""
+        if value is None:
+            return value
+        cleaned_value = unicodedata.normalize("NFKC", value)
+        return cleaned_value
 
     def to_markdown(self) -> str:
         """Convert the news to markdown."""

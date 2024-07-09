@@ -8,12 +8,11 @@ from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
-from pydantic import BaseModel
 
 from cpeq_infolettre_automatique.config import CompletionModelConfig
 
 
-class CompletionModel(BaseModel, ABC):
+class CompletionModel(ABC):
     """Abstract class for completion models."""
 
     @abstractmethod

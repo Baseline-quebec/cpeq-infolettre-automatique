@@ -1,10 +1,12 @@
 """News Repository module."""
 
 import datetime as dt
+import logging
 from typing import TypedDict
 
 import weaviate
 import weaviate.classes as wvc
+from pydantic import ValidationError
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.schemas import News
@@ -59,5 +61,11 @@ class ReferenceNewsRepository:
             limit=self.nb_items_retrieved,
             return_properties=ReferenceNewsType,
         ).objects
-        news = [News(**object_.properties) for object_ in objects]
+        news = []
+        for object_ in objects:
+            try:
+                news.append(News.model_validate(object_.properties))
+            except ValidationError:
+                logging.exception("Error validating object %s", object_)
+
         return news
