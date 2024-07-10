@@ -9,7 +9,7 @@ resource "azurerm_resource_group" "rg" {
 }
 
 resource "azurerm_storage_account" "storage" {
-  name                     = "cpeq0storage0account"
+  name                     = "st0cpeq0${var.environment}0${var.location}"
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
@@ -22,7 +22,7 @@ resource "azurerm_storage_account" "storage" {
 }
 
 resource "azurerm_service_plan" "service_plan" {
-  name                = "cpeq-service-plan"
+  name                = "asp-cpeq-${var.environment}-${var.location}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   os_type             = "Linux"
@@ -35,7 +35,7 @@ resource "azurerm_service_plan" "service_plan" {
 }
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                = "example-linux-function-app"
+  name                = "func-automated-newsletter-${var.environment}-${var.location}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
