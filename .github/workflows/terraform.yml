@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 env:
-  IS_MAIN: ${{ github.head_ref == 'refs/heads/main' }}
+  IS_MAIN: ${{ github.head_ref == 'refs/head/main' }}
   ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
