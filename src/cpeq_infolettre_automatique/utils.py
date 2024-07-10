@@ -1,31 +1,28 @@
 """Utility functions for processing and saving data."""
 
-import json
-from pathlib import Path
+import datetime as dt
+from typing import cast
+from zoneinfo import ZoneInfo
+
+from O365.drive import Folder
 
 
-def process_raw_response(raw_response: str) -> list[dict[str, str]]:
-    """Converts raw JSON lines into a list of dictionaries (valid JSON array).
+def get_current_montreal_datetime() -> dt.datetime:
+    """Get the current date and time in the Montreal timezone.
 
-    Args:
-        raw_response (str): The raw JSON lines to be processed.
-
-    Returns:
-        list[dict[str, str]]: A list of dictionaries or a list with an error message.
+    Returns: The current date and time for Montreal.
     """
-    return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
+    timezone: ZoneInfo = ZoneInfo("America/Montreal")
+    return dt.datetime.now(tz=timezone)
 
 
-def save_data_to_json(data: list[dict[str, str]], file_path: str = "output.json") -> str:
-    """Saves processed data to a JSON file.
-
-    Args:
-        data (list[dict[str, str]]): Processed data to be saved.
-        file_path (str): Path where the JSON data will be saved.
-
-    Returns:
-        str: A success message or an error message.
-    """
-    with Path(file_path).open("w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
-    return f"Data successfully saved to {file_path}"
+def get_or_create_subfolder(parent_folder: Folder, folder_name: str) -> Folder:
+    """Returns the subfolder with name $folder_name from the $parent_folder, creating it before if not found."""
+    folders = parent_folder.get_child_folders()
+    filtered_folders = tuple(filter(lambda x: x.name == folder_name, folders))
+    if len(filtered_folders) == 1:
+        return cast(Folder, filtered_folders[0])
+    if len(filtered_folders) == 0:
+        return cast(Folder, parent_folder.create_child_folder(folder_name))
+    msg = f"More than one folder with the name {folder_name} exist in the requested parent folder."
+    raise RuntimeError(msg)

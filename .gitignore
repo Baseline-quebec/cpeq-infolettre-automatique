@@ -11,8 +11,10 @@ reports/
 *.pickle*
 *.xls*
 *.zip*
-data/
-
+data/*
+!data/reference_news.json
+!data/weaviate/
+persistence_data/
 # direnv
 .envrc
 
@@ -65,3 +67,10 @@ __pycache__/
 
 # Remove any file including local in its name
 **local**
+
+# Remove o365 token file
+o365_token.txt
+
+# Remove news and newsletter files
+news.csv
+newsletter.md

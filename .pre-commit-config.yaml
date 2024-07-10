@@ -19,6 +19,7 @@ repos:
     rev: v4.5.0
     hooks:
       - id: check-added-large-files
+        args: ['--maxkb=2100']
       - id: check-ast
       - id: check-builtin-literals
       - id: check-case-conflict
@@ -80,4 +81,3 @@ repos:
         entry: mypy
         language: system
         types: [python]
-exclude: 'tests/tests_data/.*'
