@@ -7,7 +7,6 @@ from typing import TypedDict
 import weaviate
 import weaviate.classes as wvc
 from pydantic import ValidationError
-from pydantic_core import Url
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.schemas import News
@@ -21,6 +20,7 @@ class ReferenceNewsType(TypedDict):
 
     title: str
     content: str
+    # link: Url TODO: Add link when updating bootstraping script.
     datetime: dt.datetime | None
     rubric: Rubric
     summary: str
