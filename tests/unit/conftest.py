@@ -26,7 +26,7 @@ def news_fixture() -> News:
     return News(
         title="Some title",
         content="Some content",
-        link=Url("https://somelink.com"),
+        link=Url("https://somelink.com/"),
         datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
         rubric=None,
         summary=None,
