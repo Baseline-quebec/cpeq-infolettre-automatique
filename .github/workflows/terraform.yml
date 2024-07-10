@@ -17,13 +17,13 @@ on:
 
 env:
   IS_MAIN: ${{ github.head_ref == 'refs/heads/main' }}
-  ENVIRONMENT: dev
   ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
 jobs:
   terraform:
+    environment: dev
     runs-on: ubuntu-latest
     defaults:
       run:
