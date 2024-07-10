@@ -121,12 +121,6 @@ def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
 
 
 @pytest.fixture()
-def newsletter_formatter_fixture() -> Any:
-    """Fixture for mocked NewsletterFormater."""
-    return MagicMock()
-
-
-@pytest.fixture()
 def summary_generator_fixture() -> SummaryGenerator:
     """Fixture for the SummaryGenerator."""
     completion_model_mock = MagicMock(spec=CompletionModel)
