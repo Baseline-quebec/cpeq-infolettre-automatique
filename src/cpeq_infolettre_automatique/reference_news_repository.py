@@ -21,7 +21,6 @@ class ReferenceNewsType(TypedDict):
 
     title: str
     content: str
-    link: Url
     datetime: dt.datetime | None
     rubric: Rubric
     summary: str
