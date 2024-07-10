@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import weaviate
+from pydantic_core import Url
 
 from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
@@ -25,6 +26,7 @@ def news_fixture() -> News:
     return News(
         title="Some title",
         content="Some content",
+        link=Url("https://somelink.com/"),
         datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
         rubric=None,
         summary=None,
@@ -116,12 +118,6 @@ def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
     reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
     reference_news_repository_fixture.read_many_by_rubric.return_value = [summarized_news_fixture]
     return reference_news_repository_fixture
-
-
-@pytest.fixture()
-def newsletter_formatter_fixture() -> Any:
-    """Fixture for mocked NewsLetterFormater."""
-    return MagicMock()
 
 
 @pytest.fixture()
