@@ -17,9 +17,6 @@ on:
 
 env:
   IS_MAIN: ${{ github.head_ref == 'refs/head/main' }}
-  ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
-  ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
-  ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
 jobs:
   terraform:
@@ -30,7 +27,6 @@ jobs:
         working-directory: iac
     permissions:
       pull-requests: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -38,6 +34,7 @@ jobs:
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.TERRAFORM_CLIENT_ID }}
+          client-secret: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
           tenant-id: ${{ secrets.TERRAFORM_TENANT_ID }}
           subscription-id: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
@@ -52,6 +49,11 @@ jobs:
         run: terraform fmt -check
 
       - run: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
       - run: terraform validate -no-color
         if: ${{ !env.IS_MAIN }}

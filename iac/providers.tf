@@ -10,7 +10,6 @@ terraform {
 }
 
 provider "azurerm" {
-  use_oidc = true
   features {}
   # This provider is configured through environment variables.
 }
