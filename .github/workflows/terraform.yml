@@ -47,10 +47,10 @@ jobs:
 
       - run: terraform init
         env:
-          ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
       - run: terraform validate -no-color
         if: ${{ !env.IS_MAIN }}
