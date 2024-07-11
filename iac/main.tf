@@ -76,7 +76,6 @@ resource "azurerm_linux_function_app" "function_app" {
 
   site_config {
     application_stack {
-      python_version = "3.12"
       docker {
         registry_url = azurerm_container_registry.acr.login_server
         image_name   = "cpeq-infolettre-automatique"
