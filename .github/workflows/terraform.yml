@@ -56,7 +56,7 @@ jobs:
 
       - id: validate
         if: github.event_name == 'pull_request'
-        run: echo "stdout=$(terraform validate)\n" >> $GITHUB_OUTPUT
+        run: echo "stdout=$(terraform validate)" >> $GITHUB_OUTPUT
         env:
           ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
@@ -69,7 +69,7 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
-        run: echo "stdout=$(terraform plan -no-color -var-file=variables/${{ vars.ENVIRONMENT }}.tfvars -out plan.tfplan)\n" >> $GITHUB_OUTPUT
+        run: echo "stdout=$(terraform plan -no-color -var-file=variables/${{ vars.ENVIRONMENT }}.tfvars -out plan.tfplan)" >> $GITHUB_OUTPUT
 
       - uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
