@@ -8,6 +8,19 @@ resource "azurerm_resource_group" "rg" {
   }
 }
 
+resource "azurerm_container_registry" "acr" {
+  name                = "cr-cpeq-${var.environment}-${var.location}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "Basic"
+  admin_enabled       = false
+
+  tags = {
+    environment = var.environment
+    project     = "CPEQ"
+  }
+}
+
 resource "azurerm_storage_account" "storage" {
   name                     = "st0cpeq0${var.environment}0${var.location}"
   resource_group_name      = azurerm_resource_group.rg.name
@@ -34,16 +47,43 @@ resource "azurerm_service_plan" "service_plan" {
   }
 }
 
+resource "azurerm_user_assigned_identity" "function_app" {
+  location            = azurerm_resource_group.rg.location
+  name                = "id-func-${var.environment}-${var.location}"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_role_assignment" "func_acr" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.function_app.principal_id
+}
+
 resource "azurerm_linux_function_app" "function_app" {
-  name                = "func-automated-newsletter-${var.environment}-${var.location}"
+  name                = "func-cpeq-${var.environment}-${var.location}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
   service_plan_id            = azurerm_service_plan.service_plan.id
+  https_only                 = true
 
-  site_config {}
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.function_app.id]
+  }
+
+  site_config {
+    application_stack {
+      python_version = "3.12"
+      docker {
+        registry_url = azurerm_container_registry.acr.login_server
+        image_name   = "cpeq-infolettre-automatique"
+        image_tag    = "latest"
+      }
+    }
+  }
 
   tags = {
     environment = var.environment
