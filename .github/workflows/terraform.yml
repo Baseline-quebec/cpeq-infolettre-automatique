@@ -86,8 +86,8 @@ jobs:
 
           {
             echo "stdout<<EOF
-            $(cat output.log)
-            EOF"
+            cat output.log
+            echo EOF"
           } >> "$GITHUB_OUTPUT"
 
           exit $result_code
