@@ -73,7 +73,7 @@ def scraping_job_data_fixture() -> str:
 @pytest.fixture(scope="class")
 def async_client_fixture() -> AsyncClient:
     """AsyncClient fixture."""
-    return AsyncClient()
+    return AsyncMock(spec=AsyncClient)
 
 
 @pytest.mark.asyncio(scope="class")
