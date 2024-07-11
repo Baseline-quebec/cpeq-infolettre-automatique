@@ -43,11 +43,11 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform Format
-        if: ${{ !env.IS_MAIN }}
         id: fmt
         run: terraform fmt -check
 
       - run: terraform init
+        id: init
         env:
           ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
@@ -55,7 +55,7 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
 
       - run: terraform validate -no-color
-        if: ${{ ! env.IS_MAIN }}
+        id: validate
         env:
           ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
