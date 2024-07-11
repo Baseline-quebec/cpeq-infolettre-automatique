@@ -56,6 +56,11 @@ jobs:
 
       - id: validate
         if: github.event_name == 'pull_request'
+        env:
+          ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
         run: |
           terraform validate 2>&1 >> output.log
           result_code=${PIPESTATUS[0]}
@@ -68,12 +73,6 @@ jobs:
 
           exit $result_code
 
-        env:
-          ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
-
       - id: plan
         env:
           ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
@@ -85,9 +84,9 @@ jobs:
           result_code=${PIPESTATUS[0]}
 
           {
-            echo "stdout<<EOF
+            echo 'stdout<<EOF'
             cat output.log
-            echo EOF"
+            echo EOF
           } >> "$GITHUB_OUTPUT"
 
           exit $result_code
