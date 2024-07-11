@@ -60,9 +60,9 @@ jobs:
           terraform validate 2>&1 | tee output.log
           result_code=${PIPESTATUS[0]}
 
-          echo 'stdout<<EOF'
-          cat output.log
-          echo EOF
+          echo "stdout<<EOF
+          $(cat output.log)
+          EOF"
           >> "$GITHUB_OUTPUT"
 
           exit $result_code
@@ -83,9 +83,9 @@ jobs:
           terraform plan -no-color -var-file=variables/${{ vars.ENVIRONMENT }}.tfvars -out plan.tfplan 2>&1 | tee output.log
           result_code=${PIPESTATUS[0]}
 
-          echo 'stdout<<EOF'
-          cat output.log
-          echo EOF
+          echo "stdout<<EOF
+          $(cat output.log)
+          EOF"
           >> "$GITHUB_OUTPUT"
 
           exit $result_code
