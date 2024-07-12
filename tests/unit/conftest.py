@@ -20,7 +20,7 @@ from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
-@pytest.fixture
+@pytest.fixture()
 def news_fixture() -> News:
     """Fixture for a News object."""
     return News(
@@ -33,7 +33,7 @@ def news_fixture() -> News:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def classified_news_fixture(news_fixture: News) -> News:
     """Fixture for a News object with a classification."""
     classified_news = news_fixture.model_copy()
@@ -41,7 +41,7 @@ def classified_news_fixture(news_fixture: News) -> News:
     return classified_news
 
 
-@pytest.fixture
+@pytest.fixture()
 def summarized_news_fixture(classified_news_fixture: News) -> News:
     """Fixture for a News object with a summary."""
     summarized_news = classified_news_fixture.model_copy()
@@ -49,7 +49,7 @@ def summarized_news_fixture(classified_news_fixture: News) -> News:
     return summarized_news
 
 
-@pytest.fixture
+@pytest.fixture()
 def webscraper_io_client_fixture(news_fixture: News) -> WebscraperIoClient:
     """Fixture for mocked WebScraperIoClient."""
     webscraper_io_client_fixture = AsyncMock(spec=WebscraperIoClient)
@@ -62,13 +62,13 @@ def webscraper_io_client_fixture(news_fixture: News) -> WebscraperIoClient:
     return webscraper_io_client_fixture
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_collection_name() -> str:
     """Fixture for the collection name."""
     return "Test_collection"
 
 
-@pytest.fixture
+@pytest.fixture()
 def vectorstore_client_fixture(
     test_collection_name: str,
 ) -> Iterator[weaviate.WeaviateClient]:
@@ -82,7 +82,7 @@ def vectorstore_client_fixture(
     client.close()
 
 
-@pytest.fixture
+@pytest.fixture()
 def vectorstore_config_fixture(test_collection_name: str) -> VectorstoreConfig:
     """Fixture for VectorstoreConfig."""
     return VectorstoreConfig(
@@ -93,7 +93,7 @@ def vectorstore_config_fixture(test_collection_name: str) -> VectorstoreConfig:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def vectorstore_fixture() -> Vectorstore:
     """Fixture for mocked Vectorstore."""
     vectorstore_fixture = MagicMock(spec=Vectorstore)
@@ -103,7 +103,7 @@ def vectorstore_fixture() -> Vectorstore:
     return vectorstore_fixture
 
 
-@pytest.fixture
+@pytest.fixture()
 def news_repository_fixture() -> Any:
     """Fixture for mocked NewsRepository."""
     news_repository_fixture = MagicMock()
@@ -112,7 +112,7 @@ def news_repository_fixture() -> Any:
     return news_repository_fixture
 
 
-@pytest.fixture
+@pytest.fixture()
 def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
     reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
@@ -120,7 +120,7 @@ def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
     return reference_news_repository_fixture
 
 
-@pytest.fixture
+@pytest.fixture()
 def summary_generator_fixture() -> SummaryGenerator:
     """Fixture for the SummaryGenerator."""
     completion_model_mock = MagicMock(spec=CompletionModel)

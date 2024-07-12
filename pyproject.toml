@@ -21,7 +21,7 @@ coloredlogs = ">=15.0.1"
 fastapi = { extras = ["all"], version = ">=0.92.0" }
 gunicorn = ">=21.2.0"
 poethepoet = ">=0.25.0"
-python = ">=3.12,<4.0"
+python = ">=3.12,<3.13"
 uvicorn = { extras = ["standard"], version = ">=0.29.0" }
 python-decouple = "^3.8"
 openai = "^1.23.2"
@@ -54,6 +54,7 @@ ipykernel = ">=6.29.4"
 ipywidgets = ">=8.1.2"
 pdoc = ">=14.4.0"
 types-dateparser = "^1.2.0.20240420"
+unstructured = {version = "^0.14.10", extras = ["all-docs"]}
 
 [tool.coverage.report]  # https://coverage.readthedocs.io/en/latest/config.html#report
 fail_under = 30
@@ -139,6 +140,9 @@ ban-relative-imports = "all"
 
 [tool.ruff.lint.flake8-unused-arguments]
 ignore-variadic-names = true
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = true
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2

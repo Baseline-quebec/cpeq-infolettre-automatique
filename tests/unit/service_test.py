@@ -17,7 +17,7 @@ from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
-@pytest.fixture
+@pytest.fixture()
 def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
     vectorstore_fixture: Vectorstore,
