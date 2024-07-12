@@ -8,7 +8,7 @@ on:
       - main
     paths:
       - "iac/**"
-  pull_request_target:
+  pull_request:
     branches:
       - main
     paths:
@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 env:
-  IS_MAIN: ${{ github.head_ref == 'refs/heads/main' }}
+  IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
   ENVIRONMENT: dev
   ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}

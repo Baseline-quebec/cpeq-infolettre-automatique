@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: "Build and Push to Registry"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "tests/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "tests/**"
+
+env:
+  IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
+  DOCKER_REGISTRY: "crcpeqdevcanadaeast.azurecr.io"
+  DOCKER_NAMESPACE: "cpeq"
+  DOCKER_IMAGE: "infolettre-automatique"
+  AZURE_CORE_OUTPUT: none # Prevents the Azure CLI from logging to stdout to prevent credentials leak
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21
+
+      - name: Install @devcontainers/cli
+        run: npm install --location=global @devcontainers/cli@0.58.0
+
+      - name: Start Dev Container
+        run: |
+          PYTHON_VERSION=${{ matrix.python-version }} devcontainer up --workspace-folder .
+
+      - name: Lint package
+        run: devcontainer exec --workspace-folder . poe lint
+
+      - name: Test package
+        run: devcontainer exec --workspace-folder . poe test
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          path: reports/htmlcov/
+          name: coverage-report
+          retention-days: 7
+
+  build_and_push:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: "Set Variables"
+        id: vars
+        run: |
+          echo "DOCKER_IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: "Validate code"
+        run: |
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: "Docker login"
+        uses: docker/login-action@v3
+        with:
+          registry: $DOCKER_REGISTRY
+          username: ${{ secrets.AZURE_CLIENT_ID }} # https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/e5c456e5-6936-4492-b6ad-113cd1c40c64/isMSAApp~/false
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: $DOCKER_REGISTRY/$DOCKER_NAMESPACE/$DOCKER_IMAGE:${{ steps.vars.outputs.DOCKER_IMAGE_TAG }}
