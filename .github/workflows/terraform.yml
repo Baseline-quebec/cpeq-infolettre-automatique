@@ -9,12 +9,14 @@ on:
     paths:
       - "iac/**"
   pull_request:
+    branches:
+      - main
     paths:
       - "iac/**"
   workflow_dispatch:
 
 env:
-  IS_MAIN: ${{ github.head_ref == 'refs/head/main' }}
+  IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
 
 jobs:
   terraform:
@@ -28,7 +30,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
           sparse-checkout: |
             iac
 
