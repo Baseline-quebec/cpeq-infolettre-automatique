@@ -9,12 +9,12 @@ on:
     paths:
       - "src/**"
       - "tests/**"
+      - "data/**"
   pull_request:
-    branches:
-      - main
     paths:
       - "src/**"
       - "tests/**"
+      - "data/**"
 
 env:
   IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
@@ -84,8 +84,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: $DOCKER_REGISTRY
-          username: ${{ secrets.AZURE_CLIENT_ID }} # https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/e5c456e5-6936-4492-b6ad-113cd1c40c64/isMSAApp~/false
-          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+          username: ${{ secrets.PIPELINE_CLIENT_ID }} # https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/7ad2fb8b-5bce-4f28-88b3-97ecaf4e48ad/isMSAApp~/false
+          password: ${{ secrets.PIPELINE_CLIENT_SECRET }}
 
       - name: Build and Push
         uses: docker/build-push-action@v5
