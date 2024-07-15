@@ -17,8 +17,7 @@ on:
       - "data/**"
 
 env:
-  IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
-  DOCKER_REGISTRY: "crcpeqdevcanadaeast.azurecr.io"
+  IS_MAIN: ${{ github.ref == 'ref/heads/main' }}
   DOCKER_NAMESPACE: "cpeq"
   DOCKER_IMAGE: "infolettre-automatique"
   AZURE_CORE_OUTPUT: none # Prevents the Azure CLI from logging to stdout to prevent credentials leak

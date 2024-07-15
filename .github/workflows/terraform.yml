@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 env:
-  IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
+  IS_MAIN: ${{ github.ref == 'ref/heads/main' }}
 
 jobs:
   terraform:
