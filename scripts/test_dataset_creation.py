@@ -1,6 +1,5 @@
 """The test dataset creation process."""
 
-import json
 from pathlib import Path
 
 from cpeq_infolettre_automatique.dependencies import (
@@ -14,42 +13,8 @@ from cpeq_infolettre_automatique.dependencies import (
     get_vectorstore_client,
     get_webscraperio_client,
 )
-from cpeq_infolettre_automatique.repositories import NewsRepository
-from cpeq_infolettre_automatique.schemas import News, Newsletter
+from cpeq_infolettre_automatique.repositories import LocalNewsRepository
 from cpeq_infolettre_automatique.service import Service
-
-
-class LocalNewsRepository(NewsRepository):
-    """Repository responsible for storing and retrieving News locally."""
-
-    def __init__(self, path: Path) -> None:
-        """Initializes the News repository."""
-        self.path = path
-
-    def setup(self) -> None:
-        """Initializes the local folder in which to store the News."""
-        self.path.mkdir(parents=True, exist_ok=True)
-
-    def create_news(self, news_list: list[News]) -> None:
-        """Save the list of News as a json file locally.
-
-        Args:
-            news_list: List of News to save.
-        """
-        file_name = "news.json"
-        file_path = self.path / file_name
-        with file_path.open("w", encoding="UTF-8") as target:
-            json.dump(news_list, target, ensure_ascii=False, indent=4)
-
-    def create_newsletter(self, newsletter: Newsletter) -> None:
-        """Save the Newsletter as a Markdown file locally.
-
-        Args:
-            newsletter: The Newsletter to save.
-        """
-        file_name = "newsletter.md"
-        file_path = self.path / file_name
-        file_path.write_text(newsletter.to_markdown(), encoding="utf-8")
 
 
 async def main() -> None:

@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from O365.drive import Folder
+from pydantic.json import pydantic_encoder
+from pydantic_core import to_jsonable_python
 
 from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.utils import get_or_create_subfolder
@@ -99,8 +101,9 @@ class LocalNewsRepository(NewsRepository):
         """
         file_name = "news.json"
         file_path = self.path / file_name
+        json_news = [to_jsonable_python(news) for news in news_list]
         with file_path.open("w", encoding="UTF-8") as target:
-            json.dump(news_list, target, ensure_ascii=False, indent=4)
+            json.dump(json_news, target, ensure_ascii=False, indent=4, default=pydantic_encoder)
 
     def create_newsletter(self, newsletter: Newsletter) -> None:
         """Save the Newsletter as a Markdown file locally.
