@@ -8,7 +8,7 @@ from cpeq_infolettre_automatique.summary_generator import (
 
 class TestSummaryGenerator:
     @staticmethod
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test__summarize_news__when_provided_examples__summarizes_news_effectively(
         summary_generator_fixture: SummaryGenerator,
         classified_news_fixture: News,
