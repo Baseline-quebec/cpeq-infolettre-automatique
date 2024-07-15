@@ -32,7 +32,9 @@ class News(BaseModel):
     title: str
     content: str
     link: Annotated[Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)] = Field(
-        validation_alias=AliasChoices("link", "articleLink-href")
+        validation_alias=AliasChoices(
+            "link", "articleLink-href", "article-link-href", "article_link-href"
+        )
     )
     datetime: dt.datetime | None = Field(validation_alias=AliasChoices("datetime", "date"))
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None

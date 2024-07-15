@@ -20,7 +20,7 @@ class ReferenceNewsType(TypedDict):
 
     title: str
     content: str
-    # link: Url TODO: Add link when updating bootstraping script.
+    link: str
     datetime: dt.datetime | None
     rubric: Rubric
     summary: str

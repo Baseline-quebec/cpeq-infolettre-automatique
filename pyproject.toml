@@ -55,6 +55,12 @@ ipywidgets = ">=8.1.2"
 pdoc = ">=14.4.0"
 types-dateparser = "^1.2.0.20240420"
 
+[tool.poetry.group.eval]
+optional = true
+
+[tool.poetry.group.eval.dependencies]
+mlflow = "^2.14.3"
+
 [tool.coverage.report]  # https://coverage.readthedocs.io/en/latest/config.html#report
 fail_under = 30
 precision = 1
@@ -133,6 +139,10 @@ lint.ignore = [
     "CPY001", # Copyright
 ]
 lint.unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = true
+mark-parentheses = true
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"

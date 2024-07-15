@@ -2,6 +2,8 @@
 
 import csv
 import datetime
+import json
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 from O365.drive import Folder
@@ -10,7 +12,23 @@ from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.utils import get_or_create_subfolder
 
 
-class NewsRepository:
+class NewsRepository(ABC):
+    """Abstract class for a News Repository."""
+
+    @abstractmethod
+    def setup(self) -> None:
+        """Set up the repository."""
+
+    @abstractmethod
+    def create_news(self, news_list: list[News]) -> None:
+        """Save all the news."""
+
+    @abstractmethod
+    def create_newsletter(self, newsletter: Newsletter) -> None:
+        """Save the newsletter."""
+
+
+class OneDriveNewsRepository(NewsRepository):
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
     def __init__(self, parent_folder: Folder) -> None:
@@ -60,3 +78,36 @@ class NewsRepository:
         file_name = "newsletter.md"
         Path(file_name).write_text(newsletter.to_markdown(), encoding="utf-8")
         self.news_folder.upload_file(item=file_name)
+
+
+class LocalNewsRepository(NewsRepository):
+    """Repository responsible for storing and retrieving News locally."""
+
+    def __init__(self, path: Path) -> None:
+        """Initializes the News repository."""
+        self.path = path
+
+    def setup(self) -> None:
+        """Initializes the local folder in which to store the News."""
+        self.path.mkdir(parents=True, exist_ok=True)
+
+    def create_news(self, news_list: list[News]) -> None:
+        """Save the list of News as a json file locally.
+
+        Args:
+            news_list: List of News to save.
+        """
+        file_name = "news.json"
+        file_path = self.path / file_name
+        with file_path.open("w", encoding="UTF-8") as target:
+            json.dump(news_list, target, ensure_ascii=False, indent=4)
+
+    def create_newsletter(self, newsletter: Newsletter) -> None:
+        """Save the Newsletter as a Markdown file locally.
+
+        Args:
+            newsletter: The Newsletter to save.
+        """
+        file_name = "newsletter.md"
+        file_path = self.path / file_name
+        file_path.write_text(newsletter.to_markdown(), encoding="utf-8")

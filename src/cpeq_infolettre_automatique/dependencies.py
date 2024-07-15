@@ -24,7 +24,7 @@ from cpeq_infolettre_automatique.embedding_model import (
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
 )
-from cpeq_infolettre_automatique.repositories import NewsRepository
+from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.utils import get_or_create_subfolder
@@ -63,7 +63,7 @@ class HttpClientDependency(ApiDependency):
     @classmethod
     def setup(cls) -> None:
         """Setup dependency."""
-        cls.client = httpx.AsyncClient(http2=True)
+        cls.client = httpx.AsyncClient(http2=True, timeout=10.0)
 
     def __call__(self) -> httpx.AsyncClient:
         """Returns the HTTP Client instance."""
@@ -131,7 +131,7 @@ def get_news_repository(
     news_folder: Annotated[Folder, Depends(OneDriveDependency())],
 ) -> NewsRepository:
     """Returns a configured News Repository."""
-    return NewsRepository(news_folder)
+    return OneDriveNewsRepository(news_folder)
 
 
 def get_openai_client() -> AsyncOpenAI:
