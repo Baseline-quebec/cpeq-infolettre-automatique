@@ -44,7 +44,7 @@ class TestService:
     """Test the Service class."""
 
     @staticmethod
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_generate_newsletter__when_provided_with_news__returns_proper_newsletter(
         service_fixture: Service,
         news_fixture: News,
@@ -57,7 +57,7 @@ class TestService:
         assert news_fixture.title in newsletter_content
 
     @staticmethod
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_generate_newsletter__when_happy_path__all_subservices_are_called(
         service_fixture: Service,
     ) -> None:

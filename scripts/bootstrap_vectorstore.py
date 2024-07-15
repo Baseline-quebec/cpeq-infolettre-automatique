@@ -63,28 +63,28 @@ class WeaviateCollection:
                     name="rubric",
                     data_type=wvc.config.DataType.TEXT,
                     index_filterable=True,
-                    index_searchable=False,
+                    index_searchable=True,
                     vectorize_property_name=False,
                 ),
                 wvc.config.Property(
                     name="title",
                     data_type=wvc.config.DataType.TEXT,
                     index_filterable=True,
-                    index_searchable=False,
+                    index_searchable=True,
                     vectorize_property_name=False,
                 ),
                 wvc.config.Property(
                     name="content",
                     data_type=wvc.config.DataType.TEXT,
                     index_filterable=True,
-                    index_searchable=False,
+                    index_searchable=True,
                     vectorize_property_name=False,
                 ),
                 wvc.config.Property(
                     name="summary",
                     data_type=wvc.config.DataType.TEXT,
                     index_filterable=True,
-                    index_searchable=False,
+                    index_searchable=True,
                     vectorize_property_name=False,
                 ),
                 wvc.config.Property(
@@ -92,6 +92,13 @@ class WeaviateCollection:
                     data_type=wvc.config.DataType.DATE,
                     index_filterable=True,
                     index_searchable=False,
+                    vectorize_property_name=False,
+                ),
+                wvc.config.Property(
+                    name="link",
+                    data_type=wvc.config.DataType.TEXT,
+                    index_filterable=True,
+                    index_searchable=True,
                     vectorize_property_name=False,
                 ),
             ],
@@ -116,6 +123,7 @@ def get_reference_news(data_path: Path) -> list[News]:
             )
             news_item["datetime"] = parsed_datetime
             news_item["rubric"] = rubric_group["rubric"]
+            news_item["link"] = news_item["urls"][0]["url1"]
             reference_news = News(**news_item)
             references_news.append(reference_news)
 
