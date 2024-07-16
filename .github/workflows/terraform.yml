@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 env:
-  IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
+  IS_MAIN: ${{ github.ref == 'ref/heads/main' }}
 
 jobs:
   terraform:
@@ -45,7 +45,6 @@ jobs:
 
       - id: fmt
         name: Check Terraform formatting
-        if: ! env.IS_MAIN
         run: terraform fmt -check
 
       - id: init
@@ -59,7 +58,6 @@ jobs:
 
       - id: validate
         name: Validate Terraform config
-        if: ! env.IS_MAIN
         env:
           ARM_CLIENT_ID: ${{ secrets.TERRAFORM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
