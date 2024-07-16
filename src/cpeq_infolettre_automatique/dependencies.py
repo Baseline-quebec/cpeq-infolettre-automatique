@@ -11,7 +11,10 @@ from O365.account import Account
 from O365.drive import Folder
 from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.completion_model import CompletionModel, OpenAICompletionModel
+from cpeq_infolettre_automatique.completion_model import (
+    CompletionModel,
+    OpenAICompletionModel,
+)
 from cpeq_infolettre_automatique.config import (
     CompletionModelConfig,
     EmbeddingModelConfig,
@@ -63,7 +66,7 @@ class HttpClientDependency(ApiDependency):
     @classmethod
     def setup(cls) -> None:
         """Setup dependency."""
-        timeout = httpx.Timeout(connect=60.0)
+        timeout = httpx.Timeout(timeout=60.0)
         cls.client = httpx.AsyncClient(http2=True, timeout=timeout)
 
     def __call__(self) -> httpx.AsyncClient:
