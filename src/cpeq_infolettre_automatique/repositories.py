@@ -4,14 +4,20 @@ import csv
 import datetime
 from pathlib import Path
 
-from O365.drive import Folder
+from O365.drive import File, Folder
 
 from cpeq_infolettre_automatique.schemas import News, Newsletter
-from cpeq_infolettre_automatique.utils import get_or_create_subfolder
+from cpeq_infolettre_automatique.utils import (
+    get_file_if_exists,
+    get_or_create_subfolder,
+)
 
 
 class NewsRepository:
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
+
+    _news_file_name = "news.csv"
+    _newsletter_file_name = "newsletter.md"
 
     def __init__(self, parent_folder: Folder) -> None:
         """Initializes the News repository.
@@ -28,14 +34,25 @@ class NewsRepository:
             folder_name=str(datetime.datetime.now(tz=datetime.UTC).date()),
         )
 
-    def create_news(self, news_list: list[News]) -> None:
+    def create_news(self, news: News) -> None:
+        """Adds a News to the repository, appending it to the CSV file if it exists, or creating the file of not.
+
+        Args:
+            news: The News to save.
+        """
+        self.create_many_news([news])
+
+    def create_many_news(self, news_list: list[News]) -> None:
         """Save the list of News as a new CSV file in the OneDrive folder.
 
         Args:
             news_list: List of News to save.
         """
-        file_name = "news.csv"
-        with Path(file_name).open(mode="w", encoding="utf-8", newline="") as csvfile:
+        file: File | None = get_file_if_exists(self.news_folder, self._news_file_name)
+        if file is not None:
+            file.download(name=self._news_file_name)
+
+        with Path(self._news_file_name).open(mode="w", encoding="utf-8", newline="") as csvfile:
             csvwriter = csv.writer(
                 csvfile,
                 delimiter=",",
@@ -43,13 +60,15 @@ class NewsRepository:
                 quoting=csv.QUOTE_MINIMAL,
                 dialect="excel",
             )
-            rows: list[list[str]] = [
-                [keys.capitalize() for keys in News.model_fields],
-                *([str(value) for _, value in news] for news in news_list),
-            ]
+
+            rows: list[list[str]] = []
+            if file is None:
+                # Add headers row if we are creating the file
+                rows.append([keys.capitalize() for keys in News.model_fields])
+            rows.append(*([str(value) for _, value in news] for news in news_list))
 
             csvwriter.writerows(rows)
-            self.news_folder.upload_file(item=file_name)
+            self.news_folder.upload_file(item=self._news_file_name)
 
     def create_newsletter(self, newsletter: Newsletter) -> None:
         """Save the Newsletter as a Markdown file in the OneDrive folder.
@@ -57,6 +76,5 @@ class NewsRepository:
         Args:
             newsletter: The Newsletter to save.
         """
-        file_name = "newsletter.md"
-        Path(file_name).write_text(newsletter.to_markdown(), encoding="utf-8")
-        self.news_folder.upload_file(item=file_name)
+        Path(self._newsletter_file_name).write_text(newsletter.to_markdown(), encoding="utf-8")
+        self.news_folder.upload_file(item=self._newsletter_file_name)
