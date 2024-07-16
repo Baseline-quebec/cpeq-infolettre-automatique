@@ -142,6 +142,7 @@ ignore-variadic-names = true
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = true
+mark-parentheses = true
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2
