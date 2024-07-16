@@ -63,7 +63,7 @@ class HttpClientDependency(ApiDependency):
     @classmethod
     def setup(cls) -> None:
         """Setup dependency."""
-        timeout = httpx.Timeout(connect=60.0)
+        timeout = httpx.Timeout(timeout=60.0)
         cls.client = httpx.AsyncClient(http2=True, timeout=timeout)
 
     def __call__(self) -> httpx.AsyncClient:
