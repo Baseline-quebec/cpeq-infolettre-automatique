@@ -44,7 +44,7 @@ class TestService:
     """Test the Service class."""
 
     @staticmethod
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio()
     async def test_generate_newsletter__when_provided_with_news__returns_proper_newsletter(
         service_fixture: Service,
         news_fixture: News,
@@ -57,7 +57,7 @@ class TestService:
         assert news_fixture.title in newsletter_content
 
     @staticmethod
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio()
     async def test_generate_newsletter__when_happy_path__all_subservices_are_called(
         service_fixture: Service,
     ) -> None:
@@ -72,7 +72,7 @@ class TestService:
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
         assert service_fixture.summary_generator.generate.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
-        assert service_fixture.news_repository.create_news.called
+        assert service_fixture.news_repository.create_many_news.called
 
     @staticmethod
     def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:
