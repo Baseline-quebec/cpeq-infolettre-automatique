@@ -80,7 +80,7 @@ jobs:
       - name: "Docker login"
         uses: docker/login-action@v3
         with:
-          registry: $DOCKER_REGISTRY
+          registry: ${{ vars.DOCKER_REGISTRY }}
           username: ${{ secrets.PIPELINE_CLIENT_ID }} # https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/7ad2fb8b-5bce-4f28-88b3-97ecaf4e48ad/isMSAApp~/false
           password: ${{ secrets.PIPELINE_CLIENT_SECRET }}
 
@@ -88,4 +88,4 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: $DOCKER_REGISTRY/$DOCKER_NAMESPACE/$DOCKER_IMAGE:${{ steps.vars.outputs.DOCKER_IMAGE_TAG }}
+          tags: ${{ vars.DOCKER_REGISTRY }}/$DOCKER_NAMESPACE/$DOCKER_IMAGE:${{ steps.vars.outputs.DOCKER_IMAGE_TAG }}
