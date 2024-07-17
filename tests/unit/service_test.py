@@ -72,7 +72,7 @@ class TestService:
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
         assert service_fixture.summary_generator.generate.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
-        assert service_fixture.news_repository.create_news.called
+        assert service_fixture.news_repository.create_many_news.called
 
     @staticmethod
     def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:

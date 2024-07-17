@@ -142,3 +142,68 @@ class Newsletter(BaseModel):
         """Convert the newsletter to markdown."""
         newsletter = "\n\n".join([self.header, *self._formatted_news_per_rubric()])
         return newsletter
+
+
+class AddNewsBody(BaseModel):
+    """Represents the body of the /add-news route."""
+
+    title: str
+    link: Annotated[Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)] = Field(
+        validation_alias=AliasChoices("link", "articleLink-href")
+    )
+    datetime: dt.datetime = Field(validation_alias=AliasChoices("datetime", "date"))
+    content: str
+
+    @field_validator("link")
+    @classmethod
+    def valide_link(cls, value: str) -> Url:
+        """Validate the link field."""
+        try:
+            return Url(url=value)
+        except ValidationError as e:
+            msg = f"Unable to parse article Url {value}."
+            raise ValueError(msg) from e
+
+    @field_validator("datetime", mode="before")
+    @classmethod
+    def validate_datetime(cls, value: dt.datetime | None | str) -> dt.datetime | None:
+        """Validate the datetime field."""
+        parsed_value = (
+            search_dates(
+                value,
+                settings={
+                    "TIMEZONE": "America/Montreal",
+                    "RETURN_AS_TIMEZONE_AWARE": True,
+                },
+            )
+            if isinstance(value, str)
+            else value
+        )
+        if parsed_value is None or isinstance(parsed_value, dt.datetime):
+            return parsed_value
+        return parsed_value[0][1]
+
+    @field_serializer("datetime")
+    @staticmethod
+    def serialize_datetime(datetime: dt.datetime) -> str:
+        """Serialize the datetime field."""
+        return datetime.isoformat()
+
+    @field_validator("title", "content")
+    @classmethod
+    def validate_mandatory_texts(cls, value: str) -> str:
+        """Validate that the mandatory text fields are not empty."""
+        if not value.strip() or value is None:
+            error_msg = "The title and content fields must not be empty."
+            raise ValueError(error_msg)
+        cleaned_value = unicodedata.normalize("NFKC", value)
+        return cleaned_value
+
+    def to_news(self) -> News:
+        """Returns a News domain object from this object's properties."""
+        return News(
+            title=self.title,
+            link=self.link,
+            datetime=self.datetime,
+            content=self.content,
+        )
