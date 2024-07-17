@@ -6,8 +6,8 @@ from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
     get_completion_model,
     get_embedding_model,
+    get_news_classifier,
     get_openai_client,
-    get_reference_news_repository,
     get_summary_generator,
     get_vectorstore,
     get_vectorstore_client,
@@ -27,14 +27,13 @@ async def main() -> None:
     summary_generator = get_summary_generator(completion_model)
     embedding_model = get_embedding_model(openai_client)
     for vectorstore_client in get_vectorstore_client():
-        reference_news_repository = get_reference_news_repository(vectorstore_client)
         vectorstore = get_vectorstore(vectorstore_client, embedding_model)
-
+        news_classifier = get_news_classifier(vectorstore)
         local_news_repository = LocalNewsRepository(path=Path("data", "test"))
         service = Service(
             webscraper_io_client=webscraper_io_client,
             news_repository=local_news_repository,
-            reference_news_repository=reference_news_repository,
+            news_classifier=news_classifier,
             vectorstore=vectorstore,
             summary_generator=summary_generator,
         )
