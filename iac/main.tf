@@ -35,7 +35,7 @@ resource "azurerm_service_plan" "service_plan" {
 }
 
 resource "azurerm_linux_function_app" "function_app" {
-  name                = "func-cpaq-${var.environment}-${var.location}"
+  name                = "func-cpeq-${var.environment}-${var.location}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
@@ -46,7 +46,7 @@ resource "azurerm_linux_function_app" "function_app" {
 
   site_config {
     application_stack {
-      python_version = 3.12
+      python_version = 3.11
     }
   }
 
