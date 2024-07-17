@@ -11,7 +11,10 @@ from O365.account import Account
 from O365.drive import Folder
 from openai import AsyncOpenAI
 
-from cpeq_infolettre_automatique.completion_model import CompletionModel, OpenAICompletionModel
+from cpeq_infolettre_automatique.completion_model import (
+    CompletionModel,
+    OpenAICompletionModel,
+)
 from cpeq_infolettre_automatique.config import (
     CompletionModelConfig,
     EmbeddingModelConfig,

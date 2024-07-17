@@ -269,6 +269,7 @@ def news_repository_fixture() -> Any:
     """Fixture for mocked NewsRepository."""
     news_repository_fixture = MagicMock()
     news_repository_fixture.create_news = MagicMock()
+    news_repository_fixture.create_many_news = MagicMock()
     news_repository_fixture.create_newsletter = MagicMock()
     return news_repository_fixture
 

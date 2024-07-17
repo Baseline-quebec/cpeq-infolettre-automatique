@@ -2,7 +2,7 @@
 
 import asyncio
 import datetime as dt
-from collections.abc import AsyncIterator, Awaitable, Iterable
+from collections.abc import Awaitable, Iterable, Iterator
 
 from cpeq_infolettre_automatique.news_classifier import NewsClassifier
 from cpeq_infolettre_automatique.repositories import NewsRepository
@@ -56,7 +56,7 @@ class Service:
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
-        self.news_repository.create_news(flattened_news)
+        self.news_repository.create_many_news(flattened_news)
         if delete_scraping_jobs:
             await self.webscraper_io_client.delete_scraping_jobs()
 
@@ -67,6 +67,14 @@ class Service:
         )
         self.news_repository.create_newsletter(newsletter)
         return newsletter
+
+    async def add_news(self, news: News) -> None:
+        """Manually add a new News entry in the News repository."""
+        self.news_repository.setup()
+        start_date, end_date = self._prepare_dates()
+        self._filter_news_by_date(news, start_date, end_date)
+        news = await self._prepare_news(news)
+        self.news_repository.create_news(news)
 
     @staticmethod
     def _prepare_dates(
@@ -108,19 +116,18 @@ class Service:
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
-            filtered_news = self._filter_news_by_date(
+            filtered_news = self._filter_all_news(
                 all_news, start_date=start_date, end_date=end_date
             )
-            coroutines = [self._prepare_news(news) async for news in filtered_news]
+            coroutines = [self._prepare_news(news) for news in filtered_news]
             summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
-    @staticmethod
-    async def _filter_news_by_date(
-        all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
-    ) -> AsyncIterator[News]:
+    def _filter_all_news(
+        self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
+    ) -> Iterator[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
@@ -131,11 +138,20 @@ class Service:
         Returns: The filtered news data.
         """
         for news in all_news:
-            if news.datetime is None:
+            try:
+                yield self._filter_news_by_date(news, start_date, end_date)
+            except ValueError:
                 continue
-            if not start_date <= news.datetime < end_date:
-                continue
-            yield news
+
+    @staticmethod
+    def _filter_news_by_date(news: News, start_date: dt.datetime, end_date: dt.datetime) -> News:
+        if news.datetime is None:
+            msg = f"The News with title {news.title} has no date."
+            raise ValueError(msg)
+        if not start_date <= news.datetime < end_date:
+            msg = f"The News with title {news.title} was not published in the given time period."
+            raise ValueError(msg)
+        return news
 
     async def _summarize_news(self, classified_news: News) -> News:
         """Generate summaries for the news data.

@@ -88,4 +88,4 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: ${{ vars.DOCKER_REGISTRY }}/$DOCKER_NAMESPACE/$DOCKER_IMAGE:${{ steps.vars.outputs.DOCKER_IMAGE_TAG }}
+          tags: ${{ vars.DOCKER_REGISTRY }}/${{ env.DOCKER_NAMESPACE }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.DOCKER_IMAGE_TAG }}

@@ -8,16 +8,15 @@ from typing import Annotated
 import coloredlogs
 from decouple import config
 from fastapi import Depends, FastAPI
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import Response
 
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
     OneDriveDependency,
     get_service,
-    get_webscraperio_client,
 )
+from cpeq_infolettre_automatique.schemas import AddNewsBody
 from cpeq_infolettre_automatique.service import Service
-from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 @asynccontextmanager
@@ -43,36 +42,22 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 
-@app.post("/initiate_scraping/{sitemap_id}")
-async def initiate_scraping(
-    sitemap_id: str,
-    webscraper_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
-) -> str:
-    """Initiate web scraping jobs and process their data.
-
-    Returns:
-        list[tuple[str, str]]: A list of tuples associating a sitemap id to a job id
-    """
-    return await webscraper_client.create_scraping_job(sitemap_id=sitemap_id)
-
-
-@app.get("/get-articles")
-def get_articles_from_scraper() -> JSONResponse:
-    """Retrieve and return articles.
-
-    Returns:
-        JSONResponse: An empty articles list response.
-    """
-    # Appeler l'API de webscraper.io, appeler SharePoint, enlever les doublons, et retourner les articles en json
-    return JSONResponse(content={"articles": []})
-
-
 @app.get("/generate-newsletter")
 async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
-    """Generate a newsletter from scraped news."""
+    """Generate a newsletter from scraped news.
+
+    Note:
+        This task is scheduled to return the news from last week's Monday to last week's Sunday.
+    """
     # TODO(jsleb333): Schedule this task to return immediately
     newsletter = await service.generate_newsletter(delete_scraping_jobs=False)
     return Response(content=newsletter.to_markdown())
+
+
+@app.post("/add-news")
+async def add_news(body: AddNewsBody, service: Annotated[Service, Depends(get_service)]) -> None:
+    """Endpoint to manually add a news to this week's newsletter."""
+    await service.add_news(body.to_news())
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import datetime as dt
 from typing import cast
 from zoneinfo import ZoneInfo
 
-from O365.drive import Folder
+from O365.drive import File, Folder
 
 
 def get_current_montreal_datetime() -> dt.datetime:
@@ -26,3 +26,12 @@ def get_or_create_subfolder(parent_folder: Folder, folder_name: str) -> Folder:
         return cast(Folder, parent_folder.create_child_folder(folder_name))
     msg = f"More than one folder with the name {folder_name} exist in the requested parent folder."
     raise RuntimeError(msg)
+
+
+def get_file_if_exists(folder: Folder, file_name: str) -> File | None:
+    """Gets the specified file from the specified folder. Returns None if no such file exists in the folder."""
+    items = folder.get_items()
+    filtered_items = tuple(filter(lambda item: item.name == file_name, items))
+    if len(filtered_items) == 0:
+        return None
+    return filtered_items[0]
