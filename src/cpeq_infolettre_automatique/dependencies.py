@@ -21,9 +21,7 @@ from cpeq_infolettre_automatique.embedding_model import (
     EmbeddingModel,
     OpenAIEmbeddingModel,
 )
-from cpeq_infolettre_automatique.reference_news_repository import (
-    ReferenceNewsRepository,
-)
+from cpeq_infolettre_automatique.news_classifier import MaxMeanNewsClassifier, NewsClassifier
 from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -63,7 +61,7 @@ class HttpClientDependency(ApiDependency):
     @classmethod
     def setup(cls) -> None:
         """Setup dependency."""
-        timeout = httpx.Timeout(connect=60.0)
+        timeout = httpx.Timeout(timeout=60.0)
         cls.client = httpx.AsyncClient(http2=True, timeout=timeout)
 
     def __call__(self) -> httpx.AsyncClient:
@@ -178,14 +176,11 @@ def get_vectorstore(
     )
 
 
-def get_reference_news_repository(
-    vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
-) -> ReferenceNewsRepository:
-    """Return a ReferenceNewsRepository instance."""
-    vectorstore_config = VectorstoreConfig()
-    return ReferenceNewsRepository(
-        client=vectorstore_client, vectorstore_config=vectorstore_config
-    )
+def get_news_classifier(
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
+) -> NewsClassifier:
+    """Return a NewsClassifier instance."""
+    return MaxMeanNewsClassifier(vectorstore=vectorstore)
 
 
 def get_completion_model(
@@ -214,15 +209,13 @@ def get_service(
     summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-    reference_news_repository: Annotated[
-        ReferenceNewsRepository, Depends(get_reference_news_repository)
-    ],
+    news_classifier: Annotated[NewsClassifier, Depends(get_news_classifier)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
     return Service(
         webscraper_io_client=webscraper_io_client,
         news_repository=news_repository,
-        reference_news_repository=reference_news_repository,
+        news_classifier=news_classifier,
         vectorstore=vectorstore,
         summary_generator=summary_generator,
     )

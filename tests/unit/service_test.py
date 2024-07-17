@@ -7,9 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.reference_news_repository import (
-    ReferenceNewsRepository,
-)
+from cpeq_infolettre_automatique.news_classifier import NewsClassifier
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -21,7 +19,7 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
     vectorstore_fixture: Vectorstore,
-    reference_news_repository_fixture: ReferenceNewsRepository,
+    news_classifier_fixture: NewsClassifier,
     news_repository_fixture: Any,
     summary_generator_fixture: SummaryGenerator,
 ) -> Service:
@@ -29,13 +27,9 @@ def service_fixture(
     service = Service(
         webscraper_io_client=webscraper_io_client_fixture,
         news_repository=news_repository_fixture,
-        reference_news_repository=reference_news_repository_fixture,
+        news_classifier=news_classifier_fixture,
         vectorstore=vectorstore_fixture,
         summary_generator=summary_generator_fixture,
-    )
-    service._prepare_dates = lambda *_: (
-        dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
-        dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
     )
     return service
 
@@ -51,7 +45,12 @@ class TestService:
         rubric_classification_fixture: Rubric,
     ) -> None:
         """Test that the generate_newsletter outputs newsletter with proper content."""
-        newsletter = await service_fixture.generate_newsletter()
+        with patch.object(Service, "_prepare_dates") as prepare_dates_mock:
+            prepare_dates_mock.return_value = (
+                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
+                dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
+            )
+            newsletter = await service_fixture.generate_newsletter()
         newsletter_content = newsletter.to_markdown()
         assert rubric_classification_fixture.value in newsletter_content
         assert news_fixture.title in newsletter_content
@@ -65,10 +64,15 @@ class TestService:
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        await service_fixture.generate_newsletter()
+        with patch.object(Service, "_prepare_dates") as prepare_dates_mock:
+            prepare_dates_mock.return_value = (
+                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
+                dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
+            )
+            await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
-        assert service_fixture.vectorstore.classify_news_rubric.called
-        assert service_fixture.reference_news_repository.read_many_by_rubric.called
+        assert service_fixture.vectorstore.read_many_by_rubric.called
+        assert service_fixture.news_classifier.classify.called
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
         assert service_fixture.summary_generator.generate.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called

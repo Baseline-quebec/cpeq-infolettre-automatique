@@ -4,9 +4,7 @@ import asyncio
 import datetime as dt
 from collections.abc import AsyncIterator, Awaitable, Iterable
 
-from cpeq_infolettre_automatique.reference_news_repository import (
-    ReferenceNewsRepository,
-)
+from cpeq_infolettre_automatique.news_classifier import NewsClassifier
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import (
     News,
@@ -25,24 +23,30 @@ class Service:
         self,
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
-        reference_news_repository: ReferenceNewsRepository,
         vectorstore: Vectorstore,
         summary_generator: SummaryGenerator,
+        news_classifier: NewsClassifier,
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
-        self.reference_news_repository = reference_news_repository
         self.news_repository = news_repository
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
+        self.news_classifier = news_classifier
 
-    async def generate_newsletter(self, *, delete_scraping_jobs: bool = True) -> Newsletter:
+    async def generate_newsletter(
+        self,
+        *,
+        start_date: dt.datetime | None = None,
+        end_date: dt.datetime | None = None,
+        delete_scraping_jobs: bool = True,
+    ) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
         Returns: The formatted newsletter.
         """
         self.news_repository.setup()
-        start_date, end_date = self._prepare_dates()
+        start_date, end_date = self._prepare_dates(start_date=start_date, end_date=end_date)
 
         # For the moment, only the coroutine for scraped news is implemented.
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
@@ -99,15 +103,18 @@ class Service:
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
             all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
-            filtered_news = self._filter_news(all_news, start_date=start_date, end_date=end_date)
-            coroutines = [self._summarize_news(news) async for news in filtered_news]
+            filtered_news = self._filter_news_by_date(
+                all_news, start_date=start_date, end_date=end_date
+            )
+            coroutines = [self._prepare_news(news) async for news in filtered_news]
             summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
-    async def _filter_news(
-        self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
+    @staticmethod
+    async def _filter_news_by_date(
+        all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
     ) -> AsyncIterator[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
@@ -123,9 +130,6 @@ class Service:
                 continue
             if not start_date <= news.datetime < end_date:
                 continue
-            rubric_classification = await self.vectorstore.classify_news_rubric(news)
-            if rubric_classification is not None:
-                news.rubric = rubric_classification
             yield news
 
     async def _summarize_news(self, classified_news: News) -> News:
@@ -140,6 +144,29 @@ class Service:
             error_msg = "The news must be classified before summarization"
             raise ValueError(error_msg)
 
-        examples = self.reference_news_repository.read_many_by_rubric(classified_news.rubric)
+        examples = self.vectorstore.read_many_by_rubric(classified_news.rubric)
         classified_news.summary = await self.summary_generator.generate(classified_news, examples)
         return classified_news
+
+    async def _classify_news(self, news: News) -> News:
+        """Classify the news data.
+
+        Args:
+            news: The news data to classify.
+
+        Returns: The classified news data.
+        """
+        news.rubric = await self.news_classifier.classify(news)
+        return news
+
+    async def _prepare_news(self, news: News) -> News:
+        """Prepare the news data for the newsletter.
+
+        Args:
+            news: The news data to prepare.
+
+        Returns: The prepared news data.
+        """
+        classified_news = await self._classify_news(news)
+        summarized_news = await self._summarize_news(classified_news)
+        return summarized_news

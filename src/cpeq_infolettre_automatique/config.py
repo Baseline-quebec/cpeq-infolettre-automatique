@@ -70,10 +70,11 @@ class VectorstoreConfig(BaseModel):
         "",
         cast=str,
     )
-    nb_items_retrieved: int = config("NB_ITEM_RETRIEVED", 5, cast=int)
+    max_nb_items_retrieved: int = config("MAX_NB_ITEM_RETRIEVED", 1000, cast=int)
     hybrid_weight: float = config("VECTORSTORE_HYBRID_WEIGHT", 0.75, cast=float)
     batch_size: int = max(config("BATCH_SIZE", 5, cast=int), 1)
     concurrent_requests: int = max(config("CONCURRENT_REQUESTS", 2, cast=int), 1)
+    minimal_score: float = config("VECTORSTORE_MINIMUM_SCORE", 0.0, cast=float)
 
 
 class CompletionModelConfig(BaseModel):
