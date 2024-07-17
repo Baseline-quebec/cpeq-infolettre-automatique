@@ -68,7 +68,8 @@ class NewsRepository:
             rows.append(*([str(value) for _, value in news] for news in news_list))
 
             csvwriter.writerows(rows)
-            self.news_folder.upload_file(item=self._news_file_name)
+
+        self.news_folder.upload_file(item=self._news_file_name)
 
     def create_newsletter(self, newsletter: Newsletter) -> None:
         """Save the Newsletter as a Markdown file in the OneDrive folder.
