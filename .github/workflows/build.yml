@@ -64,7 +64,7 @@ jobs:
     environment: dev
     env:
       PYTHON_VERSION: "3.12"
-      POETRY_VERSION: "1.2.0"
+      POETRY_VERSION: "1.8.3"
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: "Resolve Project Dependencies Using Pip"
+      - name: "Resolve project dependencies"
         shell: bash
         run: |
           python -m pip install --upgrade pipx
