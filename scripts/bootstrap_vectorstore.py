@@ -1,12 +1,10 @@
 """Script to populate the vectorstore with the reference news."""
 
-import datetime as dt
 import json
 import logging
 import uuid
 from pathlib import Path
 
-import dateparser
 import weaviate
 import weaviate.classes as wvc
 from tqdm import tqdm
@@ -114,19 +112,7 @@ def get_reference_news(data_path: Path) -> list[News]:
     with Path.open(data_path) as f:
         data = json.load(f)
 
-    references_news = []
-    for rubric_group in data:
-        for news_item in rubric_group["examples"]:
-            parsed_datetime = dateparser.parse(news_item["date"])
-            parsed_datetime = (
-                parsed_datetime.astimezone(dt.UTC) if parsed_datetime is not None else None
-            )
-            news_item["datetime"] = parsed_datetime
-            news_item["rubric"] = rubric_group["rubric"]
-            news_item["link"] = news_item["urls"][0]["url1"]
-            reference_news = News(**news_item)
-            references_news.append(reference_news)
-
+    references_news = [News.model_validate(news_item) for news_item in data]
     return references_news
 
 
@@ -198,7 +184,7 @@ async def main() -> None:
     openai_client = get_openai_client()
     embedding_model_config = EmbeddingModelConfig()
     embedding_model = OpenAIEmbeddingModel(openai_client, embedding_model_config)
-    vectorstore_config = VectorstoreConfig()
+    vectorstore_config = VectorstoreConfig(collection_name="Test_collection")
     for weaviate_client in get_vectorstore_client():
         weaviate_collection = WeaviateCollection(weaviate_client, vectorstore_config)
         await bootstrap_vectorstore(
