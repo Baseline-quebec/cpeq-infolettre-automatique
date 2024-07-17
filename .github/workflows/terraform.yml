@@ -8,11 +8,11 @@ on:
       - main
     paths:
       - "iac/**"
-      - ".github/workflows/**"
+      - ".github/workflows/terraform.yml"
   pull_request:
     paths:
       - "iac/**"
-      - ".github/workflows/**"
+      - ".github/workflows/terraform.yml"
   workflow_dispatch:
 
 env:
