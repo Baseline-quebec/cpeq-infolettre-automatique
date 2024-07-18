@@ -96,11 +96,14 @@ jobs:
           export PATH=$PATH:$HOME/.poetry/bin
           poetry lock --no-update
           poetry install --no-root --without dev
-          # Activate venv
           poetry export -f requirements.txt --output requirements.txt
           pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
 
-      - name: "Deploy using Azure Function Core Tools"
-        shell: bash
-        run: |
-          func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python
+      - name: "Update Azure Function"
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: .
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true
