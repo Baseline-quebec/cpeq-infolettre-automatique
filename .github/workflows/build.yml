@@ -76,11 +76,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Setup Python ${{ env.PYTHON_VERSION }} Environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install Azure Function Core Tools
         shell: bash
         run: |
@@ -89,12 +84,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install azure-functions-core-tools-4
 
+      - name: Setup Python ${{ env.PYTHON_VERSION }} Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: "Resolve project dependencies"
         shell: bash
         run: |
-          python -m pip install --upgrade pipx
-          pipx install poetry==$POETRY_VERSION
-          poetry install
+          curl -sSL https://install.python-poetry.org | python -
+          export PATH=$PATH:$HOME/.poetry/bin
+          poetry lock --no-update
+          poetry install --no-root --without dev
+          # Activate venv
+          poetry export -f requirements.txt --output requirements.txt
+          pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
 
       - name: "Deploy using Azure Function Core Tools"
         shell: bash
