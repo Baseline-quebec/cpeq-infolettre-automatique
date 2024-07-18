@@ -53,7 +53,7 @@ resource "azurerm_linux_function_app" "function_app" {
   }
 
   app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE = 1
+    WEBSITE_RUN_FROM_PACKAGE = 1 # See this thread : https://stackoverflow.com/questions/72280118/deployment-failed-with-error-package-deployment-using-zip-deploy-failed-refer
   }
 
   tags = {
@@ -76,6 +76,6 @@ resource "azurerm_linux_function_app_slot" "dev" {
   }
 
   app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE = 1
+    WEBSITE_RUN_FROM_PACKAGE = 1 # See this thread : https://stackoverflow.com/questions/72280118/deployment-failed-with-error-package-deployment-using-zip-deploy-failed-refer
   }
 }
