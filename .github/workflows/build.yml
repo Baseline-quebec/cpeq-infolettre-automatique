@@ -103,4 +103,4 @@ jobs:
       - name: "Deploy using Azure Function Core Tools"
         shell: bash
         run: |
-          func azure functionapp publish --python ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+          func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python
