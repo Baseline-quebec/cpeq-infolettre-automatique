@@ -99,11 +99,7 @@ jobs:
           poetry export -f requirements.txt --output requirements.txt
           pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
 
-      - name: "Update Azure Function"
-        uses: Azure/functions-action@v1
-        with:
-          app-name: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
-          package: .
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-          scm-do-build-during-deployment: false
-          enable-oryx-build: false
+      - name: "Deploy using Azure Function Core Tools"
+        shell: bash
+        run: |
+          func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python
