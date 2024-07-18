@@ -79,7 +79,6 @@ jobs:
       - name: "Resolve project dependencies"
         shell: bash
         run: |
-          ls -al
           python -m pip install --upgrade pipx
           pipx install poetry==$POETRY_VERSION
           poetry install
