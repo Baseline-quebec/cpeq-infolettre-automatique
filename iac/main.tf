@@ -52,6 +52,10 @@ resource "azurerm_linux_function_app" "function_app" {
     }
   }
 
+  app_settings = {
+    WEBSITE_RUN_FROM_PACKAGE = 1
+  }
+
   tags = {
     environment = var.environment
     project     = "CPEQ"
@@ -69,5 +73,9 @@ resource "azurerm_linux_function_app_slot" "dev" {
     application_stack {
       python_version = "3.11"
     }
+  }
+
+  app_settings = {
+    WEBSITE_RUN_FROM_PACKAGE = 1
   }
 }
