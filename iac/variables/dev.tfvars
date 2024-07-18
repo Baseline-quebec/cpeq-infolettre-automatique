@@ -1,2 +1,2 @@
 environment = "dev"
-location    = "canadaeast"
+location    = "canadacentral"
