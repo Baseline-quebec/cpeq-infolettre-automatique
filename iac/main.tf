@@ -44,14 +44,24 @@ resource "azurerm_linux_function_app" "function_app" {
   service_plan_id            = azurerm_service_plan.service_plan.id
   https_only                 = true
 
-  site_config {
-    application_stack {
-      python_version = "3.11"
-    }
-  }
+  site_config {}
 
   tags = {
     environment = var.environment
     project     = "CPEQ"
+  }
+}
+
+resource "azurerm_linux_function_app_slot" "dev" {
+  name                       = "dev"
+  function_app_id            = azurerm_linux_function_app.function_app.id
+  storage_account_name       = azurerm_storage_account.storage.name
+  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
+  https_only                 = true
+
+  site_config {
+    application_stack {
+      python_version = "3.11"
+    }
   }
 }
