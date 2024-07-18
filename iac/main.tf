@@ -35,6 +35,7 @@ resource "azurerm_service_plan" "service_plan" {
 }
 
 resource "azurerm_linux_function_app" "function_app" {
+  depends_on          = [azurerm_storage_account.storage]
   name                = "func-cpeq-${var.environment}-${var.location}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
