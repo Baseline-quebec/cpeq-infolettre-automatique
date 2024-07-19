@@ -90,7 +90,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: "Resolve project dependencies"
+      - name: "Deploy to Azure Function"
         shell: bash
         run: |
           pushd code
@@ -101,8 +101,4 @@ jobs:
           poetry install
           poetry export -f requirements.txt --output requirements.txt --all-extras
           pip install --target="./.python_packages/lib/site-packages" -r requirements.txt
-
-      - name: "Deploy using Azure Function Core Tools"
-        shell: bash
-        run: |
           func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python
