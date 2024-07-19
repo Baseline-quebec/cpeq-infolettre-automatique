@@ -101,4 +101,4 @@ jobs:
           poetry install
           poetry export -f requirements.txt --output requirements.txt --all-extras
           pip install --target="./.python_packages/lib/site-packages" -r requirements.txt
-          func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python
+          func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python --slot dev
