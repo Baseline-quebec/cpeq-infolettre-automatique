@@ -1,4 +1,7 @@
-"""Azure Function wrapper around the FastAPI application."""
+"""Azure Function wrapper around the FastAPI application.
+
+This file needs to be placed at the root of the repository and named function_app.py specifically for it to be detected by the Azure Functions Runtime.
+"""
 
 import azure.functions as func
 
