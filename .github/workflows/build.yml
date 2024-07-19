@@ -70,6 +70,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+          path: code
 
       - name: Azure login
         uses: azure/login@v2
@@ -92,6 +93,7 @@ jobs:
       - name: "Resolve project dependencies"
         shell: bash
         run: |
+          pushd code
           curl -sSL https://install.python-poetry.org | python -
           export PATH=$PATH:$HOME/.poetry/bin
           poetry self add poetry-plugin-export
@@ -103,5 +105,4 @@ jobs:
       - name: "Deploy using Azure Function Core Tools"
         shell: bash
         run: |
-          ls -al
-          #func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python
+          func azure functionapp publish ${{ vars.AZURE_FUNCTIONAPP_NAME }} --python
