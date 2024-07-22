@@ -3,6 +3,7 @@
 import datetime as dt
 import logging
 import uuid
+from collections.abc import Sequence
 from typing import TypedDict
 
 import weaviate
@@ -57,20 +58,10 @@ class Vectorstore:
 
     async def hybrid_search(
         self,
-        news: News,
-        ids_to_keep: list[str | uuid.UUID] | None = None,
+        query: str,
+        embeddings: list[float],
+        ids_to_keep: Sequence[str | uuid.UUID] | None = None,
     ) -> list[tuple[News, float]]:
-        """Retrieve news similar to the given news.
-
-        Args:
-            news: The news to search similar news for.
-
-        Returns:
-            list[News]: A list of similar news.
-        """
-        query: str = self.create_query(news)
-        embeddings = await self.embedding_model.embed(text_description=query)
-
         collection = self.vectorstore_client.collections.get(self.collection_name)
 
         objects = collection.query.hybrid(
@@ -80,7 +71,9 @@ class Vectorstore:
             alpha=self.hybrid_weight,
             return_metadata=wvc.query.MetadataQuery(score=True),
             return_properties=ReferenceNewsType,
-            filters=wvc.query.Filter.by_id().contains_any(ids_to_keep) if ids_to_keep else None,
+            filters=wvc.query.Filter.by_id().contains_any(list(ids_to_keep))
+            if ids_to_keep
+            else None,
         ).objects
 
         news_retrieved: list[tuple[News, float]] = [
@@ -116,6 +109,34 @@ class Vectorstore:
                 logging.exception("Error validating object %s", object_)
 
         return news
+
+    def read_many_with_vectors(self) -> list[tuple[News, list[float]]]:
+        """Get objects with specific rubric from the repository.
+
+        Args:
+            uuids: The uuids to filter by.
+
+        Returns:
+            The list of objects with the specified uuids.
+        """
+        collection = self.vectorstore_client.collections.get(self.collection_name)
+
+        objects = collection.query.fetch_objects(
+            limit=min(self.max_nb_items_retrieved, len(collection)),
+            include_vector=True,
+            return_properties=ReferenceNewsType,
+        ).objects
+        news_vectors = []
+        for object_ in objects:
+            try:
+                news_vectors.append((
+                    News.model_validate(object_.properties),
+                    object_.vector["default"],
+                ))
+            except ValidationError:
+                logging.exception("Error validating object %s", object_)
+
+        return news_vectors
 
     @staticmethod
     def create_query(news: News) -> str:
