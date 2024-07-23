@@ -179,12 +179,12 @@ async def bootstrap_vectorstore(
 
 async def main() -> None:
     """Populate the vectorstore with the reference news."""
-    data_path = Path("data", "reference_news.json")
+    data_path = Path("data", "reference_news", "reference_news_combined.json")
     reference_news = get_reference_news(data_path)
     openai_client = get_openai_client()
     embedding_model_config = EmbeddingModelConfig()
     embedding_model = OpenAIEmbeddingModel(openai_client, embedding_model_config)
-    vectorstore_config = VectorstoreConfig(collection_name="Test_collection")
+    vectorstore_config = VectorstoreConfig(collection_name="ClassificationEvaluationSummary")
     for weaviate_client in get_vectorstore_client():
         weaviate_collection = WeaviateCollection(weaviate_client, vectorstore_config)
         await bootstrap_vectorstore(

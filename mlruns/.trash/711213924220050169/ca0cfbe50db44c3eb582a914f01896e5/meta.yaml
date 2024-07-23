@@ -1,0 +1,16 @@
+artifact_uri: file:///workspaces/cpeq-infolettre-automatique/mlruns/711213924220050169/ca0cfbe50db44c3eb582a914f01896e5/artifacts
+deleted_time: 1721765539748
+end_time: 1721764786332
+entry_point_name: ''
+experiment_id: '711213924220050169'
+lifecycle_stage: deleted
+run_id: ca0cfbe50db44c3eb582a914f01896e5
+run_name: MaxMeanNewsClassifier
+run_uuid: ca0cfbe50db44c3eb582a914f01896e5
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721764751174
+status: 4
+tags: []
+user_id: user

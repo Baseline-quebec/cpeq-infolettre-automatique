@@ -155,15 +155,19 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
     Returns:
         weaviate.WeaviateClient: The vectorstore client.
     """
-    client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
-        version=config("WEAVIATE_VERSION"),
-        persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH"),
-    )
-    if not client.is_ready():
-        error_msg = "Vectorstore is not ready"
-        raise ValueError(error_msg)
-    yield client
-    client.close()
+    try:
+        client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
+            version=config("WEAVIATE_VERSION", cast=str),
+            persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH", cast=str),
+            port=config("WEAVIATE_HTTP_PORT", cast=int),
+            grpc_port=config("WEAVIATE_GRPC_PORT", cast=int),
+        )
+        if not client.is_ready():
+            error_msg = "Vectorstore is not ready"
+            raise ValueError(error_msg)
+        yield client
+    finally:
+        client.close()
 
 
 def get_vectorstore(

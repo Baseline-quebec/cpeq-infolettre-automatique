@@ -1,0 +1,16 @@
+artifact_uri: file:///workspaces/cpeq-infolettre-automatique/mlruns/711213924220050169/af2f9f067783408db7283c6e752f730c/artifacts
+deleted_time: 1721765539748
+end_time: null
+entry_point_name: ''
+experiment_id: '711213924220050169'
+lifecycle_stage: deleted
+run_id: af2f9f067783408db7283c6e752f730c
+run_name: title-summary
+run_uuid: af2f9f067783408db7283c6e752f730c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721759649500
+status: 1
+tags: []
+user_id: user

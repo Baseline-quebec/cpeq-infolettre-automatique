@@ -19,7 +19,7 @@ class NewsClassifier:
         news: News,
         embedding: list[float] | None = None,
         ids_to_keep: Sequence[str | uuid.UUID] | None = None,
-    ) -> list[tuple[Rubric, float]]:
+    ) -> dict[Rubric, float]:
         """Classify the given news.
 
         Args:
@@ -47,7 +47,7 @@ class MaxMeanNewsClassifier(NewsClassifier):
         news: News,
         embedding: list[float] | None = None,
         ids_to_keep: Sequence[str | uuid.UUID] | None = None,
-    ) -> list[tuple[Rubric, float]]:
+    ) -> dict[Rubric, float]:
         """Retrieve Rubric classification scores for a news.
 
         Args:
@@ -64,19 +64,22 @@ class MaxMeanNewsClassifier(NewsClassifier):
         news_scores = await self.vectorstore.hybrid_search(query, embedding, ids_to_keep)
 
         if len(news_scores) == 0:
-            return [(Rubric.AUTRE, 0.0)]
+            rubric_scores = dict[Rubric, float] = dict.fromkeys(Rubric, 0.0)
+            rubric_scores[Rubric.AUTRE] = 1.0
+            return rubric_scores
 
-        scores: dict[Rubric, list[float]] = {Rubric(rubric.value): [] for rubric in Rubric}
+        rubric_list_scores: dict[Rubric, list[float]] = {rubric: [] for rubric in Rubric}
         for news_item, score in news_scores:
             if news_item.rubric is not None:
-                scores[news_item.rubric].append(score)
+                rubric_list_scores[news_item.rubric].append(score)
 
-        rubric_scores = [
-            (rubric, np.mean(score, dtype=float))
-            for rubric, score in scores.items()
-            if len(score) > 0
-        ]
+        rubric_avg_scores: dict[Rubric, float] = dict.fromkeys(Rubric, 0.0)
+        for rubric, scores in rubric_list_scores.items():
+            if len(scores) > 0:
+                rubric_avg_scores[rubric] = np.mean(scores, dtype=float)
 
-        rubric_scores.sort(key=operator.itemgetter(1), reverse=True)
+        rubric_scores = dict(
+            sorted(rubric_avg_scores.items(), key=operator.itemgetter(1), reverse=True)
+        )
 
         return rubric_scores
