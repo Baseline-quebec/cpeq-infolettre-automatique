@@ -1,4 +1,4 @@
-"""Implementation of the Classification Evaluation Module"""
+"""Implementation of the Classification Evaluation Module."""
 
 import json
 import operator
@@ -7,9 +7,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import mlflow
-import numpy as np
 from beir.retrieval.evaluation import EvaluateRetrieval
-from mlflow import MlflowClient
 from sklearn.metrics import ConfusionMatrixDisplay, classification_report, log_loss
 from tqdm import tqdm
 
@@ -17,10 +15,9 @@ from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.dependencies import (
     get_embedding_model,
     get_openai_client,
-    get_vectorstore,
     get_vectorstore_client,
 )
-from cpeq_infolettre_automatique.news_classifier import MaxMeanNewsClassifier, NewsClassifier
+from cpeq_infolettre_automatique.news_classifier import MaxMeanNewsClassifier
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
@@ -78,6 +75,13 @@ class ClassificationEvaluation:
         )
         return report
 
+    def classification_report_txt(self) -> dict[str, float | dict[str, float]]:
+        """Classification Report txt."""
+        report: dict[str, float | dict[str, float]] = classification_report(
+            self.y_true, self.y_pred, target_names=self.target_names, output_dict=False
+        )
+        return report
+
     def confusion_matrix(self) -> ConfusionMatrixDisplay:
         """Confusion Matrix Display."""
         return ConfusionMatrixDisplay.from_predictions(
@@ -88,11 +92,11 @@ class ClassificationEvaluation:
             xticks_rotation="vertical",
         )
 
-    def accuracy(self) -> dict[str, float]:
+    def classification_accuracy(self) -> dict[str, float]:
         """Accuracy."""
         classification_report = self.classification_report()
-        metric_value: float = classification_report["accuracy"]
-        metrics = {"accuracy": metric_value}
+        metric_value: float = classification_report["accuracy"]  # type: ignore[assignment]
+        metrics = {"classification_accuracy": metric_value}
         return metrics
 
     def log_loss(self) -> dict[str, float]:
@@ -100,7 +104,7 @@ class ClassificationEvaluation:
         metrics = {}
         good_pred = []
         probs = []
-        for i, items in enumerate(zip(self.y_true, self.y_scores, strict=True)):
+        for items in zip(self.y_true, self.y_scores, strict=True):
             true_label, labels_scores = items
             for j, label_score in enumerate(labels_scores):
                 label, score = label_score
@@ -120,9 +124,28 @@ class ClassificationEvaluation:
         classification_report = self.classification_report()
         metric_values = classification_report["macro avg"]
         metrics = {}
-        for metric_name, metric_value in metric_values.items():
+        for metric_name, metric_value in metric_values.items():  # type: ignore[union-attr]
             metrics[f"macro_avg_{metric_name}"] = metric_value
         return metrics
+
+    def classification_metrics(self) -> dict[str, float]:
+        """Classification Metrics."""
+        classification_metrics = {}
+        classification_metrics.update(self.classification_accuracy())
+        classification_metrics.update(self.macro_avg())
+        classification_metrics.update(self.log_loss())
+        return classification_metrics
+
+    def retriever_metrics(self) -> list[dict[str, float]]:
+        """Retriever Metrics."""
+        retriever_metrics: list[dict[str, float]] = []
+        retriever_metrics.extend((
+            self.mean_average_precision_at_k(),
+            self.recall_at_k(),
+            self.precision_at_k(),
+            self.accuracy_at_k(),
+        ))
+        return retriever_metrics
 
     def mean_average_precision_at_k(self) -> dict[str, float]:
         """Mean Average Precision."""
@@ -164,7 +187,7 @@ class ClassificationEvaluation:
         """Filtered Out Metrics."""
         metrics = {}
         classification_report = self.classification_report()
-        for metric_name, metric_value in classification_report[Rubric.AUTRE.value].items():
+        for metric_name, metric_value in classification_report[Rubric.AUTRE.value].items():  # type: ignore[union-attr]
             metrics[f"{Rubric.AUTRE.value}_{metric_name}"] = metric_value
         return metrics
 
@@ -172,7 +195,7 @@ class ClassificationEvaluation:
         """Metrics."""
         metrics = {}
         metrics.update(self.filtered_out_news_metrics())
-        metrics.update(self.accuracy())
+        metrics.update(self.classification_accuracy())
         metrics.update(self.macro_avg())
         metrics.update(self.mean_average_precision_at_k())
         metrics.update(self.recall_at_k())
@@ -202,11 +225,25 @@ async def run_experiment(experiment_name: str, run_name: str, vectorstore: Vecto
         experiment_id = experiment.experiment_id
     target_names = [rubric.value for rubric in Rubric]
     news_classifiers = [MaxMeanNewsClassifier(vectorstore)]
-    with mlflow.start_run(run_name=run_name, experiment_id=experiment_id) as parent_run:
+    parent_run = mlflow.search_runs(
+        experiment_ids=[experiment_id], filter_string=f"run_name='{run_name}'"
+    )
+    parent_run_id = None
+    if not parent_run.empty:
+        parent_run_id = parent_run["run_id"][0]
+    with mlflow.start_run(
+        run_id=parent_run_id, run_name=run_name, experiment_id=experiment_id
+    ) as parent_run:
         for news_classifier in tqdm(news_classifiers):
             model_name = type(news_classifier).__name__
+            child_run = mlflow.search_runs(
+                experiment_ids=[experiment_id], filter_string=f"run_name='{model_name}'"
+            )
+            child_run_id = None
+            if not child_run.empty:
+                child_run_id = child_run["run_id"][0]
             with mlflow.start_run(
-                run_name=model_name, experiment_id=experiment_id, nested=True
+                run_id=child_run_id, run_name=model_name, experiment_id=experiment_id, nested=True
             ) as child_run:
                 q_rels = {}
                 results = {}
@@ -230,15 +267,27 @@ def run_classification_evaluation(
 ) -> None:
     """Run Classification Evaluation."""
     classification_evaluation = ClassificationEvaluation(q_rels, results, target_names)
-    mlflow.log_metrics(classification_evaluation.metrics())
+    mlflow.log_metrics(classification_evaluation.classification_metrics())
+    retriever_metrics = classification_evaluation.retriever_metrics()
+    for metrics in retriever_metrics:
+        for key, value in metrics.items():
+            new_key = key.split("_")[0]
+            k = int(key.split("_")[-1])
+            mlflow.log_metric(new_key, value, step=k)
     classification_report = classification_evaluation.classification_report()
+    classification_report_txt: str = classification_evaluation.classification_report_txt()  # type: ignore[assignment]
     with tempfile.TemporaryDirectory() as tmp_dir:
-        path = Path(tmp_dir, "classification_report.json")
-        with path.open("w") as f:
-            json.dump(classification_report, f, indent=2)
-            mlflow.log_artifact(path)
+        json_path = Path(tmp_dir, "classification_report.json")
+        with json_path.open("w", encoding="utf-8") as f:
+            json.dump(classification_report, f, indent=2, ensure_ascii=False)
+        txt_path = Path(tmp_dir, "classification_report.txt")
+        txt_path.write_text(classification_report_txt)
+
+        mlflow.log_artifacts(tmp_dir)
+
     fig = classification_evaluation.confusion_matrix().figure_
-    mlflow.log_figure(fig, "confusion_matrix.png")
+
+    mlflow.log_figure(fig, "confusion_matrix.png", save_kwargs={"bbox_inches": "tight"})
 
 
 async def main(experiment_name: str, collection_name: str) -> None:
