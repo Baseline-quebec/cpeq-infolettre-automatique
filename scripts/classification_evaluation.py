@@ -43,11 +43,13 @@ class ClassificationEvaluation:
         self,
         q_rels: dict[str, dict[str, int]],
         results: dict[str, dict[str, float]],
+        y_pred: list[str],
         target_names: list[str],
     ) -> None:
         """Initialization."""
         self.q_rels = q_rels
         self.results = results
+        self.y_pred = y_pred
         self.target_names = target_names
         self.top_k = [1, 2, 3, 4, 5]
 
@@ -65,11 +67,6 @@ class ClassificationEvaluation:
         return [next(iter(rel.keys())) for rel in self.q_rels.values()]
 
     @property
-    def y_pred(self) -> list[str]:
-        """Predicted Values."""
-        return [y_score[0][0] for y_score in self.y_scores]
-
-    @property
     def y_scores(self) -> list[list[tuple[str, float]]]:
         """Predicted Values."""
         y_scores_new = []
@@ -85,7 +82,7 @@ class ClassificationEvaluation:
     def classification_report(self) -> dict[str, float | dict[str, float]]:
         """Classification Report."""
         report: dict[str, float | dict[str, float]] = classification_report(
-            self.y_true, self.y_pred, output_dict=True
+            self.y_true, self.y_pred, output_dict=True, labels=self.target_names
         )
         return report
 
@@ -101,6 +98,7 @@ class ClassificationEvaluation:
             self.y_pred,
             cmap="Greens",
             xticks_rotation="vertical",
+            display_labels=self.target_names,
         )
 
     def roc_curve(self) -> ConfusionMatrixDisplay:
@@ -293,6 +291,7 @@ async def run_rubric_classifiers_experiment(
     else:
         experiment_id = experiment.experiment_id
     target_names = [rubric.value for rubric in Rubric]
+    target_names.sort()
     parent_run = mlflow.search_runs(
         experiment_ids=[experiment_id], filter_string=f"run_name='{run_name}'"
     )
@@ -303,22 +302,14 @@ async def run_rubric_classifiers_experiment(
         run_id=parent_run_id, run_name=run_name, experiment_id=experiment_id
     ) as parent_run:
         for rubric_classifier in tqdm(rubric_classifiers):
-            model_name = rubric_classifier.model_name
-            child_run_name = f"{run_name}-{model_name}"
-            child_run = mlflow.search_runs(
-                experiment_ids=[experiment_id], filter_string=f"run_name='{child_run_name}'"
-            )
-            child_run_id = None
-            if not child_run.empty:
-                child_run_id = child_run["run_id"][0]
             with mlflow.start_run(
-                run_id=child_run_id,
-                run_name=child_run_name,
                 experiment_id=experiment_id,
                 nested=True,
             ) as child_run:
                 q_rels = {}
                 results = {}
+                y_pred = []
+                wrong_preds: list[tuple[str, dict[str, dict[str, float]]]] = []
                 for i, dataset in tqdm(
                     enumerate(leave_one_out_rubric_classification_dataset_generator(vectorstore))
                 ):
@@ -332,12 +323,25 @@ async def run_rubric_classifiers_experiment(
                     ]
                     rubric_classifier.news_classifier.setup(train_class_vector)
                     q_rels[str(i)] = {test_class: 1}
-                    pred = await rubric_classifier.news_classifier.predict_probs(
+                    probs = await rubric_classifier.news_classifier.predict_probs(
                         news=test_news, embedding=test_embedding, ids_to_keep=ids_to_keep
                     )
-                    results[str(i)] = pred
+                    results[str(i)] = probs
+                    prediction = await rubric_classifier.predict(
+                        news=test_news, embedding=test_embedding, ids_to_keep=ids_to_keep
+                    )
 
-                run_classification_evaluation(q_rels, results, target_names)
+                    y_pred.append(prediction.value)
+                    if prediction.value != test_class:
+                        wrong_preds.append((
+                            test_news.title,
+                            {
+                                "actual": {test_class: probs.get(test_class, 0.0)},
+                                "pred": {prediction.value: probs[prediction.value]},
+                            },
+                        ))
+
+                run_classification_evaluation(q_rels, results, y_pred, target_names, wrong_preds)
                 mlflow.log_params(rubric_classifier.model_info)
                 mlflow.log_param("fields", run_name)
 
@@ -366,22 +370,14 @@ async def run_news_filterers_experiment(
         run_id=parent_run_id, run_name=run_name, experiment_id=experiment_id
     ) as parent_run:
         for news_filtrerer in tqdm(news_filterers):
-            model_name = news_filtrerer.model_name
-            child_run_name = f"{run_name}-{model_name}"
-            child_run = mlflow.search_runs(
-                experiment_ids=[experiment_id], filter_string=f"run_name='{child_run_name}'"
-            )
-            child_run_id = None
-            if not child_run.empty:
-                child_run_id = child_run["run_id"][0]
             with mlflow.start_run(
-                run_id=child_run_id,
-                run_name=child_run_name,
                 experiment_id=experiment_id,
                 nested=True,
             ) as child_run:
                 q_rels = {}
                 results = {}
+                y_pred = []
+                wrong_preds: list[tuple[str, dict[str, dict[str, float]]]] = []
                 for i, dataset in tqdm(
                     enumerate(leave_one_out_news_filtering_dataset_generator(vectorstore))
                 ):
@@ -395,12 +391,24 @@ async def run_news_filterers_experiment(
                     ]
                     news_filtrerer.news_classifier.setup(train_class_vector)
                     q_rels[str(i)] = {test_class: 1}
-                    pred = await news_filtrerer.news_classifier.predict_probs(
+                    probs = await news_filtrerer.predict_probs(
                         news=test_news, embedding=test_embedding, ids_to_keep=ids_to_keep
                     )
-                    results[str(i)] = pred
+                    results[str(i)] = probs
+                    prediction = await news_filtrerer.predict(
+                        news=test_news, embedding=test_embedding, ids_to_keep=ids_to_keep
+                    )
+                    y_pred.append(prediction.value)
+                    if prediction.value != test_class:
+                        wrong_preds.append((
+                            test_news.title,
+                            {
+                                "actual": {test_class: probs.get(test_class, 0.0)},
+                                "pred": {prediction.value: probs[prediction.value]},
+                            },
+                        ))
 
-                run_classification_evaluation(q_rels, results, target_names)
+                run_classification_evaluation(q_rels, results, y_pred, target_names, wrong_preds)
                 mlflow.log_params(news_filtrerer.model_info)
                 mlflow.log_param("fields", run_name)
 
@@ -408,10 +416,12 @@ async def run_news_filterers_experiment(
 def run_classification_evaluation(
     q_rels: dict[str, dict[str, int]],
     results: dict[str, dict[str, float]],
+    y_pred: list[str],
     target_names: list[str],
+    wrong_preds: list[tuple[str, dict[str, dict[str, float]]]],
 ) -> None:
     """Run Classification Evaluation."""
-    classification_evaluation = ClassificationEvaluation(q_rels, results, target_names)
+    classification_evaluation = ClassificationEvaluation(q_rels, results, y_pred, target_names)
     mlflow.log_metrics(classification_evaluation.classification_metrics())
     retriever_metrics = classification_evaluation.retriever_metrics()
     for metrics in retriever_metrics:
@@ -422,9 +432,13 @@ def run_classification_evaluation(
     classification_report = classification_evaluation.classification_report()
     classification_report_txt: str = classification_evaluation.classification_report_txt()  # type: ignore[assignment]
     with tempfile.TemporaryDirectory() as tmp_dir:
-        json_path = Path(tmp_dir, "classification_report.json")
-        with json_path.open("w", encoding="utf-8") as f:
+        classification_report_json_path = Path(tmp_dir, "classification_report.json")
+        wrong_preds_json_path = Path(tmp_dir, "wrong_preds.json")
+        with classification_report_json_path.open("w", encoding="utf-8") as f:
             json.dump(classification_report, f, indent=2, ensure_ascii=False)
+        with wrong_preds_json_path.open("w", encoding="utf-8") as f:
+            json.dump(wrong_preds, f, indent=2, ensure_ascii=False)
+
         txt_path = Path(tmp_dir, "classification_report.txt")
         txt_path.write_text(classification_report_txt)
 
@@ -478,14 +492,18 @@ async def prepare_news_filterers_experiment(
     for vectorstore_client in get_vectorstore_client():
         try:
             vectorstore = Vectorstore(embedding_model, vectorstore_client, vectorstore_config)
+
             news_classifiers = [
+                MaxMeanScoresNewsClassifier(vectorstore),
+                MaxScoreNewsClassifier(vectorstore),
                 KnNewsClassifier(vectorstore),
                 RandomForestNewsClassifier(vectorstore),
                 MaxPoolingNewsClassifier(vectorstore),
             ]
-            news_filterers = [
-                NewsFilterer(news_classifier) for news_classifier in news_classifiers
-            ]
+            news_filterers = []
+            for news_classifier in news_classifiers:
+                for threshold in [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+                    news_filterers.append(NewsFilterer(news_classifier, threshold=threshold))
             await run_news_filterers_experiment(
                 experiment_name, run_name, news_filterers, vectorstore
             )

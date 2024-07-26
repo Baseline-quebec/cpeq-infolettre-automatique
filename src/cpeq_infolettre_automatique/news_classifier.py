@@ -357,7 +357,7 @@ class RubricClassifier:
         }
 
 
-class NewsFilterer(NewsClassifier):
+class NewsFilterer:
     """Implement the NewsFilterer."""
 
     def __init__(self, news_classifier: NewsClassifier, threshold: float = 0.50) -> None:
@@ -384,6 +384,30 @@ class NewsFilterer(NewsClassifier):
             return Relevance.AUTRE
         return Relevance.PERTINENT
 
+    async def predict_probs(
+        self,
+        news: News,
+        embedding: list[float] | None = None,
+        ids_to_keep: Sequence[str | uuid.UUID] | None = None,
+    ) -> dict[str, float]:
+        """Predict the relevance of the given news.
+
+        Args:
+            news: The news to predict if it is relevant or not.
+
+        Returns:
+            The relevance class of the news
+        """
+        predicted_probs = await self.news_classifier.predict_probs(news, embedding, ids_to_keep)
+        not_relevant_prob = predicted_probs[Relevance.AUTRE.value]
+        relevant_prob = 1.0 - not_relevant_prob
+        probs = {
+            Relevance.PERTINENT.value: relevant_prob,
+            Relevance.AUTRE.value: not_relevant_prob,
+        }
+        sorted_probs = dict(sorted(probs.items(), key=operator.itemgetter(1), reverse=True))
+        return sorted_probs
+
     @property
     def model_name(self) -> str:
         """Return the model name."""
@@ -396,4 +420,5 @@ class NewsFilterer(NewsClassifier):
             "model_name": self.model_name,
             "classifier": type(self.news_classifier).__name__,
             "task": type(self).__name__,
+            "threshold": self.threshold,
         }
