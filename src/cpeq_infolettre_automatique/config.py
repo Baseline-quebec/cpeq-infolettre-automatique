@@ -7,6 +7,13 @@ from decouple import config
 from pydantic import BaseModel
 
 
+class Relevance(Enum):
+    """Revelant Enum class."""
+
+    PERTINENT = "Pertinent"
+    AUTRE = "Autre"
+
+
 class Rubric(Enum):
     """Rubric Enum class."""
 

@@ -24,7 +24,7 @@ from cpeq_infolettre_automatique.embedding_model import (
     EmbeddingModel,
     OpenAIEmbeddingModel,
 )
-from cpeq_infolettre_automatique.news_classifier import MaxMeanNewsClassifier, NewsClassifier
+from cpeq_infolettre_automatique.news_classifier import MaxMeanScoresNewsClassifier, NewsClassifier
 from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -187,7 +187,7 @@ def get_news_classifier(
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> NewsClassifier:
     """Return a NewsClassifier instance."""
-    return MaxMeanNewsClassifier(vectorstore=vectorstore)
+    return MaxMeanScoresNewsClassifier(vectorstore=vectorstore)
 
 
 def get_completion_model(

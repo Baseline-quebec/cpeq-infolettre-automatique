@@ -184,7 +184,7 @@ async def main() -> None:
     openai_client = get_openai_client()
     embedding_model_config = EmbeddingModelConfig()
     embedding_model = OpenAIEmbeddingModel(openai_client, embedding_model_config)
-    vectorstore_config = VectorstoreConfig(collection_name="ClassificationEvaluationSummary")
+    vectorstore_config = VectorstoreConfig(collection_name="ClassificationEvaluationContent")
     for weaviate_client in get_vectorstore_client():
         weaviate_collection = WeaviateCollection(weaviate_client, vectorstore_config)
         await bootstrap_vectorstore(

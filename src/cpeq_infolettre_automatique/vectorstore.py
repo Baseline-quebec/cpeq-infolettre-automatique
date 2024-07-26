@@ -56,6 +56,25 @@ class Vectorstore:
         self.hybrid_weight = vectorstore_config.hybrid_weight
         self.minimal_score = vectorstore_config.minimal_score
 
+    async def search_similar_news(
+        self,
+        news: News,
+        ids_to_keep: Sequence[str | uuid.UUID] | None = None,
+    ) -> list[News]:
+        """Search for similar news in the vectorstore.
+
+        Args:
+            news: The news to search for.
+            ids_to_keep: The ids to keep in the search results.
+
+        Returns:
+            The list of similar news.
+        """
+        query = self.create_query(news)
+        embeddings = await self.embedding_model.embed(query)
+        news_retrieved = await self.hybrid_search(query, embeddings, ids_to_keep)
+        return [news_item for news_item, _ in news_retrieved]
+
     async def hybrid_search(
         self,
         query: str,
@@ -145,7 +164,7 @@ class Vectorstore:
         Args:
             news: The news to create the query for.
         """
-        query = f"{news.title} {news.summary}"
+        query = f"{news.title} {news.content}"
         return query
 
     @staticmethod

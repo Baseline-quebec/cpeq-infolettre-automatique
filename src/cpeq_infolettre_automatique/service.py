@@ -2,15 +2,17 @@
 
 import asyncio
 import datetime as dt
+import logging
 from collections.abc import Awaitable, Iterable, Iterator
 
-from cpeq_infolettre_automatique.news_classifier import NewsClassifier
+from cpeq_infolettre_automatique.config import Relevance
+from cpeq_infolettre_automatique.news_classifier import NewsFilterer
+from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import (
     News,
     Newsletter,
 )
-from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
@@ -24,15 +26,15 @@ class Service:
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
         vectorstore: Vectorstore,
-        summary_generator: SummaryGenerator,
-        news_classifier: NewsClassifier,
+        news_producer: NewsProducer,
+        news_filterer: NewsFilterer,
     ) -> None:
         """Initialize the service with the repository and the generator."""
         self.webscraper_io_client = webscraper_io_client
         self.news_repository = news_repository
         self.vectorstore = vectorstore
-        self.summary_generator = summary_generator
-        self.news_classifier = news_classifier
+        self.news_producer = news_producer
+        self.news_filterer = news_filterer
 
     async def generate_newsletter(
         self,
@@ -72,8 +74,12 @@ class Service:
         """Manually add a new News entry in the News repository."""
         self.news_repository.setup()
         start_date, end_date = self._prepare_dates()
-        self._filter_news_by_date(news, start_date, end_date)
-        news = await self._prepare_news(news)
+        if not self._news_in_date_range(news, start_date, end_date):
+            msg = f"The News with title {news.title} was not published in the given time period."
+            logging.warning(msg)
+            return
+
+        news = await self._produce_news(news)
         self.news_repository.create_news(news)
 
     @staticmethod
@@ -119,7 +125,7 @@ class Service:
             filtered_news = self._filter_all_news(
                 all_news, start_date=start_date, end_date=end_date
             )
-            coroutines = [self._prepare_news(news) for news in filtered_news]
+            coroutines = [self._produce_news(news) for news in filtered_news]
             summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
@@ -138,49 +144,48 @@ class Service:
         Returns: The filtered news data.
         """
         for news in all_news:
-            try:
-                yield self._filter_news_by_date(news, start_date, end_date)
-            except ValueError:
-                continue
+            if self._news_in_date_range(news, start_date, end_date) and self._news_is_relevant(
+                news
+            ):
+                yield news
 
     @staticmethod
-    def _filter_news_by_date(news: News, start_date: dt.datetime, end_date: dt.datetime) -> News:
+    def _news_in_date_range(news: News, start_date: dt.datetime, end_date: dt.datetime) -> bool:
+        """Check if the news is in the given date range.
+
+        Args:
+            news: The news data to check.
+            start_date: The start datetime of the date range.
+            end_date: The end datetime of the date range.
+
+        Returns: True if the news is in the date range, False otherwise.
+        """
         if news.datetime is None:
             msg = f"The News with title {news.title} has no date."
-            raise ValueError(msg)
+            logging.warning(msg)
+            return False
         if not start_date <= news.datetime < end_date:
             msg = f"The News with title {news.title} was not published in the given time period."
-            raise ValueError(msg)
-        return news
+            logging.warning(msg)
+            return False
+        return True
 
-    async def _summarize_news(self, classified_news: News) -> News:
-        """Generate summaries for the news data.
-
-        Args:
-            classified_news: The classified news data to summarize.
-
-        Returns: The news data with the summary.
-        """
-        if classified_news.rubric is None:
-            error_msg = "The news must be classified before summarization"
-            raise ValueError(error_msg)
-
-        examples = self.vectorstore.read_many_by_rubric(classified_news.rubric)
-        classified_news.summary = await self.summary_generator.generate(classified_news, examples)
-        return classified_news
-
-    async def _classify_news(self, news: News) -> News:
-        """Classify the news data.
+    async def _news_is_relevant(self, news: News) -> bool:
+        """Check if the news is relevant.
 
         Args:
-            news: The news data to classify.
+            news: The news data to check.
 
-        Returns: The classified news data.
+        Returns: True if the news is relevant, False otherwise.
         """
-        news.rubric = await self.news_classifier.classify(news)
-        return news
+        relevance = await self.news_filterer.predict(news)
+        if relevance == Relevance.AUTRE:
+            msg = f"The News with title {news.title} is not relevant."
+            logging.warning(msg)
+            return False
+        return True
 
-    async def _prepare_news(self, news: News) -> News:
+    async def _produce_news(self, news: News) -> News:
         """Prepare the news data for the newsletter.
 
         Args:
@@ -188,6 +193,5 @@ class Service:
 
         Returns: The prepared news data.
         """
-        classified_news = await self._classify_news(news)
-        summarized_news = await self._summarize_news(classified_news)
-        return summarized_news
+        produced_news = await self.news_producer.produce_news(news)
+        return produced_news
