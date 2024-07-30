@@ -71,15 +71,6 @@ resource "azurerm_container_app" "app" {
     identity_ids = [azurerm_user_assigned_identity.identity.id]
   }
 
-  ingress {
-    target_port  = 8000
-    exposed_port = 80
-    traffic_weight {
-      percentage      = 100
-      latest_revision = true
-    }
-  }
-
   registry {
     server   = azurerm_container_registry.acr.login_server
     identity = azurerm_user_assigned_identity.identity.id
