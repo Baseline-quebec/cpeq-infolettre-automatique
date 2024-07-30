@@ -61,12 +61,6 @@ resource "azurerm_container_app" "app" {
       image  = "cpeq/infolettre-automatique:latest"
       cpu    = 0.25
       memory = "0.5Gi"
-
-      env {
-        name        = ""
-        secret_name = ""
-        value       = ""
-      }
     }
     max_replicas = 1
     min_replicas = 0
