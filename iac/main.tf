@@ -32,7 +32,20 @@ resource "azurerm_user_assigned_identity" "identity" {
   }
 }
 
+resource "azurerm_role_assignment" "acrpull" {
+  scope                = azurerm_container_registry.acr.id
+  principal_id         = azurerm_user_assigned_identity.identity.principal_id
+  role_definition_name = "AcrPull"
+}
+
+resource "time_sleep" "wait_rbac_propagation" {
+  depends_on      = [azurerm_role_assignment.acrpull]
+  create_duration = "60s"
+}
+
 resource "azurerm_container_app_environment" "environment" {
+  depends_on = [time_sleep.wait_rbac_propagation]
+
   name                = "cae-cpeq-${var.environment}-${var.location}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -71,9 +84,8 @@ resource "azurerm_container_app" "app" {
   }
 
   registry {
-    server               = azurerm_container_registry.acr.login_server
-    username             = azurerm_container_registry.acr.admin_username
-    password_secret_name = "acr-admin-password"
+    server   = azurerm_container_registry.acr.login_server
+    identity = azurerm_user_assigned_identity.identity.id
   }
 
   tags = {
