@@ -41,6 +41,10 @@ resource "azurerm_role_assignment" "acrpull" {
 resource "time_sleep" "wait_rbac_propagation" {
   depends_on      = [azurerm_role_assignment.acrpull]
   create_duration = "2m"
+
+  triggers = {
+    rbac = azurerm_role_assignment.acrpull.principal_id
+  }
 }
 
 resource "azurerm_container_app_environment" "environment" {
