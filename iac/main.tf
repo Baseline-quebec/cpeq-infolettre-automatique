@@ -32,12 +32,6 @@ resource "azurerm_user_assigned_identity" "identity" {
   }
 }
 
-resource "azurerm_role_assignment" "app_acrpull" {
-  scope                = azurerm_container_registry.acr.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.identity.principal_id
-}
-
 resource "azurerm_container_app_environment" "environment" {
   name                = "cae-cpeq-${var.environment}-${var.location}"
   location            = azurerm_resource_group.rg.location
@@ -71,9 +65,15 @@ resource "azurerm_container_app" "app" {
     identity_ids = [azurerm_user_assigned_identity.identity.id]
   }
 
+  secret {
+    name  = "ACR-AdminPassword"
+    value = azurerm_container_registry.acr.admin_password
+  }
+
   registry {
-    server   = azurerm_container_registry.acr.login_server
-    identity = azurerm_user_assigned_identity.identity.id
+    server               = azurerm_container_registry.acr.login_server
+    username             = azurerm_container_registry.acr.admin_username
+    password_secret_name = "ACR-AdminPassword"
   }
 
   tags = {
