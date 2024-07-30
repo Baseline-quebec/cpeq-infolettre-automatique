@@ -21,67 +21,74 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
-resource "azurerm_storage_account" "storage" {
-  name                     = "st0cpeq0${var.environment}0${var.location}"
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-
-  tags = {
-    environment = var.environment
-    project     = "CPEQ"
-  }
-}
-
-resource "azurerm_service_plan" "service_plan" {
-  name                = "asp-cpeq-${var.environment}-${var.location}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  os_type             = "Linux"
-  sku_name            = "Y1"
-
-  tags = {
-    environment = var.environment
-    project     = "CPEQ"
-  }
-}
-
-resource "azurerm_user_assigned_identity" "function_app" {
+resource "azurerm_user_assigned_identity" "identity" {
   location            = azurerm_resource_group.rg.location
   name                = "id-func-${var.environment}-${var.location}"
   resource_group_name = azurerm_resource_group.rg.name
+
+  tags = {
+    environment = var.environment
+    project     = "CPEQ"
+  }
 }
 
-resource "azurerm_role_assignment" "func_acr" {
+resource "azurerm_role_assignment" "app_acrpull" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
   principal_id         = azurerm_user_assigned_identity.function_app.principal_id
+
 }
 
-resource "azurerm_linux_function_app" "function_app" {
-  name                = "func-cpeq-${var.environment}-${var.location}"
-  resource_group_name = azurerm_resource_group.rg.name
+resource "azurerm_container_app_environment" "environment" {
+  name                = "cae-cpeq-${var.environment}-${var.location}"
   location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
-  storage_account_name       = azurerm_storage_account.storage.name
-  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
-  service_plan_id            = azurerm_service_plan.service_plan.id
-  https_only                 = true
+  tags = {
+    environment = var.environment
+    project     = "CPEQ"
+  }
+}
+
+resource "azurerm_container_app" "app" {
+  name                         = "ca-cpeq-${var.environment}-${var.location}"
+  container_app_environment_id = azurerm_container_app_environment.environment.id
+  resource_group_name          = azurerm_resource_group.rg.name
+  revision_mode                = "Single"
+
+  template {
+    container {
+      name   = "infolettre-automatique"
+      image  = "cpeq/infolettre-automatique:latest"
+      cpu    = 0.25
+      memory = "0.5Gi"
+
+      env {
+        name        = ""
+        secret_name = ""
+        value       = ""
+      }
+    }
+    max_replicas = 1
+    min_replicas = 0
+  }
 
   identity {
     type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.function_app.id]
+    identity_ids = [azurerm_user_assigned_identity.identity.id]
   }
 
-  site_config {
-    application_stack {
-      docker {
-        registry_url = azurerm_container_registry.acr.login_server
-        image_name   = "cpeq-infolettre-automatique"
-        image_tag    = "latest"
-      }
+  ingress {
+    target_port  = 8000
+    exposed_port = 80
+    traffic_weight {
+      percentage = 100
     }
+  }
+
+  registry {
+    server   = azurerm_container_registry.acr.login_server
+    identity = azurerm_user_assigned_identity.identity.id
   }
 
   tags = {
