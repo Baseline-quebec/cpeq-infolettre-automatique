@@ -214,7 +214,7 @@ def get_news_classifier(
     vectorstore: Annotated[Vectorstore, get_vectorstore],
 ) -> BaseNewsClassifier:
     """Return a BaseNewsClassifier instance."""
-    return MaxPoolingNewsClassifier(vectorstore)
+    return MaxPoolingNewsClassifier(vectorstore=vectorstore)
 
 
 def get_rubric_classifier(

@@ -3,6 +3,7 @@
 import operator
 import uuid
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 from pydantic import BaseModel
@@ -25,6 +26,8 @@ class BaseNewsClassifier(BaseModel):
 
         This should only take inputs and outputs, and be agnnostic of the value predicted.
     """
+
+    vectorstore: Vectorstore
 
     async def predict_probs(
         self,
@@ -85,14 +88,6 @@ class BaseNewsClassifier(BaseModel):
 class MaxMeanScoresNewsClassifier(BaseNewsClassifier):
     """Classify news based on the maximum mean of the classification scores."""
 
-    def __init__(self, vectorstore: Vectorstore) -> None:
-        """Initialize the classifier with the provided Vectorstore.
-
-        Args:
-            vectorstore: The Vectorstore to use for classification.
-        """
-        self.vectorstore = vectorstore
-
     async def predict_scores(
         self,
         news: News,
@@ -136,14 +131,6 @@ class MaxMeanScoresNewsClassifier(BaseNewsClassifier):
 class MaxScoreNewsClassifier(BaseNewsClassifier):
     """Classify news based on the maximum classification score."""
 
-    def __init__(self, vectorstore: Vectorstore) -> None:
-        """Initialize the classifier with the provided Vectorstore.
-
-        Args:
-            vectorstore: The Vectorstore to use for classification.
-        """
-        self.vectorstore = vectorstore
-
     async def predict_scores(
         self,
         news: News,
@@ -179,71 +166,11 @@ class MaxScoreNewsClassifier(BaseNewsClassifier):
         return prediction_scores
 
 
-class KnNewsClassifier(BaseNewsClassifier):
-    """Classify news based on the K-Nearest Neighbors algorithm."""
-
-    def __init__(self, vectorstore: Vectorstore, n_neighbors: int = 4) -> None:
-        """Initialize the classifier with the provided Vectorstore.
-
-        Args:
-            vectorstore: The Vectorstore to use for classification.
-            n_neighbors: The number of neighbors to consider for classification.
-        """
-        self.vectorstore = vectorstore
-        self.classifier = KNeighborsClassifier(n_neighbors=n_neighbors, metric="cosine")
-        self.labels: list[str] = []
-
-    def setup(self, train_news: list[tuple[str, list[float]]]) -> None:
-        """Setup the classifier.
-
-        Args:
-            train_news: The training data to use for classification.
-        """
-        x = [train_news_item[1] for train_news_item in train_news]
-        y = [train_news_item[0] for train_news_item in train_news]
-
-        self.labels = sorted(set(y))
-
-        self.classifier.fit(x, y)
-
-    async def predict_scores(
-        self,
-        news: News,
-        embedding: list[float] | None = None,
-        ids_to_keep: Sequence[str | uuid.UUID] | None = None,
-    ) -> dict[str, float]:
-        """Retrieve Rubric classification scores for a news.
-
-        Args:
-            news: The news to classify a new Rubric from.
-            embedding: The embedding of the news.
-            ids_to_keep: The list of News ids to keep to perform the the classification.
-
-        Returns:
-            list[tuple[Rubric, float]]: A list of tuples containing the Rubric and the classification score.
-        """
-        query = Vectorstore.create_query(news)
-        if embedding is None:
-            embedding = await self.vectorstore.embedding_model.embed(text_description=query)
-
-        probs = self.classifier.predict_proba([embedding])
-
-        label_probs = dict(zip(self.labels, probs[0], strict=True))
-
-        return label_probs
-
-
 class MaxPoolingNewsClassifier(BaseNewsClassifier):
     """Classify news based on the maximum pooling of the rubric embeddings."""
 
-    def __init__(self, vectorstore: Vectorstore) -> None:
-        """Initialize the classifier with the provided Vectorstore.
-
-        Args:
-            vectorstore: The Vectorstore to use for classification.
-        """
-        self.vectorstore = vectorstore
-        self.labels: list[str] = []
+    labels: list[str] = []
+    label_average_embeddings: dict[str, list[float]] = {}
 
     def setup(self, train_news: list[tuple[str, list[float]]]) -> None:
         """Setup the classifier.
@@ -290,19 +217,69 @@ class MaxPoolingNewsClassifier(BaseNewsClassifier):
         return label_scores
 
 
+class KnNewsClassifier(BaseNewsClassifier):
+    """Classify news based on the K-Nearest Neighbors algorithm."""
+
+    n_neighbors: int = 4
+    labels: list[str] = []
+    classifier: Any = None
+
+    def model_post_init(self, _context: Any) -> None:
+        """Initialize the classifier."""
+        self.classifier = KNeighborsClassifier(n_neighbors=self.n_neighbors, metric="cosine")
+
+    def setup(self, train_news: list[tuple[str, list[float]]]) -> None:
+        """Setup the classifier.
+
+        Args:
+            train_news: The training data to use for classification.
+        """
+        self.classifier = KNeighborsClassifier(n_neighbors=self.n_neighbors, metric="cosine")
+        x = [train_news_item[1] for train_news_item in train_news]
+        y = [train_news_item[0] for train_news_item in train_news]
+
+        self.labels = sorted(set(y))
+
+        self.classifier.fit(x, y)
+
+    async def predict_scores(
+        self,
+        news: News,
+        embedding: list[float] | None = None,
+        ids_to_keep: Sequence[str | uuid.UUID] | None = None,
+    ) -> dict[str, float]:
+        """Retrieve Rubric classification scores for a news.
+
+        Args:
+            news: The news to classify a new Rubric from.
+            embedding: The embedding of the news.
+            ids_to_keep: The list of News ids to keep to perform the the classification.
+
+        Returns:
+            list[tuple[Rubric, float]]: A list of tuples containing the Rubric and the classification score.
+        """
+        query = Vectorstore.create_query(news)
+        if embedding is None:
+            embedding = await self.vectorstore.embedding_model.embed(text_description=query)
+
+        probs = self.classifier.predict_proba([embedding])
+
+        label_probs = dict(zip(self.labels, probs[0], strict=True))
+
+        return label_probs
+
+
 class RandomForestNewsClassifier(BaseNewsClassifier):
     """Classify news based on the RandomForest algorithm."""
 
-    def __init__(self, vectorstore: Vectorstore, n_estimators: int = 100) -> None:
-        """Initialize the classifier with the provided Vectorstore.
+    n_estimators: int = 100
+    labels: list[str] = []
+    classifier: Any = None
 
-        Args:
-            vectorstore: The Vectorstore to use for classification.
-            n_estimators: The number of estimators to consider for classification.
-        """
-        self.vectorstore = vectorstore
-        self.classifier = RandomForestClassifier(n_estimators=n_estimators)
+    def model_post_init(self, _context: Any) -> None:
+        """Initialize the classifier."""
         self.labels: list[str] = []
+        self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, metric="cosine")
 
     def setup(self, train_news: list[tuple[str, list[float]]]) -> None:
         """Setup the classifier."""
@@ -310,7 +287,6 @@ class RandomForestNewsClassifier(BaseNewsClassifier):
         y = [train_news_item[0] for train_news_item in train_news]
 
         self.labels = sorted(set(y))
-
         self.classifier.fit(x, y)
 
     async def predict_scores(

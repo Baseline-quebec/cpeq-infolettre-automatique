@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Literal
 
 import mlflow
+import pandas as pd
 from beir.retrieval.evaluation import EvaluateRetrieval
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -336,7 +337,7 @@ async def run_classifiers_experiment(  # noqa: PLR0914
                     train_class_vector = [
                         (class_, embedding) for _, class_, embedding in train_news_class_vector
                     ]
-                    news_classifier.news_classifier.setup(train_class_vector)
+                    news_classifier.model.setup(train_class_vector)
                     q_rels[str(i)] = {test_class: 1}
                     probs = await news_classifier.predict_probs(
                         news=test_news, embedding=test_embedding, ids_to_keep=ids_to_keep
@@ -377,12 +378,15 @@ def run_classification_evaluation(
             k = int(key.split("_")[-1])
             mlflow.log_metric(new_key, value, step=k)
     classification_report = classification_evaluation.classification_report()
+    mlflow.log_table(
+        pd.DataFrame.from_dict(classification_report)
+        .T.reset_index()
+        .rename({"index": "field"}, axis=1),
+        "classification_report.json",
+    )
     classification_report_txt: str = classification_evaluation.classification_report_txt()
     with tempfile.TemporaryDirectory() as tmp_dir:
-        classification_report_json_path = Path(tmp_dir, "classification_report.json")
         wrong_preds_json_path = Path(tmp_dir, "wrong_preds.json")
-        with classification_report_json_path.open("w", encoding="utf-8") as f:
-            json.dump(classification_report, f, indent=2, ensure_ascii=False)
         with wrong_preds_json_path.open("w", encoding="utf-8") as f:
             json.dump(wrong_preds, f, indent=2, ensure_ascii=False)
 
@@ -418,10 +422,10 @@ async def prepare_news_classifiers_experiment(
                 vectorstore_config=vectorstore_config,
             )
             news_classifier_models = [
-                MaxMeanScoresNewsClassifier(vectorstore),
-                KnNewsClassifier(vectorstore),
-                MaxScoreNewsClassifier(vectorstore),
-                MaxPoolingNewsClassifier(vectorstore),
+                MaxMeanScoresNewsClassifier(vectorstore=vectorstore),
+                KnNewsClassifier(vectorstore=vectorstore),
+                MaxScoreNewsClassifier(vectorstore=vectorstore),
+                MaxPoolingNewsClassifier(vectorstore=vectorstore),
             ]
 
             news_classifiers: list[RubricClassifier | NewsFilterer] = []

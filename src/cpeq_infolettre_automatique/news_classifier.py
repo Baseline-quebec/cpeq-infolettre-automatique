@@ -19,6 +19,22 @@ class RubricClassifier(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    async def predict_probs(
+        self,
+        news: News,
+        embedding: list[float] | None = None,
+        ids_to_keep: Sequence[str | uuid.UUID] | None = None,
+    ) -> dict[str, float]:
+        """Predict the rubric of the given news.
+
+        Args:
+            news: The news to predict the rubric from.
+
+        Returns:
+            The rubric class of the news
+        """
+        return await self.model.predict_probs(news, embedding, ids_to_keep)
+
     async def predict(
         self,
         news: News,
@@ -33,7 +49,7 @@ class RubricClassifier(BaseModel):
         Returns:
             The rubric class of the news
         """
-        predicted_probs = await self.model.predict_probs(news, embedding, ids_to_keep)
+        predicted_probs = await self.predict_probs(news, embedding, ids_to_keep)
         return Rubric(next(iter(predicted_probs)))
 
     @property
