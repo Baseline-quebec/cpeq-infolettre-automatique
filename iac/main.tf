@@ -66,14 +66,14 @@ resource "azurerm_container_app" "app" {
   }
 
   secret {
-    name  = "ACR-AdminPassword"
+    name  = "acr-admin-password"
     value = azurerm_container_registry.acr.admin_password
   }
 
   registry {
     server               = azurerm_container_registry.acr.login_server
     username             = azurerm_container_registry.acr.admin_username
-    password_secret_name = "ACR-AdminPassword"
+    password_secret_name = "acr-admin-password"
   }
 
   tags = {
