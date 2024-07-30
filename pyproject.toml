@@ -188,10 +188,10 @@ max-args = 8
       gunicorn \
         --access-logfile - \
         --bind $host:$port \
-        --graceful-timeout 10 \
-        --keep-alive 10 \
+        --graceful-timeout 60 \
+        --keep-alive 60 \
         --log-file - \
-        --timeout 30 \
+        --timeout 60 \
         --worker-class uvicorn.workers.UvicornWorker \
         --worker-tmp-dir /dev/shm \
         --workers 2 \

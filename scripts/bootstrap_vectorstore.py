@@ -48,9 +48,22 @@ class WeaviateCollection:
             embedding_model: The embedding model.
         """
         self.client = client
-        self.collection_name = vectorstore_config.collection_name
-        self.batch_size = vectorstore_config.batch_size
-        self.concurrent_requests = vectorstore_config.concurrent_requests
+        self.vectorstore_config = vectorstore_config
+
+    @property
+    def collection_name(self) -> str:
+        """Get the collection name."""
+        return self.vectorstore_config.collection_name
+
+    @property
+    def batch_size(self) -> int:
+        """Get the batch size."""
+        return self.vectorstore_config.batch_size
+
+    @property
+    def concurrent_requests(self) -> int:
+        """Get the concurrent requests."""
+        return self.vectorstore_config.concurrent_requests
 
     def create(self) -> None:
         """Create the collection in Weaviate according to Cpeq News schema. See #TODO for the schema details."""
@@ -138,14 +151,26 @@ async def populate_db(
             if reference_news.rubric is None:
                 logger.warning("Reference News with title %s had no rubric.", reference_news.title)
                 continue
-            text_to_embed = Vectorstore.create_query(reference_news)
             object_id = Vectorstore.create_uuid(reference_news)
-            vectorized_item = await embedding_model.embed(text_description=text_to_embed)
+            title_summary_vectorized = await embedding_model.embed(
+                text_description=Vectorstore.create_query(
+                    reference_news, vector_name="title_summary"
+                )
+            )
+            title_content_vectorized = await embedding_model.embed(
+                text_description=Vectorstore.create_query(
+                    reference_news, vector_name="title_content"
+                )
+            )
+            vectors = {
+                weaviate_collection.vectorstore_config.title_summary_vector_name: title_summary_vectorized,
+                weaviate_collection.vectorstore_config.title_content_vector_name: title_content_vectorized,
+            }
             uuid_upserted: uuid.UUID | str = batch.add_object(
                 properties=reference_news.model_dump(),
                 collection=weaviate_collection.collection_name,
                 uuid=object_id,
-                vector=vectorized_item,
+                vector=vectors,
             )
             uuids_upserted.append(uuid_upserted)
             if batch.number_errors > 0:
@@ -184,7 +209,7 @@ async def main() -> None:
     openai_client = get_openai_client()
     embedding_model_config = EmbeddingModelConfig()
     embedding_model = OpenAIEmbeddingModel(
-        client=openai_client, embedding_config=embedding_model_config
+        client=openai_client, embedding_model_config=embedding_model_config
     )
     vectorstore_config = VectorstoreConfig(collection_name="ClassificationEvaluationSummary")
     for weaviate_client in get_vectorstore_client():

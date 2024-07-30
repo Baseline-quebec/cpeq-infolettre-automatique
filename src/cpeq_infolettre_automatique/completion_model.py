@@ -8,17 +8,20 @@ from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
-from pydantic import BaseModel, ConfigDict
 
 from cpeq_infolettre_automatique.config import CompletionModelConfig
 
 
-class CompletionModel(BaseModel, ABC):
+class CompletionModel(ABC):
     """Abstract class for completion models."""
 
-    completion_model_config: CompletionModelConfig
+    def __init__(self, completion_model_config: CompletionModelConfig) -> None:
+        """Initialize the completion model.
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+        Args:
+            completion_model_config: The completion model configuration.
+        """
+        self.completion_model_config: CompletionModelConfig
 
     @property
     def model(self) -> str:
@@ -38,7 +41,17 @@ class CompletionModel(BaseModel, ABC):
 class OpenAICompletionModel(CompletionModel):
     """OpenAI completion model implementation."""
 
-    client: AsyncOpenAI
+    def __init__(
+        self, client: AsyncOpenAI, completion_model_config: CompletionModelConfig
+    ) -> None:
+        """Initialize the OpenAI completion model.
+
+        Args:
+            client: The OpenAI client.
+            completion_model_config: The completion model configuration.
+        """
+        super().__init__(completion_model_config)
+        self.client = client
 
     async def complete_message(self, user_message: str, system_prompt: str | None) -> str:
         """Predict the completion for the given data.

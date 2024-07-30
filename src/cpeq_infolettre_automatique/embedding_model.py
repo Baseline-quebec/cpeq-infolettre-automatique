@@ -2,17 +2,20 @@
 
 import tiktoken
 from openai import AsyncOpenAI
-from pydantic import BaseModel, ConfigDict
 
 from cpeq_infolettre_automatique.config import EmbeddingModelConfig
 
 
-class EmbeddingModel(BaseModel):
+class EmbeddingModel:
     """Abstract base class for embedding models."""
 
-    embedding_config: EmbeddingModelConfig
+    def __init__(self, embedding_config: EmbeddingModelConfig) -> None:
+        """Initialize the embedding model.
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+        Args:
+            embedding_config: The embedding model configuration.
+        """
+        self.embedding_config = embedding_config
 
     @property
     def embedding_model_id(self) -> str:
@@ -47,7 +50,15 @@ class EmbeddingModel(BaseModel):
 class OpenAIEmbeddingModel(EmbeddingModel):
     """Embedding model using OpenAI's API."""
 
-    client: AsyncOpenAI
+    def __init__(self, embedding_model_config: EmbeddingModelConfig, client: AsyncOpenAI) -> None:
+        """Initialize the OpenAI embedding model.
+
+        Args:
+            config: The embedding model configuration.
+            client: The OpenAI client.
+        """
+        super().__init__(embedding_model_config)
+        self.client = client
 
     async def embed(self, text_description: str) -> list[float]:
         """Get the embedding of an image or text description.

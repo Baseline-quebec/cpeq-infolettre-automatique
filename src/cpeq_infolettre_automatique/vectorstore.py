@@ -4,11 +4,12 @@ import datetime as dt
 import logging
 import uuid
 from collections.abc import Sequence
-from typing import TypedDict
+from typing import Annotated, Literal, TypedDict
 
 import weaviate
 import weaviate.classes as wvc
 from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic.json_schema import SkipJsonSchema
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
@@ -33,14 +34,25 @@ class ReferenceNewsType(TypedDict):
     summary: str
 
 
-class Vectorstore(BaseModel):
+class Vectorstore:
     """Handles vector storage and retrieval using embeddings."""
 
-    embedding_model: EmbeddingModel
-    vectorstore_client: weaviate.WeaviateClient
-    vectorstore_config: VectorstoreConfig
+    def __init__(
+        self,
+        embedding_model: EmbeddingModel,
+        vectorstore_client: weaviate.WeaviateClient,
+        vectorstore_config: VectorstoreConfig,
+    ) -> None:
+        """Initialize the Vectorstore with the embedding model and the vectorstore client.
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+        Args:
+            embedding_model: The embedding model to use.
+            vectorstore_client: The vectorstore client to use.
+            vectorstore_config: The vectorstore configuration.
+        """
+        self.embedding_model = embedding_model
+        self.vectorstore_client = vectorstore_client
+        self.vectorstore_config = vectorstore_config
 
     @property
     def collection_name(self) -> str:
@@ -65,6 +77,7 @@ class Vectorstore(BaseModel):
     async def search_similar_news(
         self,
         news: News,
+        vector_name: VectorNames,
         ids_to_keep: Sequence[str | uuid.UUID] | None = None,
     ) -> list[News]:
         """Search for similar news in the vectorstore.
@@ -76,15 +89,20 @@ class Vectorstore(BaseModel):
         Returns:
             The list of similar news.
         """
-        query = self.create_query(news)
+        query = (
+            self.create_title_content_query(news)
+            if vector_name == "title_content"
+            else self.create_title_summary_query(news)
+        )
         embeddings = await self.embedding_model.embed(query)
-        news_retrieved = await self.hybrid_search(query, embeddings, ids_to_keep)
+        news_retrieved = await self.hybrid_search(query, embeddings, vector_name, ids_to_keep)
         return [news_item for news_item, _ in news_retrieved]
 
     async def hybrid_search(
         self,
         query: str,
         embeddings: list[float],
+        vector_name: VectorNames,
         ids_to_keep: Sequence[str | uuid.UUID] | None = None,
     ) -> list[tuple[News, float]]:
         """Search for similar news in the vectorstore.
@@ -106,6 +124,7 @@ class Vectorstore(BaseModel):
             alpha=self.hybrid_weight,
             return_metadata=wvc.query.MetadataQuery(score=True),
             return_properties=ReferenceNewsType,
+            target_vector=vector_name,
             filters=wvc.query.Filter.by_id().contains_any(list(ids_to_keep))
             if ids_to_keep
             else None,
@@ -145,7 +164,7 @@ class Vectorstore(BaseModel):
 
         return news
 
-    def read_many_with_vectors(self) -> list[tuple[News, list[float]]]:
+    def read_many_with_vectors(self, vector_name: VectorNames) -> list[tuple[News, list[float]]]:
         """Get objects with specific rubric from the repository.
 
         Args:
@@ -158,6 +177,7 @@ class Vectorstore(BaseModel):
 
         objects = collection.query.fetch_objects(
             limit=min(self.max_nb_items_retrieved, len(collection)),
+            target_vector=vector_name,
             include_vector=True,
             return_properties=ReferenceNewsType,
         ).objects
@@ -166,7 +186,7 @@ class Vectorstore(BaseModel):
             try:
                 news_vectors.append((
                     News.model_validate(object_.properties),
-                    object_.vector["default"],
+                    object_.vector[vector_name],
                 ))
             except ValidationError:
                 logging.exception("Error validating object %s", object_)
@@ -174,13 +194,37 @@ class Vectorstore(BaseModel):
         return news_vectors
 
     @staticmethod
-    def create_query(news: News) -> str:
+    def create_query(news: News, *, vector_name: VectorNames) -> str:
+        """Create a query for the Weaviate client.
+
+        Args:
+            news: The news to create the query for.
+        """
+        query = (
+            Vectorstore.create_title_summary_query(news)
+            if vector_name == "title_summary"
+            else Vectorstore.create_title_content_query(news)
+        )
+        return query
+
+    @staticmethod
+    def create_title_summary_query(news: News) -> str:
         """Create a query for the Weaviate client.
 
         Args:
             news: The news to create the query for.
         """
         query = f"{news.title} {news.summary}"
+        return query
+
+    @staticmethod
+    def create_title_content_query(news: News) -> str:
+        """Create a query for the Weaviate client.
+
+        Args:
+            news: The news to create the query for.
+        """
+        query = f"{news.title} {news.content}"
         return query
 
     @staticmethod

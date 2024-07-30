@@ -12,8 +12,7 @@ from O365.drive import Folder
 from openai import AsyncOpenAI
 
 from cpeq_infolettre_automatique.classification_algo import (
-    BaseNewsClassifier,
-    MaxPoolingNewsClassifier,
+    NewsClassifierFactory,
 )
 from cpeq_infolettre_automatique.completion_model import (
     CompletionModel,
@@ -23,6 +22,7 @@ from cpeq_infolettre_automatique.config import (
     CompletionModelConfig,
     EmbeddingModelConfig,
     NewsFiltererConfig,
+    RubricClassifierConfig,
     VectorstoreConfig,
 )
 from cpeq_infolettre_automatique.embedding_model import (
@@ -151,8 +151,10 @@ def get_embedding_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
 ) -> EmbeddingModel:
     """Return an EmbeddingModel instance with the provided API key."""
-    embedding_config = EmbeddingModelConfig()
-    return OpenAIEmbeddingModel(client=openai_client, embedding_config=embedding_config)
+    embedding_model_config = EmbeddingModelConfig()
+    return OpenAIEmbeddingModel(
+        client=openai_client, embedding_model_config=embedding_model_config
+    )
 
 
 def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
@@ -179,9 +181,9 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
 def get_vectorstore(
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
     embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
+    vectorstore_config: VectorstoreConfig,
 ) -> Vectorstore:
     """Return a Vectorstore instance with the provided dependencies."""
-    vectorstore_config = VectorstoreConfig()
     return Vectorstore(
         vectorstore_client=vectorstore_client,
         embedding_model=embedding_model,
@@ -203,39 +205,45 @@ def get_completion_model(
 
 def get_summary_generator(
     completion_model: Annotated[CompletionModel, Depends(get_completion_model)],
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> SummaryGenerator:
     """Return a SummaryGenerator instance."""
     return SummaryGenerator(
         completion_model=completion_model,
+        vectorstore=vectorstore,
     )
 
 
-def get_news_classifier(
-    vectorstore: Annotated[Vectorstore, get_vectorstore],
-) -> BaseNewsClassifier:
-    """Return a BaseNewsClassifier instance."""
-    return MaxPoolingNewsClassifier(vectorstore=vectorstore)
-
-
 def get_rubric_classifier(
-    news_classifier: Annotated[BaseNewsClassifier, get_news_classifier],
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> RubricClassifier:
     """Return a RubricClassifier instance."""
-    return RubricClassifier(model=news_classifier)
+    rubric_classifier_config = RubricClassifierConfig()
+    news_classifier_model = NewsClassifierFactory.create_news_classifier(
+        vectorstore=vectorstore,
+        classifier_type=rubric_classifier_config.classification_model_name,
+        vector_name=rubric_classifier_config.vector_name,
+    )
+    return RubricClassifier(model=news_classifier_model)
 
 
 def get_news_filterer(
-    news_classifier: BaseNewsClassifier,
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> NewsFilterer:
     """Return a NewsFilterer instance."""
+    news_filterer_config = NewsFiltererConfig()
+    news_classifier_model = MaxPoolingNewsClassifier(
+        vectorstore=vectorstore, vector_name="title_content"
+    )
+    news_classifier_model.setup()
     filterer_config = NewsFiltererConfig()
-    return NewsFilterer(model=news_classifier, news_filterer_config=filterer_config)
+    return NewsFilterer(model=news_classifier_model, news_filterer_config=filterer_config)
 
 
 def get_news_producer(
-    summary_generator: Annotated[SummaryGenerator, get_summary_generator],
-    rubric_classifier: Annotated[RubricClassifier, get_rubric_classifier],
-    vectorstore: Annotated[Vectorstore, get_vectorstore],
+    summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
+    rubric_classifier: Annotated[RubricClassifier, Depends(get_rubric_classifier)],
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> NewsProducer:
     """Return a NewsProducer instance."""
     return NewsProducer(

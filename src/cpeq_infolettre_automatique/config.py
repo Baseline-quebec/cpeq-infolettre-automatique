@@ -7,6 +7,9 @@ from decouple import config
 from pydantic import BaseModel
 
 
+type VectorNames = VectorNames
+
+
 class Relevance(Enum):
     """Revelant Enum class."""
 
@@ -73,6 +76,9 @@ class VectorstoreConfig(BaseModel):
         "",
         cast=str,
     )
+
+    title_summary_vector_name: VectorNames = "title_summary"
+    title_content_vector_name: VectorNames = "title_content"
     max_nb_items_retrieved: int = config("MAX_NB_ITEM_RETRIEVED", 1000, cast=int)
     hybrid_weight: float = config("VECTORSTORE_HYBRID_WEIGHT", 0.75, cast=float)
     batch_size: int = max(config("BATCH_SIZE", 5, cast=int), 1)
@@ -90,4 +96,13 @@ class CompletionModelConfig(BaseModel):
 class NewsFiltererConfig(BaseModel):
     """Configuration for the news filterer."""
 
+    classification_model_name: str = config("NEWS_FILTERER_MODEL_NAME", cast=str)
+    vector_name: VectorNames = config("NEWS_FILTERER_VECTOR_NAME", cast=str)
     threshold: float = config("NEWS_FILTERER_THRESHOLD", 0.50, cast=float)
+
+
+class RubricClassifierConfig(BaseModel):
+    """Configuration for the rubric classifier."""
+
+    classification_model_name: str = config("RUBRIC_CLASSIFIER_MODEL_NAME", cast=str)
+    vector_name: VectorNames = config("RUBRIC_CLASSIFIER_VECTOR_NAME", cast=str)

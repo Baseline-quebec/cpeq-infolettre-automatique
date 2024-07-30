@@ -5,6 +5,8 @@ import datetime as dt
 import logging
 from collections.abc import AsyncIterator, Awaitable, Iterable
 
+from tqdm import tqdm
+
 from cpeq_infolettre_automatique.config import Relevance
 from cpeq_infolettre_automatique.news_classifier import NewsFilterer
 from cpeq_infolettre_automatique.news_producer import NewsProducer
@@ -52,12 +54,14 @@ class Service:
 
         # For the moment, only the coroutine for scraped news is implemented.
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
+        logging.info("Nb Scraping jobs: %s", len(job_ids))
         scraped_news_coroutines = self._prepare_scraped_news_summarization_coroutines(
             start_date, end_date, job_ids
         )
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
+
         self.news_repository.create_many_news(flattened_news)
         if delete_scraping_jobs:
             await self.webscraper_io_client.delete_scraping_jobs()
@@ -129,7 +133,7 @@ class Service:
             summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
-        return (scraped_news_coroutine(job_id) for job_id in job_ids)
+        return (scraped_news_coroutine(job_id) for job_id in tqdm(job_ids))
 
     async def _filter_all_news(
         self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime

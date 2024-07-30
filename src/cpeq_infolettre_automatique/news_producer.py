@@ -1,25 +1,24 @@
 """Implementation of the News Producer Class."""
 
-from pydantic import BaseModel, ConfigDict
-
 from cpeq_infolettre_automatique.news_classifier import RubricClassifier
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
-from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
 
-class NewsProducer(BaseModel):
+class NewsProducer:
     """Class to produce news for the newsletter."""
 
-    summary_generator: SummaryGenerator
-    rubric_classifier: RubricClassifier
-    vectorstore: Vectorstore
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def __init__(
+        self,
+        summary_generator: SummaryGenerator,
+        rubric_classifier: RubricClassifier,
+    ) -> None:
+        """Initialize the News Producer with the summary generator and the rubric classifier."""
+        self.summary_generator = summary_generator
+        self.rubric_classifier = rubric_classifier
 
     async def produce_news(self, news: News) -> News:
         """Produce the news by classifying and summarizing it."""
-        reference_news = await self.vectorstore.search_similar_news(news)
-        news.summary = await self.summary_generator.generate(news, reference_news)
+        news.summary = await self.summary_generator.generate(news)
         news.rubric = await self.rubric_classifier.predict(news)
         return news

@@ -406,7 +406,7 @@ def run_classification_evaluation(
 
 async def prepare_news_classifiers_experiment(
     experiment_type: Literal["rubric-classification", "news-filtering"],
-    run_name: str,
+    run_name: VectorNames,
     collection_name: str,
 ) -> None:
     """Main Function."""
@@ -456,28 +456,28 @@ if __name__ == "__main__":
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="rubric-classification",
-            run_name="title-summary",
-            collection_name="ClassificationEvaluationSummary",
+            run_name="title_summary",
+            collection_name="ClassificationEvaluation",
         )
     )
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="rubric-classification",
-            run_name="title-content",
-            collection_name="ClassificationEvaluationContent",
+            run_name="title_content",
+            collection_name="ClassificationEvaluation",
         )
     )
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="news-filtering",
-            run_name="title-summary",
-            collection_name="ClassificationEvaluationSummary",
+            run_name="title_summary",
+            collection_name="ClassificationEvaluation",
         )
     )
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="news-filtering",
-            run_name="title-content",
-            collection_name="ClassificationEvaluationContent",
+            run_name="title_content",
+            collection_name="ClassificationEvaluation",
         )
     )

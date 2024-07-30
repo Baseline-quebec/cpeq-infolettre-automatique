@@ -6,6 +6,7 @@ from collections import defaultdict
 from inspect import cleandoc
 from typing import Annotated
 
+import annotated_types
 from dateparser.search import search_dates
 from pydantic import (
     AliasChoices,
@@ -105,7 +106,7 @@ class News(BaseModel):
 class Newsletter(BaseModel):
     """Schema for the newsletter."""
 
-    news: list[News]
+    news: Annotated[list[News], annotated_types.Len(min_length=1)]
     news_datetime_range: tuple[dt.datetime, dt.datetime]
     publication_datetime: dt.datetime = Field(default_factory=get_current_montreal_datetime)
 

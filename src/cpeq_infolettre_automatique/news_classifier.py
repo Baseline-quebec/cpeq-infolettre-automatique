@@ -5,19 +5,17 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
-
-from cpeq_infolettre_automatique.classification_algo import BaseNewsClassifier
+from cpeq_infolettre_automatique.classification_algo import NewsClassifier
 from cpeq_infolettre_automatique.config import NewsFiltererConfig, Relevance, Rubric
 from cpeq_infolettre_automatique.schemas import News
 
 
-class RubricClassifier(BaseModel):
+class RubricClassifier:
     """Implement the NewsClassifier."""
 
-    model: BaseNewsClassifier
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def __init__(self, model: NewsClassifier) -> None:
+        """Initialize the NewsClassifier with the model."""
+        self.model = model
 
     async def predict_probs(
         self,
@@ -67,13 +65,13 @@ class RubricClassifier(BaseModel):
         }
 
 
-class NewsFilterer(BaseModel):
+class NewsFilterer:
     """Implement the NewsFilterer."""
 
-    model: BaseNewsClassifier
-    news_filterer_config: NewsFiltererConfig
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def __init__(self, model: NewsClassifier, news_filterer_config: NewsFiltererConfig) -> None:
+        """Initialize the NewsFilterer with the model and the configuration."""
+        self.model = model
+        self.news_filterer_config = news_filterer_config
 
     @property
     def threshold(self) -> float:
@@ -95,9 +93,11 @@ class NewsFilterer(BaseModel):
             The relevance class of the news
         """
         predicted_probs = await self.predict_probs(news, embedding, ids_to_keep)
-        if predicted_probs[Relevance.AUTRE.value] >= self.threshold:
-            return Relevance.AUTRE
-        return Relevance.PERTINENT
+        return (
+            Relevance.PERTINENT
+            if predicted_probs[Relevance.AUTRE.value] >= self.threshold
+            else Relevance.AUTRE
+        )
 
     async def predict_probs(
         self,

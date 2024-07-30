@@ -1,6 +1,7 @@
 """Client module for WebScraper.io API interaction."""
 
 import asyncio
+import datetime as dt
 import json
 import logging
 from collections.abc import Iterable
@@ -14,6 +15,11 @@ from cpeq_infolettre_automatique.schemas import News
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+RATELIMIT_RESET_HEADER = "x-ratelimit-reset"
+RATELIMIT_ERROR_CODE = 429
+SECONDS_IN_MINUTE = 60
+LIMIT_MAX_SECONDS = 15 * SECONDS_IN_MINUTE
 
 
 class WebscraperIoClient:
@@ -164,6 +170,22 @@ class WebscraperIoClient:
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
+            if e.response.status_code == RATELIMIT_ERROR_CODE:
+                timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
+                if timestamp is not None:
+                    datetime_reset = dt.datetime.fromtimestamp(timestamp, tz=dt.UTC)
+                    seconds_to_reset = (
+                        datetime_reset - dt.datetime.now(tz=dt.UTC)
+                    ).total_seconds() + 1
+                else:
+                    seconds_to_reset = LIMIT_MAX_SECONDS
+                logger.warning(
+                    "Scraping job limit reached, retrying job %s in %s seconds.",
+                    job_id,
+                    seconds_to_reset,
+                )
+                await asyncio.sleep(seconds_to_reset)
+                return await self.download_scraping_job_data(job_id)
             logger.exception(
                 "HTTP Code %s while downloading scraping job data on Sitemap ID %s.",
                 e.response.status_code,

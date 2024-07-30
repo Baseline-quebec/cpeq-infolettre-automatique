@@ -7,7 +7,7 @@ from typing import Annotated
 
 import coloredlogs
 from decouple import config
-from fastapi import Depends, FastAPI
+from fastapi import BackgroundTasks, Depends, FastAPI
 from fastapi.responses import Response
 
 from cpeq_infolettre_automatique.dependencies import (
@@ -43,15 +43,20 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/generate-newsletter")
-async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
+async def generate_newsletter(
+    service: Annotated[Service, Depends(get_service)], background_tasks: BackgroundTasks
+) -> Response:
     """Generate a newsletter from scraped news.
 
     Note:
         This task is scheduled to return the news from last week's Monday to last week's Sunday.
     """
     # TODO(jsleb333): Schedule this task to return immediately
-    newsletter = await service.generate_newsletter(delete_scraping_jobs=False)
-    return Response(content=newsletter.to_markdown())
+    # background_tasks.add_task(service.generate_newsletter, delete_scraping_jobs=False)
+    newsletter = await service.generate_newsletter(
+        delete_scraping_jobs=False,
+    )
+    return Response("Newsletter generation scheduled.")
 
 
 @app.post("/add-news")
