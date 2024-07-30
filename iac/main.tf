@@ -78,11 +78,6 @@ resource "azurerm_container_app" "app" {
     identity_ids = [azurerm_user_assigned_identity.identity.id]
   }
 
-  secret {
-    name  = "acr-admin-password"
-    value = azurerm_container_registry.acr.admin_password
-  }
-
   registry {
     server   = azurerm_container_registry.acr.login_server
     identity = azurerm_user_assigned_identity.identity.id
