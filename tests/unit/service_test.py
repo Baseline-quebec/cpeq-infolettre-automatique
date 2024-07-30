@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.news_classifier import NewsClassifier
+from cpeq_infolettre_automatique.news_classifier import BaseNewsClassifier
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -19,7 +19,7 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
     vectorstore_fixture: Vectorstore,
-    news_classifier_fixture: NewsClassifier,
+    news_classifier_fixture: BaseNewsClassifier,
     news_repository_fixture: Any,
     summary_generator_fixture: SummaryGenerator,
 ) -> Service:

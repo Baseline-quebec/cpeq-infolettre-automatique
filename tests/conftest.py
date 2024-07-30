@@ -14,7 +14,7 @@ from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
 from cpeq_infolettre_automatique.news_classifier import (
-    NewsClassifier,
+    BaseNewsClassifier,
 )
 from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -277,7 +277,7 @@ def news_repository_fixture() -> Any:
 @pytest.fixture()
 def news_classifier_fixture(rubric_classification_fixture: Rubric) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
-    news_classifier_fixture = MagicMock(spec=NewsClassifier)
+    news_classifier_fixture = MagicMock(spec=BaseNewsClassifier)
     news_classifier_fixture.classify = AsyncMock(return_value=rubric_classification_fixture)
     return news_classifier_fixture
 

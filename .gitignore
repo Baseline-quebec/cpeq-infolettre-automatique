@@ -78,4 +78,4 @@ newsletter.md
 results
 .funcignore
 data/weaviate
-mlruns
+mlruns/**

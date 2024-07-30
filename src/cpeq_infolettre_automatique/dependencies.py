@@ -24,7 +24,10 @@ from cpeq_infolettre_automatique.embedding_model import (
     EmbeddingModel,
     OpenAIEmbeddingModel,
 )
-from cpeq_infolettre_automatique.news_classifier import MaxMeanScoresNewsClassifier, NewsClassifier
+from cpeq_infolettre_automatique.news_classifier import (
+    BaseNewsClassifier,
+    MaxMeanScoresNewsClassifier,
+)
 from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -185,7 +188,7 @@ def get_vectorstore(
 
 def get_news_classifier(
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-) -> NewsClassifier:
+) -> BaseNewsClassifier:
     """Return a NewsClassifier instance."""
     return MaxMeanScoresNewsClassifier(vectorstore=vectorstore)
 
@@ -216,7 +219,7 @@ def get_service(
     summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-    news_classifier: Annotated[NewsClassifier, Depends(get_news_classifier)],
+    news_classifier: Annotated[BaseNewsClassifier, Depends(get_news_classifier)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
     return Service(

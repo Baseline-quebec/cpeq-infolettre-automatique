@@ -11,13 +11,13 @@ class Relevance(Enum):
     """Revelant Enum class."""
 
     PERTINENT = "Pertinent"
-    AUTRE = "Autre"
+    AUTRE = "Autre"  # Should match Rubric.AUTRE values
 
 
 class Rubric(Enum):
     """Rubric Enum class."""
 
-    AUTRE = "Autre"
+    AUTRE = "Autre"  # Should match Relevance.AUTRE values
     CHANGEMENT_CLIMATIQUE_ET_ENERGIE = "Changements climatiques et énergie"
     ACCEPTABILITE_SOCIALE_BRUIT_ET_TROUBLES_DE_VOISINAGE = (
         "Acceptabilité sociale, bruit et troubles de voisinage"
@@ -27,7 +27,6 @@ class Rubric(Enum):
     BIODIVERSITE_MILIEUX_HUMIDES_ET_ESPECES_EN_PERIL = (
         "Biodiversité, milieux humides et espèces en péril"
     )
-    CARRIERES_ET_SABLIERES = "Carrières et sablières"
     DEVELOPPEMENT_DURABLE_RSE_ET_CRITERES_ESG = "Développement durable, RSE et critères ESG"
     DEVELOPPEMENT_NORDIQUE = "Développement nordique"
     DOMAINE_AEROSPATIAL = "Domaine aérospatial"
@@ -48,9 +47,6 @@ class Rubric(Enum):
     SUBSTANCES_CHIMIQUES = "Substances chimiques"
     TECHNOLOGIES_PROPRES = "Technologies propres"
     TRANSPORT_ET_MOBILITE_DURABLE = "Transport et mobilité durable"
-    MODIFICATIONS_LEGISLATIVES_ET_REGLEMENTAIRES_EN_BREF = (
-        "Modifications législatives et réglementaires en bref"
-    )
 
 
 class EmbeddingModelConfig(BaseModel):

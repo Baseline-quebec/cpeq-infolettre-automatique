@@ -76,6 +76,20 @@ class WebscraperIoClient:
 
         return job_id
 
+    async def create_scraping_jobs(self) -> list[str]:
+        """Creates scraping jobs for all sitemaps.
+
+        Returns:
+            A list containing the IDs of all the created scraping jobs.
+        """
+        sitemaps: list[dict[str, str]] = await self.get_sitemaps()
+        job_ids: list[str] = []
+
+        coroutines = [self.create_scraping_job(sitemap["id"]) for sitemap in sitemaps]
+        job_ids = await asyncio.gather(*coroutines)
+
+        return job_ids
+
     async def delete_scraping_jobs(self) -> None:
         """Deletes all existing scraping jobs."""
         job_ids: list[str] = await self.get_scraping_jobs()
@@ -169,6 +183,33 @@ class WebscraperIoClient:
             except ValidationError:
                 logger.exception("Error while processing news data")
         return tuple(news)
+
+    async def get_sitemaps(self) -> list[dict[str, str]]:
+        """Gets the list of sitemaps from Webscraper.io.
+
+        Returns:
+            A list containing the IDs and names of all the sitemaps.
+        """
+        url: str = f"{self._base_url}/sitemaps"
+        sitemaps: list[dict[str, str]] = []
+
+        response: httpx.Response = await self._client.get(
+            url, params={"api_token": self._api_token}
+        )
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP code %s while getting all sitemaps.",
+                e.response.status_code,
+            )
+        except httpx.RequestError:
+            logger.exception("Error issuing GET request at URL %s.", url)
+        else:
+            sitemaps = response.json().get("data", [])
+
+        return sitemaps
 
     @staticmethod
     def process_raw_response(raw_response: str) -> list[dict[str, str]]:

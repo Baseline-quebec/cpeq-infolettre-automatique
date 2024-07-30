@@ -164,7 +164,7 @@ class Vectorstore:
         Args:
             news: The news to create the query for.
         """
-        query = f"{news.title} {news.content}"
+        query = f"{news.title} {news.summary}"
         return query
 
     @staticmethod

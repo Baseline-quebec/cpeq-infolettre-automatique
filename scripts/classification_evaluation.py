@@ -27,9 +27,7 @@ from cpeq_infolettre_automatique.news_classifier import (
     MaxMeanScoresNewsClassifier,
     MaxPoolingNewsClassifier,
     MaxScoreNewsClassifier,
-    NewsClassifier,
     NewsFilterer,
-    RandomForestNewsClassifier,
     RubricClassifier,
 )
 from cpeq_infolettre_automatique.schemas import News
@@ -468,7 +466,6 @@ async def prepare_rubric_classifier_experiment(
                 MaxMeanScoresNewsClassifier(vectorstore),
                 KnNewsClassifier(vectorstore),
                 MaxScoreNewsClassifier(vectorstore),
-                RandomForestNewsClassifier(vectorstore),
                 MaxPoolingNewsClassifier(vectorstore),
             ]
             rubric_classifiers = [
@@ -497,12 +494,11 @@ async def prepare_news_filterers_experiment(
                 MaxMeanScoresNewsClassifier(vectorstore),
                 MaxScoreNewsClassifier(vectorstore),
                 KnNewsClassifier(vectorstore),
-                RandomForestNewsClassifier(vectorstore),
                 MaxPoolingNewsClassifier(vectorstore),
             ]
             news_filterers = []
             for news_classifier in news_classifiers:
-                for threshold in [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+                for threshold in [0.3, 0.45, 0.4, 0.45, 0.5]:
                     news_filterers.append(NewsFilterer(news_classifier, threshold=threshold))
             await run_news_filterers_experiment(
                 experiment_name, run_name, news_filterers, vectorstore
