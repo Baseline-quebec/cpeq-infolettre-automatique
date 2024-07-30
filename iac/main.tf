@@ -40,7 +40,7 @@ resource "azurerm_role_assignment" "acrpull" {
 
 resource "time_sleep" "wait_rbac_propagation" {
   depends_on      = [azurerm_role_assignment.acrpull]
-  create_duration = "60s"
+  create_duration = "2m"
 }
 
 resource "azurerm_container_app_environment" "environment" {
