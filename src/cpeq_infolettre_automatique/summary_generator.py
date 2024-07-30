@@ -2,20 +2,18 @@
 
 from inspect import cleandoc
 
+from pydantic import BaseModel, ConfigDict
+
 from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.schemas import News
 
 
-class SummaryGenerator:
+class SummaryGenerator(BaseModel):
     """Service for summarizing news articles."""
 
-    def __init__(self, completion_model: CompletionModel) -> None:
-        """Initialize the SummaryGenerator.
+    completion_model: CompletionModel
 
-        Args:
-            completion_model: The completion model to use for summarization.
-        """
-        self.completion_model = completion_model
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     async def generate(self, classified_news: News, reference_news: list[News]) -> str:
         """Summarize the given news based on reference news exemples.
@@ -26,10 +24,6 @@ class SummaryGenerator:
 
         Returns: The summary of the text.
         """
-        if classified_news.rubric is None:
-            error_msg = "The news must be classified to generate a summary."
-            raise ValueError(error_msg)
-
         if any(news.summary is None for news in reference_news):
             error_msg = "All reference news must have a summary as an exemple."
             raise ValueError(error_msg)

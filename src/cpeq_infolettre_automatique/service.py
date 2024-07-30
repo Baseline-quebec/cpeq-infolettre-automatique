@@ -3,7 +3,7 @@
 import asyncio
 import datetime as dt
 import logging
-from collections.abc import Awaitable, Iterable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Iterable
 
 from cpeq_infolettre_automatique.config import Relevance
 from cpeq_infolettre_automatique.news_classifier import NewsFilterer
@@ -125,15 +125,15 @@ class Service:
             filtered_news = self._filter_all_news(
                 all_news, start_date=start_date, end_date=end_date
             )
-            coroutines = [self._produce_news(news) for news in filtered_news]
+            coroutines = [self._produce_news(news) async for news in filtered_news]
             summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
         return (scraped_news_coroutine(job_id) for job_id in job_ids)
 
-    def _filter_all_news(
+    async def _filter_all_news(
         self, all_news: Iterable[News], start_date: dt.datetime, end_date: dt.datetime
-    ) -> Iterator[News]:
+    ) -> AsyncIterator[News]:
         """Preprocess the raw news by keeping only news published within start_date and end_date and are relevant.
 
         Args:
@@ -144,9 +144,9 @@ class Service:
         Returns: The filtered news data.
         """
         for news in all_news:
-            if self._news_in_date_range(news, start_date, end_date) and self._news_is_relevant(
-                news
-            ):
+            if self._news_in_date_range(
+                news, start_date, end_date
+            ) and await self._news_is_relevant(news):
                 yield news
 
     @staticmethod

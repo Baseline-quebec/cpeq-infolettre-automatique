@@ -8,12 +8,27 @@ from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
+from pydantic import BaseModel, ConfigDict
 
 from cpeq_infolettre_automatique.config import CompletionModelConfig
 
 
-class CompletionModel(ABC):
+class CompletionModel(BaseModel, ABC):
     """Abstract class for completion models."""
+
+    completion_model_config: CompletionModelConfig
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @property
+    def model(self) -> str:
+        """Get the model ID."""
+        return self.completion_model_config.model
+
+    @property
+    def temperature(self) -> float:
+        """Get the temperature."""
+        return self.completion_model_config.temperature
 
     @abstractmethod
     async def complete_message(self, user_message: str, system_prompt: str | None) -> str:
@@ -23,18 +38,7 @@ class CompletionModel(ABC):
 class OpenAICompletionModel(CompletionModel):
     """OpenAI completion model implementation."""
 
-    def __init__(
-        self, client: AsyncOpenAI, completion_model_config: CompletionModelConfig
-    ) -> None:
-        """Initialize the completion model with the client and configuration.
-
-        Args:
-            client: The OpenAI async client.
-            completion_model_config: The configuration for the completion model.
-        """
-        self._client = client
-        self.temperature = completion_model_config.temperature
-        self.model = completion_model_config.model
+    client: AsyncOpenAI
 
     async def complete_message(self, user_message: str, system_prompt: str | None) -> str:
         """Predict the completion for the given data.
@@ -48,13 +52,13 @@ class OpenAICompletionModel(CompletionModel):
             messages.append(ChatCompletionSystemMessageParam(role="system", content=system_prompt))
         messages.append(ChatCompletionUserMessageParam(role="user", content=user_message))
 
-        chat_response = await self._client.chat.completions.create(
+        chat_response = await self.client.chat.completions.create(
             messages=messages,
             model=self.model,
             temperature=self.temperature,
         )
 
-        content = chat_response.choices[0].message.content
+        content: str | None = chat_response.choices[0].message.content
         if content is None:
             error_msg = "The completion model returned an empty response"
             raise ValueError(error_msg)

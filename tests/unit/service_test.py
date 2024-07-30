@@ -1,16 +1,16 @@
 """Tests for service class."""
 
 import datetime as dt
-from typing import Any
 from unittest.mock import patch
 
 import pytest
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.news_classifier import BaseNewsClassifier
+from cpeq_infolettre_automatique.news_classifier import NewsFilterer
+from cpeq_infolettre_automatique.news_producer import NewsProducer
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
-from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -19,17 +19,17 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
     vectorstore_fixture: Vectorstore,
-    news_classifier_fixture: BaseNewsClassifier,
-    news_repository_fixture: Any,
-    summary_generator_fixture: SummaryGenerator,
+    news_repository_fixture: NewsRepository,
+    news_producer_fixture: NewsProducer,
+    news_filterer_fixture: NewsFilterer,
 ) -> Service:
     """Fixture for mocked service."""
     service = Service(
         webscraper_io_client=webscraper_io_client_fixture,
         news_repository=news_repository_fixture,
-        news_classifier=news_classifier_fixture,
         vectorstore=vectorstore_fixture,
-        summary_generator=summary_generator_fixture,
+        news_producer=news_producer_fixture,
+        news_filterer=news_filterer_fixture,
     )
     return service
 
@@ -71,10 +71,11 @@ class TestService:
             )
             await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
-        assert service_fixture.vectorstore.read_many_by_rubric.called
-        assert service_fixture.news_classifier.classify.called
+        assert service_fixture.vectorstore.search_similar_news.called
+        assert service_fixture.news_filterer.predict.called
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
-        assert service_fixture.summary_generator.generate.called
+        assert service_fixture.news_producer.summary_generator.generate.called
+        assert service_fixture.news_producer.rubric_classifier.predict.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
         assert service_fixture.news_repository.create_many_news.called
 

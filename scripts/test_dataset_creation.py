@@ -7,7 +7,10 @@ from cpeq_infolettre_automatique.dependencies import (
     get_completion_model,
     get_embedding_model,
     get_news_classifier,
+    get_news_filterer,
+    get_news_producer,
     get_openai_client,
+    get_rubric_classifier,
     get_summary_generator,
     get_vectorstore,
     get_vectorstore_client,
@@ -29,13 +32,20 @@ async def main() -> None:
     for vectorstore_client in get_vectorstore_client():
         vectorstore = get_vectorstore(vectorstore_client, embedding_model)
         news_classifier = get_news_classifier(vectorstore)
+        rubric_classifier = get_rubric_classifier(news_classifier)
+        news_producer = get_news_producer(
+            summary_generator=summary_generator,
+            rubric_classifier=rubric_classifier,
+            vectorstore=vectorstore,
+        )
+        news_filterer = get_news_filterer(news_classifier)
         local_news_repository = LocalNewsRepository(path=Path("data", "test"))
         service = Service(
             webscraper_io_client=webscraper_io_client,
             news_repository=local_news_repository,
-            news_classifier=news_classifier,
             vectorstore=vectorstore,
-            summary_generator=summary_generator,
+            news_producer=news_producer,
+            news_filterer=news_filterer,
         )
 
         await service.generate_newsletter(delete_scraping_jobs=False)

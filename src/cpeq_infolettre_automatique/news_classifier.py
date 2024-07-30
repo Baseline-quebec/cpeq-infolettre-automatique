@@ -1,12 +1,23 @@
-from cpeq_infolettre_automatique.classification_algorithm import BaseNewsClassifier
+"""Implement the RubricClassifier and NewsFilterer classes."""
+
+import operator
+import uuid
+from collections.abc import Sequence
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+from cpeq_infolettre_automatique.classification_algo import BaseNewsClassifier
+from cpeq_infolettre_automatique.config import NewsFiltererConfig, Relevance, Rubric
+from cpeq_infolettre_automatique.schemas import News
 
 
-class RubricClassifier:
+class RubricClassifier(BaseModel):
     """Implement the NewsClassifier."""
 
-    def __init__(self, news_classifier: BaseNewsClassifier) -> None:
-        """Initialize the RubricClassifier with the provided dependencies."""
-        self.news_classifier = news_classifier
+    model: BaseNewsClassifier
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     async def predict(
         self,
@@ -22,31 +33,36 @@ class RubricClassifier:
         Returns:
             The rubric class of the news
         """
-        predicted_probs = await self.news_classifier.predict_probs(news, embedding, ids_to_keep)
+        predicted_probs = await self.model.predict_probs(news, embedding, ids_to_keep)
         return Rubric(next(iter(predicted_probs)))
 
     @property
     def model_name(self) -> str:
         """Return the model name."""
-        return f"{type(self).__name__}_{type(self.news_classifier).__name__}"
+        return f"{type(self).__name__}_{type(self.model).__name__}"
 
     @property
     def model_info(self) -> dict[str, Any]:
         """Return the model info."""
         return {
             "model_name": self.model_name,
-            "classifier": type(self.news_classifier).__name__,
+            "classifier": type(self.model).__name__,
             "task": type(self).__name__,
         }
 
 
-class NewsFilterer:
+class NewsFilterer(BaseModel):
     """Implement the NewsFilterer."""
 
-    def __init__(self, news_classifier: BaseNewsClassifier, threshold: float = 0.50) -> None:
-        """Initialize the NewsFilterer with the provided dependencies."""
-        self.news_classifier = news_classifier
-        self.threshold = threshold
+    model: BaseNewsClassifier
+    news_filterer_config: NewsFiltererConfig
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @property
+    def threshold(self) -> float:
+        """Get the threshold."""
+        return self.news_filterer_config.threshold
 
     async def predict(
         self,
@@ -81,7 +97,7 @@ class NewsFilterer:
         Returns:
             The relevance class of the news
         """
-        predicted_probs = await self.news_classifier.predict_probs(news, embedding, ids_to_keep)
+        predicted_probs = await self.model.predict_probs(news, embedding, ids_to_keep)
         not_relevant_prob = predicted_probs[Relevance.AUTRE.value]
         relevant_prob = 1.0 - not_relevant_prob
         probs = {
@@ -94,14 +110,14 @@ class NewsFilterer:
     @property
     def model_name(self) -> str:
         """Return the model name."""
-        return f"{type(self).__name__}_{type(self.news_classifier).__name__}"
+        return f"{type(self).__name__}_{type(self.model).__name__}"
 
     @property
     def model_info(self) -> dict[str, Any]:
         """Return the model info."""
         return {
             "model_name": self.model_name,
-            "classifier": type(self.news_classifier).__name__,
+            "classifier": type(self.model).__name__,
             "task": type(self).__name__,
             "threshold": self.threshold,
         }

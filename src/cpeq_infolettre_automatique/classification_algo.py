@@ -1,11 +1,11 @@
 """Implementation of NewsClassifier."""
 
-import math
 import operator
 import uuid
 from collections.abc import Sequence
 
 import numpy as np
+from pydantic import BaseModel
 from scipy.special import softmax
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import cosine_similarity
@@ -16,11 +16,14 @@ from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
 
-class BaseNewsClassifier:
+class BaseNewsClassifier(BaseModel):
     """Interface for a NewsClassifier.
 
     Note:
+        All NewsClassifier implementations should inherit from
+        this class and implement the predict and predict_probs method.
 
+        This should only take inputs and outputs, and be agnnostic of the value predicted.
     """
 
     async def predict_probs(
@@ -32,7 +35,9 @@ class BaseNewsClassifier:
         """Predict the rubric of the given news.
 
         Args:
-            news: The news to predict the rubric from.
+            news: The news to classify a new Rubric from.
+            embedding: The embedding of the news.
+            ids_to_keep: The list of News ids to keep to perform the the classification.
 
         Returns:
             The rubric class of the news
@@ -57,7 +62,9 @@ class BaseNewsClassifier:
         """Predict the rubric of the given news.
 
         Args:
-            news: The news to predict the rubric from.
+            news: The news to classify a new Rubric from.
+            embedding: The embedding of the news.
+            ids_to_keep: The list of News ids to keep to perform the the classification.
 
         Returns:
             The rubric class of the news
@@ -96,6 +103,7 @@ class MaxMeanScoresNewsClassifier(BaseNewsClassifier):
 
         Args:
             news: The news to classify a new Rubric from.
+            embedding: The embedding of the news.
             ids_to_keep: The list of News ids to keep to perform the the classification.
 
         Returns:
@@ -186,7 +194,11 @@ class KnNewsClassifier(BaseNewsClassifier):
         self.labels: list[str] = []
 
     def setup(self, train_news: list[tuple[str, list[float]]]) -> None:
-        """Setup the classifier."""
+        """Setup the classifier.
+
+        Args:
+            train_news: The training data to use for classification.
+        """
         x = [train_news_item[1] for train_news_item in train_news]
         y = [train_news_item[0] for train_news_item in train_news]
 
@@ -204,6 +216,7 @@ class KnNewsClassifier(BaseNewsClassifier):
 
         Args:
             news: The news to classify a new Rubric from.
+            embedding: The embedding of the news.
             ids_to_keep: The list of News ids to keep to perform the the classification.
 
         Returns:
@@ -233,7 +246,11 @@ class MaxPoolingNewsClassifier(BaseNewsClassifier):
         self.labels: list[str] = []
 
     def setup(self, train_news: list[tuple[str, list[float]]]) -> None:
-        """Setup the classifier."""
+        """Setup the classifier.
+
+        Args:
+            train_news: The training data to use for classification.
+        """
         self.labels = list({train_news_item[0] for train_news_item in train_news})
         labels_embeddings: dict[str, list[list[float]]] = {label: [] for label in self.labels}
 
@@ -254,6 +271,7 @@ class MaxPoolingNewsClassifier(BaseNewsClassifier):
 
         Args:
             news: The news to classify a new Rubric from.
+            embedding: The embedding of the item.
             ids_to_keep: The list of News ids to keep to perform the the classification.
 
         Returns:

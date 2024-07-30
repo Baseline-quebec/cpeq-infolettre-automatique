@@ -85,3 +85,9 @@ class CompletionModelConfig(BaseModel):
 
     model: Literal["gpt-4o", "gpt-4-turbo"] = config("COMPLETION_MODEL_ID", "gpt-4o", cast=str)
     temperature: float = config("COMPLETION_MODEL_TEMPERATURE", 0.1, cast=float)
+
+
+class NewsFiltererConfig(BaseModel):
+    """Configuration for the news filterer."""
+
+    threshold: float = config("NEWS_FILTERER_THRESHOLD", 0.50, cast=float)

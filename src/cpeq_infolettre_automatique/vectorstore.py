@@ -8,7 +8,7 @@ from typing import TypedDict
 
 import weaviate
 import weaviate.classes as wvc
-from pydantic import ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
@@ -33,28 +33,34 @@ class ReferenceNewsType(TypedDict):
     summary: str
 
 
-class Vectorstore:
+class Vectorstore(BaseModel):
     """Handles vector storage and retrieval using embeddings."""
 
-    def __init__(
-        self,
-        embedding_model: EmbeddingModel,
-        client: weaviate.WeaviateClient,
-        vectorstore_config: VectorstoreConfig,
-    ) -> None:
-        """Initialize the Vectorstore with the provided Weaviate client and collection name.
+    embedding_model: EmbeddingModel
+    vectorstore_client: weaviate.WeaviateClient
+    vectorstore_config: VectorstoreConfig
 
-        Args:
-            embedding_model: The embedding model to use for the Vectorstore.
-            client: An instance of the Weaviate client to handle API calls.
-            collection_name: The name of the collection to store the vectors in.
-        """
-        self.vectorstore_client = client
-        self.embedding_model = embedding_model
-        self.collection_name = vectorstore_config.collection_name
-        self.max_nb_items_retrieved = vectorstore_config.max_nb_items_retrieved
-        self.hybrid_weight = vectorstore_config.hybrid_weight
-        self.minimal_score = vectorstore_config.minimal_score
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @property
+    def collection_name(self) -> str:
+        """Get the collection name."""
+        return self.vectorstore_config.collection_name
+
+    @property
+    def max_nb_items_retrieved(self) -> int:
+        """Get the maximum number of items to retrieve."""
+        return self.vectorstore_config.max_nb_items_retrieved
+
+    @property
+    def hybrid_weight(self) -> float:
+        """Get the hybrid weight."""
+        return self.vectorstore_config.hybrid_weight
+
+    @property
+    def minimal_score(self) -> float:
+        """Get the minimal score."""
+        return self.vectorstore_config.minimal_score
 
     async def search_similar_news(
         self,
@@ -81,6 +87,16 @@ class Vectorstore:
         embeddings: list[float],
         ids_to_keep: Sequence[str | uuid.UUID] | None = None,
     ) -> list[tuple[News, float]]:
+        """Search for similar news in the vectorstore.
+
+        Args:
+            query: The query to search for.
+            embeddings: The embeddings of the query.
+            ids_to_keep: The ids to keep in the search results.
+
+        Returns:
+            The list of similar news with their scores.
+        """
         collection = self.vectorstore_client.collections.get(self.collection_name)
 
         objects = collection.query.hybrid(

@@ -11,6 +11,10 @@ from O365.account import Account
 from O365.drive import Folder
 from openai import AsyncOpenAI
 
+from cpeq_infolettre_automatique.classification_algo import (
+    BaseNewsClassifier,
+    MaxPoolingNewsClassifier,
+)
 from cpeq_infolettre_automatique.completion_model import (
     CompletionModel,
     OpenAICompletionModel,
@@ -18,16 +22,15 @@ from cpeq_infolettre_automatique.completion_model import (
 from cpeq_infolettre_automatique.config import (
     CompletionModelConfig,
     EmbeddingModelConfig,
+    NewsFiltererConfig,
     VectorstoreConfig,
 )
 from cpeq_infolettre_automatique.embedding_model import (
     EmbeddingModel,
     OpenAIEmbeddingModel,
 )
-from cpeq_infolettre_automatique.news_classifier import (
-    BaseNewsClassifier,
-    MaxMeanScoresNewsClassifier,
-)
+from cpeq_infolettre_automatique.news_classifier import NewsFilterer, RubricClassifier
+from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -180,17 +183,10 @@ def get_vectorstore(
     """Return a Vectorstore instance with the provided dependencies."""
     vectorstore_config = VectorstoreConfig()
     return Vectorstore(
-        client=vectorstore_client,
+        vectorstore_client=vectorstore_client,
         embedding_model=embedding_model,
         vectorstore_config=vectorstore_config,
     )
-
-
-def get_news_classifier(
-    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-) -> BaseNewsClassifier:
-    """Return a NewsClassifier instance."""
-    return MaxMeanScoresNewsClassifier(vectorstore=vectorstore)
 
 
 def get_completion_model(
@@ -214,18 +210,53 @@ def get_summary_generator(
     )
 
 
+def get_news_classifier(
+    vectorstore: Annotated[Vectorstore, get_vectorstore],
+) -> BaseNewsClassifier:
+    """Return a BaseNewsClassifier instance."""
+    return MaxPoolingNewsClassifier(vectorstore)
+
+
+def get_rubric_classifier(
+    news_classifier: Annotated[BaseNewsClassifier, get_news_classifier],
+) -> RubricClassifier:
+    """Return a RubricClassifier instance."""
+    return RubricClassifier(model=news_classifier)
+
+
+def get_news_filterer(
+    news_classifier: BaseNewsClassifier,
+) -> NewsFilterer:
+    """Return a NewsFilterer instance."""
+    filterer_config = NewsFiltererConfig()
+    return NewsFilterer(model=news_classifier, news_filterer_config=filterer_config)
+
+
+def get_news_producer(
+    summary_generator: Annotated[SummaryGenerator, get_summary_generator],
+    rubric_classifier: Annotated[RubricClassifier, get_rubric_classifier],
+    vectorstore: Annotated[Vectorstore, get_vectorstore],
+) -> NewsProducer:
+    """Return a NewsProducer instance."""
+    return NewsProducer(
+        summary_generator=summary_generator,
+        rubric_classifier=rubric_classifier,
+        vectorstore=vectorstore,
+    )
+
+
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
-    summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-    news_classifier: Annotated[BaseNewsClassifier, Depends(get_news_classifier)],
+    news_filterer: Annotated[NewsFilterer, Depends(get_news_filterer)],
+    news_producer: Annotated[NewsProducer, Depends(get_news_producer)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
     return Service(
         webscraper_io_client=webscraper_io_client,
         news_repository=news_repository,
-        news_classifier=news_classifier,
         vectorstore=vectorstore,
-        summary_generator=summary_generator,
+        news_filterer=news_filterer,
+        news_producer=news_producer,
     )

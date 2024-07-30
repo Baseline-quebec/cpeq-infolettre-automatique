@@ -183,7 +183,9 @@ async def main() -> None:
     reference_news = get_reference_news(data_path)
     openai_client = get_openai_client()
     embedding_model_config = EmbeddingModelConfig()
-    embedding_model = OpenAIEmbeddingModel(openai_client, embedding_model_config)
+    embedding_model = OpenAIEmbeddingModel(
+        client=openai_client, embedding_config=embedding_model_config
+    )
     vectorstore_config = VectorstoreConfig(collection_name="ClassificationEvaluationSummary")
     for weaviate_client in get_vectorstore_client():
         weaviate_collection = WeaviateCollection(weaviate_client, vectorstore_config)

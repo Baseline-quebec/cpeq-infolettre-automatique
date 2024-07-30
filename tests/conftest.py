@@ -10,12 +10,11 @@ import pytest
 import weaviate
 from pydantic_core import Url
 
-from cpeq_infolettre_automatique.completion_model import CompletionModel
-from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
+from cpeq_infolettre_automatique.config import Relevance, Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
-from cpeq_infolettre_automatique.news_classifier import (
-    BaseNewsClassifier,
-)
+from cpeq_infolettre_automatique.news_classifier import NewsFilterer, RubricClassifier
+from cpeq_infolettre_automatique.news_producer import NewsProducer
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
@@ -265,7 +264,7 @@ def vectorstore_fixture(summarized_news_fixture: News) -> Vectorstore:
 
 
 @pytest.fixture()
-def news_repository_fixture() -> Any:
+def news_repository_fixture() -> NewsRepository:
     """Fixture for mocked NewsRepository."""
     news_repository_fixture = MagicMock()
     news_repository_fixture.create_news = MagicMock()
@@ -275,17 +274,39 @@ def news_repository_fixture() -> Any:
 
 
 @pytest.fixture()
-def news_classifier_fixture(rubric_classification_fixture: Rubric) -> Any:
+def rubric_classifier_fixture(rubric_classification_fixture: Rubric) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
-    news_classifier_fixture = MagicMock(spec=BaseNewsClassifier)
-    news_classifier_fixture.classify = AsyncMock(return_value=rubric_classification_fixture)
-    return news_classifier_fixture
+    rubric_classifier_fixture = MagicMock(spec=RubricClassifier)
+    rubric_classifier_fixture.predict = AsyncMock(return_value=rubric_classification_fixture)
+    return rubric_classifier_fixture
 
 
 @pytest.fixture()
 def summary_generator_fixture() -> SummaryGenerator:
     """Fixture for the SummaryGenerator."""
-    completion_model_mock = MagicMock(spec=CompletionModel)
-    summary_generator_fixture = SummaryGenerator(completion_model=completion_model_mock)
+    summary_generator_fixture = MagicMock(SummaryGenerator)
     summary_generator_fixture.generate = AsyncMock(return_value="This is a summary")
     return summary_generator_fixture
+
+
+@pytest.fixture()
+def news_producer_fixture(
+    summary_generator_fixture: SummaryGenerator,
+    rubric_classifier_fixture: RubricClassifier,
+    vectorstore_fixture: Vectorstore,
+) -> NewsProducer:
+    """Fixture for the NewsProducer."""
+    news_producer_fixture = NewsProducer(
+        summary_generator=summary_generator_fixture,
+        rubric_classifier=rubric_classifier_fixture,
+        vectorstore=vectorstore_fixture,
+    )
+    return news_producer_fixture
+
+
+@pytest.fixture()
+def news_filterer_fixture() -> NewsFilterer:
+    """Fixture for the NewsFilterer."""
+    rubric_classifier_fixture = MagicMock(spec=NewsFilterer)
+    rubric_classifier_fixture.predict = AsyncMock(return_value=Relevance.PERTINENT)
+    return rubric_classifier_fixture

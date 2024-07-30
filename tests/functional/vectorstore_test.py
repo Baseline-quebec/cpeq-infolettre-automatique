@@ -23,7 +23,9 @@ class TestReferenceNewsRepository:
         """Test read_many_by_rubric returns proper news with specified rubric when queried with rubric."""
         # Arrange
         vectorstore = Vectorstore(
-            embedding_model_fixture, vectorstore_client_fixture, vectorstore_config_fixture
+            embedding_model=embedding_model_fixture,
+            vectorstore_client=vectorstore_client_fixture,
+            vectorstore_config=vectorstore_config_fixture,
         )
         collection = vectorstore.vectorstore_client.collections.get(vectorstore.collection_name)
 
