@@ -84,6 +84,11 @@ resource "azurerm_container_app" "app" {
     }
     max_replicas = 1
     min_replicas = 0
+
+    http_scale_rule {
+      name                = "Wake up container"
+      concurrent_requests = 1
+    }
   }
 
   identity {
