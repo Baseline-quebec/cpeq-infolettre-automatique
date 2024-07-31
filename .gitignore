@@ -75,7 +75,4 @@ o365_token.txt
 news.csv
 newsletter.md
 
-results
-.funcignore
-
 mlruns/**
