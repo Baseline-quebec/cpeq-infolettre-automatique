@@ -36,10 +36,10 @@ resource "azurerm_key_vault" "keyvault" {
   sku_name = "standard"
 }
 
-resource "azurerm_key_vault_secret" "acr_password" {
-  name         = "ContainerRegistry--AdminPassword"
-  value        = azurerm_container_registry.acr.admin_password
-  key_vault_id = azurerm_key_vault.keyvault.id
+resource "azurerm_role_assignment" "terraform_secrets_admin" {
+  scope                = azurerm_key_vault.keyvault.id
+  principal_id         = data.azurerm_client_config.current.client_id
+  role_definition_name = "Key Vault Secrets Officer"
 }
 
 resource "azurerm_user_assigned_identity" "identity" {
@@ -66,6 +66,14 @@ resource "time_sleep" "wait_rbac_propagation" {
   triggers = {
     rbac = azurerm_role_assignment.keyvault_secret_read.scope
   }
+}
+
+resource "azurerm_key_vault_secret" "acr_password" {
+  depends_on = [time_sleep.wait_rbac_propagation]
+
+  name         = "ContainerRegistry--AdminPassword"
+  value        = azurerm_container_registry.acr.admin_password
+  key_vault_id = azurerm_key_vault.keyvault.id
 }
 
 resource "azurerm_container_app_environment" "environment" {
