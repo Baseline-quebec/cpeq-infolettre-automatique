@@ -47,11 +47,12 @@ resource "azurerm_role_assignment" "acrpull" {
 }
 
 resource "time_sleep" "wait_rbac_propagation" {
-  depends_on      = [azurerm_role_assignment.acrpull]
+  depends_on      = [azurerm_role_assignment.acrpull, azurerm_role_assignment.build_pipeline]
   create_duration = "1m"
 
   triggers = {
-    container_app = azurerm_role_assignment.acrpull.scope
+    container_app  = azurerm_role_assignment.acrpull.scope
+    build_pipeline = azurerm_role_assignment.build_pipeline.scope
   }
 }
 
