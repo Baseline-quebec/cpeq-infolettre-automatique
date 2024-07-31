@@ -34,6 +34,7 @@ pydantic = "^2.7.4"
 dateparser = "^1.2.0"
 o365 = "^2.0.35"
 scipy = "^1.14.0"
+scikit-learn = "^1.5.1"
 
 [tool.poetry.group.test.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 commitizen = ">=3.21.3"
