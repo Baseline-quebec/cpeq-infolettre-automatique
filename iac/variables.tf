@@ -8,3 +8,8 @@ variable "location" {
   type        = string
   description = "The Azure Location where to deploy resources."
 }
+
+variable "build_pipeline_client_id" {
+  type        = string
+  description = "Client ID of the Service Principal used by the Build pipeline to push Docker images to the Container Registry"
+}

@@ -21,6 +21,12 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
+resource "azurerm_role_assignment" "build_pipeline" {
+  scope                = azurerm_container_registry.acr.id
+  principal_id         = var.build_pipeline_client_id
+  role_definition_name = "AcrPush"
+}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "keyvault" {
