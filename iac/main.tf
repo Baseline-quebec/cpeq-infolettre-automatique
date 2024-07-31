@@ -99,7 +99,7 @@ resource "azurerm_container_app" "app" {
   ingress {
     target_port      = 8000
     external_enabled = true
-    transport        = "http"
+    transport        = "http2"
     traffic_weight {
       percentage      = 100
       latest_revision = true
