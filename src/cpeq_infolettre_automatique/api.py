@@ -64,7 +64,7 @@ def generate_newsletter_background(
         This task is scheduled to return the news from last week's Monday to last week's Sunday.
     """
     background_tasks.add_task(service.generate_newsletter, delete_scraping_jobs=False)
-    return Response("Newsletter generation scheduled.")
+    return Response("Newsletter generation started.")
 
 
 @app.post("/add-news")
