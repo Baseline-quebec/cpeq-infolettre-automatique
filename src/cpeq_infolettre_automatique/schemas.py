@@ -44,7 +44,11 @@ class News(BaseModel):
     @field_validator("link")
     @classmethod
     def valide_link(cls, value: str) -> Url:
-        """Validate the link field."""
+        """Validate the link field.
+
+        Raises:
+            ValueError: If the link is not a valid URL.
+        """
         try:
             return Url(url=value)
         except ValidationError as e:
@@ -79,7 +83,11 @@ class News(BaseModel):
     @field_validator("title", "content")
     @classmethod
     def validate_mandatory_texts(cls, value: str) -> str:
-        """Validate that the mandatory text fields are not empty."""
+        """Validate that the mandatory text fields are not empty.
+
+        Raises:
+            ValueError: If the title or content fields are empty.
+        """
         if not value.strip() or value is None:
             error_msg = "The title and content fields must not be empty."
             raise ValueError(error_msg)
@@ -96,7 +104,11 @@ class News(BaseModel):
         return cleaned_value
 
     def to_markdown(self) -> str:
-        """Convert the news to markdown."""
+        """Convert the news to markdown.
+
+        Raises:
+        ValueError: If the news does not have a summary or a title.
+        """
         if self.summary is None or self.title is None:
             error_msg = "The news must have a summary and a title to be converted to markdown."
             raise ValueError(error_msg)
@@ -158,7 +170,11 @@ class AddNewsBody(BaseModel):
     @field_validator("link")
     @classmethod
     def valide_link(cls, value: str) -> Url:
-        """Validate the link field."""
+        """Validate the link field.
+
+        Raises:
+            ValueError: If the link is not a valid URL.
+        """
         try:
             return Url(url=value)
         except ValidationError as e:
@@ -193,7 +209,11 @@ class AddNewsBody(BaseModel):
     @field_validator("title", "content")
     @classmethod
     def validate_mandatory_texts(cls, value: str) -> str:
-        """Validate that the mandatory text fields are not empty."""
+        """Validate that the mandatory text fields are not empty.
+
+        Raises:
+            ValueError: If the title or content fields are empty.
+        """
         if not value.strip() or value is None:
             error_msg = "The title and content fields must not be empty."
             raise ValueError(error_msg)

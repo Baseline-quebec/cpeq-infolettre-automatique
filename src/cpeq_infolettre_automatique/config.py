@@ -1,13 +1,26 @@
 """App configuration."""
 
 from enum import Enum
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from decouple import config
 from pydantic import BaseModel
 
 
-type VectorNames = VectorNames
+class VectorNames(Enum):
+    """Vector Names Enum class."""
+
+    TITLE_SUMMARY = "title_summary"
+    TITLE_CONTENT = "title_content"
+
+
+ClassificationAlgos: TypeAlias = Literal[  # noqa: UP040
+    "MaxMeanScoresNewsClassifier",
+    "MaxScoreNewsClassifier",
+    "MaxPoolingNewsClassifier",
+    "KnNewsClassifier",
+    "RandomForestNewsClassifier",
+]
 
 
 class Relevance(Enum):
@@ -77,8 +90,8 @@ class VectorstoreConfig(BaseModel):
         cast=str,
     )
 
-    title_summary_vector_name: VectorNames = "title_summary"
-    title_content_vector_name: VectorNames = "title_content"
+    title_summary_vector_name: VectorNames = VectorNames.TITLE_SUMMARY
+    title_content_vector_name: VectorNames = VectorNames.TITLE_CONTENT
     max_nb_items_retrieved: int = config("MAX_NB_ITEM_RETRIEVED", 1000, cast=int)
     hybrid_weight: float = config("VECTORSTORE_HYBRID_WEIGHT", 0.75, cast=float)
     batch_size: int = max(config("BATCH_SIZE", 5, cast=int), 1)
@@ -93,16 +106,26 @@ class CompletionModelConfig(BaseModel):
     temperature: float = config("COMPLETION_MODEL_TEMPERATURE", 0.1, cast=float)
 
 
-class NewsFiltererConfig(BaseModel):
-    """Configuration for the news filterer."""
+class NewsRelevancyClassifierConfig(BaseModel):
+    """Configuration for the news relevancy classifier."""
 
-    classification_model_name: str = config("NEWS_FILTERER_MODEL_NAME", cast=str)
-    vector_name: VectorNames = config("NEWS_FILTERER_VECTOR_NAME", cast=str)
-    threshold: float = config("NEWS_FILTERER_THRESHOLD", 0.50, cast=float)
+    classification_model_name: ClassificationAlgos = config(
+        "NEWS_RELEVANCY_CLASSIFIER_MODEL_NAME", cast=str
+    )
+    vector_name: VectorNames = config("NEWS_RELEVANCY_CLASSIFIER_VECTOR_NAME", cast=VectorNames)
+    threshold: float = config("NEWS_RELEVANCY_CLASSIFIER_THRESHOLD", 0.50, cast=float)
 
 
-class RubricClassifierConfig(BaseModel):
+class NewsRubricClassifierConfig(BaseModel):
     """Configuration for the rubric classifier."""
 
-    classification_model_name: str = config("RUBRIC_CLASSIFIER_MODEL_NAME", cast=str)
-    vector_name: VectorNames = config("RUBRIC_CLASSIFIER_VECTOR_NAME", cast=str)
+    classification_model_name: ClassificationAlgos = config(
+        "NEWS_RUBRIC_CLASSIFIER_MODEL_NAME", cast=str
+    )
+    vector_name: VectorNames = config("NEWS_RUBRIC_CLASSIFIER_VECTOR_NAME", cast=VectorNames)
+
+
+class SummaryGeneratorConfig(BaseModel):
+    """Configuration for the summary generator."""
+
+    vector_name: VectorNames = config("SUMMARY_GENERATOR_VECTOR_NAME", cast=VectorNames)

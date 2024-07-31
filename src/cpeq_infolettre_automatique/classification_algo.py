@@ -3,7 +3,7 @@
 import operator
 import uuid
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any
 
 import numpy as np
 from scipy.special import softmax
@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import KNeighborsClassifier
 
-from cpeq_infolettre_automatique.config import Rubric, VectorNames
+from cpeq_infolettre_automatique.config import ClassificationAlgos, Rubric, VectorNames
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
@@ -25,7 +25,9 @@ class NewsClassifier:
         This should only take inputs and outputs, and be agnnostic of the value predicted.
     """
 
-    def __init__(self, vectorstore: Vectorstore, vector_name: VectorNames) -> None:
+    def __init__(
+        self, vectorstore: Vectorstore, *, vector_name: VectorNames, **kwargs: Any
+    ) -> None:
         """Initialize the NewsClassifier with the vectorstore.
 
         Args:
@@ -97,13 +99,7 @@ class NewsClassifierFactory:
     def create_news_classifier(
         vectorstore: Vectorstore,
         vector_name: VectorNames,
-        classifier_type: Literal[
-            "MaxMeanScoresNewsClassifier",
-            "MaxScoreNewsClassifier",
-            "MaxPoolingNewsClassifier",
-            "KnNewsClassifier",
-            "RandomForestNewsClassifier",
-        ],
+        classifier_type: ClassificationAlgos,
         train_data: list[tuple[str, list[float]]] | None = None,
         **kwargs: Any,
     ) -> NewsClassifier:
@@ -118,6 +114,9 @@ class NewsClassifierFactory:
 
         Returns:
             The NewsClassifier.
+
+        Raises:
+            ValueError: If the classifier_type is unknown.
         """
         model: NewsClassifier
         model_dict = {
@@ -128,7 +127,7 @@ class NewsClassifierFactory:
             "RandomForestNewsClassifier": RandomForestNewsClassifier,
         }
         if classifier_type in model_dict:
-            model = model_dict[classifier_type](vectorstore, vector_name, **kwargs)
+            model = model_dict[classifier_type](vectorstore, vector_name=vector_name, **kwargs)
         else:
             error_msg = f"Unknown classifier type: {classifier_type}"
             raise ValueError(error_msg)
@@ -292,7 +291,7 @@ class KnNewsClassifier(NewsClassifier):
             vectorstore: The vectorstore to use for classification.
             n_neighbors: The number of neighbors to use for classification.
         """
-        super().__init__(vectorstore, vector_name)
+        super().__init__(vectorstore, vector_name=vector_name)
         self.n_neighbors = n_neighbors
         self.labels: list[str] = []
         self.classifier = KNeighborsClassifier(n_neighbors=self.n_neighbors, metric="cosine")
@@ -360,7 +359,7 @@ class RandomForestNewsClassifier(NewsClassifier):
             vectorstore: The vectorstore to use for classification.
             n_estimators: The number of estimators to use for classification.
         """
-        super().__init__(vectorstore, vector_name)
+        super().__init__(vectorstore, vector_name=vector_name)
         self.n_estimators = n_estimators
         self.labels: list[str] = []
         self.classifier = RandomForestClassifier(n_estimators=self.n_estimators)

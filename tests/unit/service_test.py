@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.news_classifier import NewsFilterer
+from cpeq_infolettre_automatique.news_classifier import NewsRelevancyClassifier
 from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
@@ -21,7 +21,7 @@ def service_fixture(
     vectorstore_fixture: Vectorstore,
     news_repository_fixture: NewsRepository,
     news_producer_fixture: NewsProducer,
-    news_filterer_fixture: NewsFilterer,
+    news_relevance_classifier_fixture: NewsRelevancyClassifier,
 ) -> Service:
     """Fixture for mocked service."""
     service = Service(
@@ -29,7 +29,7 @@ def service_fixture(
         news_repository=news_repository_fixture,
         vectorstore=vectorstore_fixture,
         news_producer=news_producer_fixture,
-        news_filterer=news_filterer_fixture,
+        news_relevancy_classifier=news_relevance_classifier_fixture,
     )
     return service
 
@@ -72,10 +72,10 @@ class TestService:
             await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
         assert service_fixture.vectorstore.search_similar_news.called
-        assert service_fixture.news_filterer.predict.called
+        assert service_fixture.news_relevancy_classifier.predict.called
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
-        assert service_fixture.news_producer.summary_generator.generate.called
-        assert service_fixture.news_producer.rubric_classifier.predict.called
+        assert service_fixture.news_producer.summary_generator.completion_model.complete_message.called
+        assert service_fixture.news_producer.news_rubric_classifier.predict.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
         assert service_fixture.news_repository.create_many_news.called
 

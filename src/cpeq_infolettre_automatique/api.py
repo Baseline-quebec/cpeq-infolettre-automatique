@@ -43,7 +43,19 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/generate-newsletter")
-async def generate_newsletter(
+async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
+    """Generate a newsletter from scraped news.
+
+    Note:
+        This task is scheduled to return the news from last week's Monday to last week's Sunday.
+    """
+    # TODO(jsleb333): Schedule this task to return immediately
+    newsletter = await service.generate_newsletter(delete_scraping_jobs=False)
+    return Response(newsletter.to_markdown())
+
+
+@app.get("/generate-newsletter-background")
+def generate_newsletter_background(
     service: Annotated[Service, Depends(get_service)], background_tasks: BackgroundTasks
 ) -> Response:
     """Generate a newsletter from scraped news.
@@ -51,11 +63,7 @@ async def generate_newsletter(
     Note:
         This task is scheduled to return the news from last week's Monday to last week's Sunday.
     """
-    # TODO(jsleb333): Schedule this task to return immediately
-    # background_tasks.add_task(service.generate_newsletter, delete_scraping_jobs=False)
-    newsletter = await service.generate_newsletter(
-        delete_scraping_jobs=False,
-    )
+    background_tasks.add_task(service.generate_newsletter, delete_scraping_jobs=False)
     return Response("Newsletter generation scheduled.")
 
 

@@ -1,4 +1,4 @@
-"""Implement the RubricClassifier and NewsFilterer classes."""
+"""Implement the NewsRubricClassifier and NewsRelevancyClassifier classes."""
 
 import operator
 import uuid
@@ -6,11 +6,11 @@ from collections.abc import Sequence
 from typing import Any
 
 from cpeq_infolettre_automatique.classification_algo import NewsClassifier
-from cpeq_infolettre_automatique.config import NewsFiltererConfig, Relevance, Rubric
+from cpeq_infolettre_automatique.config import NewsRelevancyClassifierConfig, Relevance, Rubric
 from cpeq_infolettre_automatique.schemas import News
 
 
-class RubricClassifier:
+class NewsRubricClassifier:
     """Implement the NewsClassifier."""
 
     def __init__(self, model: NewsClassifier) -> None:
@@ -29,7 +29,7 @@ class RubricClassifier:
             news: The news to predict the rubric from.
 
         Returns:
-            The rubric class of the news
+            The rubric classes of the news with their associated probabilities. The results are sorted in descending order of the probabilities.
         """
         return await self.model.predict_probs(news, embedding, ids_to_keep)
 
@@ -48,7 +48,7 @@ class RubricClassifier:
             The rubric class of the news
         """
         predicted_probs = await self.predict_probs(news, embedding, ids_to_keep)
-        return Rubric(next(iter(predicted_probs)))
+        return Rubric(max(predicted_probs.items(), key=operator.itemgetter(1))[0])
 
     @property
     def model_name(self) -> str:
@@ -65,18 +65,22 @@ class RubricClassifier:
         }
 
 
-class NewsFilterer:
-    """Implement the NewsFilterer."""
+class NewsRelevancyClassifier:
+    """Implement the NewsRelevancyClassifier."""
 
-    def __init__(self, model: NewsClassifier, news_filterer_config: NewsFiltererConfig) -> None:
-        """Initialize the NewsFilterer with the model and the configuration."""
+    def __init__(
+        self,
+        model: NewsClassifier,
+        news_relevancy_classifier_config: NewsRelevancyClassifierConfig,
+    ) -> None:
+        """Initialize the NewsRelevancyClassifier with the model and the configuration."""
         self.model = model
-        self.news_filterer_config = news_filterer_config
+        self.news_relevancy_classifier_config = news_relevancy_classifier_config
 
     @property
     def threshold(self) -> float:
         """Get the threshold."""
-        return self.news_filterer_config.threshold
+        return self.news_relevancy_classifier_config.threshold
 
     async def predict(
         self,
@@ -95,7 +99,7 @@ class NewsFilterer:
         predicted_probs = await self.predict_probs(news, embedding, ids_to_keep)
         return (
             Relevance.PERTINENT
-            if predicted_probs[Relevance.AUTRE.value] >= self.threshold
+            if predicted_probs[Relevance.PERTINENT.value] >= self.threshold
             else Relevance.AUTRE
         )
 
@@ -111,7 +115,7 @@ class NewsFilterer:
             news: The news to predict if it is relevant or not.
 
         Returns:
-            The relevance class of the news
+            The relevancy of the news with their associated probabilities. The results are sorted in descending order of the probabilities.
         """
         predicted_probs = await self.model.predict_probs(news, embedding, ids_to_keep)
         not_relevant_prob = predicted_probs[Relevance.AUTRE.value]

@@ -21,15 +21,19 @@ from cpeq_infolettre_automatique.completion_model import (
 from cpeq_infolettre_automatique.config import (
     CompletionModelConfig,
     EmbeddingModelConfig,
-    NewsFiltererConfig,
-    RubricClassifierConfig,
+    NewsRelevancyClassifierConfig,
+    NewsRubricClassifierConfig,
+    SummaryGeneratorConfig,
     VectorstoreConfig,
 )
 from cpeq_infolettre_automatique.embedding_model import (
     EmbeddingModel,
     OpenAIEmbeddingModel,
 )
-from cpeq_infolettre_automatique.news_classifier import NewsFilterer, RubricClassifier
+from cpeq_infolettre_automatique.news_classifier import (
+    NewsRelevancyClassifier,
+    NewsRubricClassifier,
+)
 from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
@@ -90,7 +94,13 @@ class OneDriveDependency(ApiDependency):
 
     @classmethod
     def setup(cls) -> None:
-        """Setup dependency."""
+        """Setup dependency.
+
+        Raises:
+        RuntimeError: If the authentication with Office365 fails.
+        RuntimeError: If the requested Sharepoint Site was not found.
+        RuntimeError: If the requested OneDrive instance was not found.
+        """
         credentials = (
             "99536437-db80-4ece-8bd5-0f4e4b1cba22",
             "zfv8Q~U.AUmeoEDQpuEqTHsBvEnrw2TUXbqo5aLn",
@@ -162,6 +172,9 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
 
     Returns:
         weaviate.WeaviateClient: The vectorstore client.
+
+    Raises:
+        ValueError: If the vectorstore is not ready.
     """
     try:
         client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
@@ -181,9 +194,9 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
 def get_vectorstore(
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
     embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
-    vectorstore_config: VectorstoreConfig,
 ) -> Vectorstore:
     """Return a Vectorstore instance with the provided dependencies."""
+    vectorstore_config = VectorstoreConfig()
     return Vectorstore(
         vectorstore_client=vectorstore_client,
         embedding_model=embedding_model,
@@ -208,48 +221,51 @@ def get_summary_generator(
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> SummaryGenerator:
     """Return a SummaryGenerator instance."""
+    summary_generator_config = SummaryGeneratorConfig()
     return SummaryGenerator(
         completion_model=completion_model,
         vectorstore=vectorstore,
+        summary_generator_config=summary_generator_config,
     )
 
 
-def get_rubric_classifier(
+def get_news_rubric_classifier(
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-) -> RubricClassifier:
-    """Return a RubricClassifier instance."""
-    rubric_classifier_config = RubricClassifierConfig()
+) -> NewsRubricClassifier:
+    """Return a NewsRubricClassifier instance."""
+    news_rubric_classifier_config = NewsRubricClassifierConfig()
     news_classifier_model = NewsClassifierFactory.create_news_classifier(
         vectorstore=vectorstore,
-        classifier_type=rubric_classifier_config.classification_model_name,
-        vector_name=rubric_classifier_config.vector_name,
+        classifier_type=news_rubric_classifier_config.classification_model_name,
+        vector_name=news_rubric_classifier_config.vector_name,
     )
-    return RubricClassifier(model=news_classifier_model)
+    return NewsRubricClassifier(model=news_classifier_model)
 
 
-def get_news_filterer(
+def get_news_relevancy_classifier(
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-) -> NewsFilterer:
-    """Return a NewsFilterer instance."""
-    news_filterer_config = NewsFiltererConfig()
-    news_classifier_model = MaxPoolingNewsClassifier(
-        vectorstore=vectorstore, vector_name="title_content"
+) -> NewsRelevancyClassifier:
+    """Return a NewsRelevancyClassifierConfig instance."""
+    news_relevancy_classifier_config = NewsRelevancyClassifierConfig()
+    news_classifier_model = NewsClassifierFactory.create_news_classifier(
+        vectorstore=vectorstore,
+        classifier_type=news_relevancy_classifier_config.classification_model_name,
+        vector_name=news_relevancy_classifier_config.vector_name,
     )
-    news_classifier_model.setup()
-    filterer_config = NewsFiltererConfig()
-    return NewsFilterer(model=news_classifier_model, news_filterer_config=filterer_config)
+    return NewsRelevancyClassifier(
+        model=news_classifier_model,
+        news_relevancy_classifier_config=news_relevancy_classifier_config,
+    )
 
 
 def get_news_producer(
     summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
-    rubric_classifier: Annotated[RubricClassifier, Depends(get_rubric_classifier)],
-    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
+    news_rubric_classifier: Annotated[NewsRubricClassifier, Depends(get_news_rubric_classifier)],
 ) -> NewsProducer:
     """Return a NewsProducer instance."""
     return NewsProducer(
         summary_generator=summary_generator,
-        rubric_classifier=rubric_classifier,
-        vectorstore=vectorstore,
+        news_rubric_classifier=news_rubric_classifier,
     )
 
 
@@ -257,7 +273,9 @@ def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-    news_filterer: Annotated[NewsFilterer, Depends(get_news_filterer)],
+    news_relevancy_classifier: Annotated[
+        NewsRelevancyClassifier, Depends(get_news_relevancy_classifier)
+    ],
     news_producer: Annotated[NewsProducer, Depends(get_news_producer)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
@@ -265,6 +283,6 @@ def get_service(
         webscraper_io_client=webscraper_io_client,
         news_repository=news_repository,
         vectorstore=vectorstore,
-        news_filterer=news_filterer,
+        news_relevancy_classifier=news_relevancy_classifier,
         news_producer=news_producer,
     )

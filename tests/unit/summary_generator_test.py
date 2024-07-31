@@ -22,7 +22,9 @@ class TestSummaryGenerator:
             summarized_news_fixture,
             summarized_news_fixture_copy,
         ]
-        summary = await summary_generator_fixture.generate(classified_news_fixture, reference_news)
+        summary = await summary_generator_fixture.generate_with_similar_news(
+            classified_news_fixture, reference_news
+        )
         assert isinstance(summary, str)
 
     @staticmethod

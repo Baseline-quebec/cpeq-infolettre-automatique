@@ -10,9 +10,13 @@ import pytest
 import weaviate
 from pydantic_core import Url
 
+from cpeq_infolettre_automatique.completion_model import CompletionModel
 from cpeq_infolettre_automatique.config import Relevance, Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
-from cpeq_infolettre_automatique.news_classifier import NewsFilterer, RubricClassifier
+from cpeq_infolettre_automatique.news_classifier import (
+    NewsRelevancyClassifier,
+    NewsRubricClassifier,
+)
 from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News, Newsletter
@@ -218,7 +222,11 @@ def test_collection_name() -> str:
 def vectorstore_client_fixture(
     test_collection_name: str,
 ) -> Iterator[weaviate.WeaviateClient]:
-    """Fixture for mocked Weaviate client."""
+    """Fixture for mocked Weaviate client.
+
+    Raises:
+        ValueError: If the vectorstore is not ready.
+    """
     client: weaviate.WeaviateClient = weaviate.connect_to_embedded()
     if not client.is_ready():
         error_msg = "Vectorstore is not ready"
@@ -259,7 +267,7 @@ def embedding_model_fixture() -> EmbeddingModel:
 def vectorstore_fixture(summarized_news_fixture: News) -> Vectorstore:
     """Fixture for mocked Vectorstore."""
     vectorstore_fixture = MagicMock(spec=Vectorstore)
-    vectorstore_fixture.read_many_by_rubric.return_value = [summarized_news_fixture]
+    vectorstore_fixture.search_similar_news.return_value = [summarized_news_fixture]
     return vectorstore_fixture
 
 
@@ -274,39 +282,49 @@ def news_repository_fixture() -> NewsRepository:
 
 
 @pytest.fixture()
-def rubric_classifier_fixture(rubric_classification_fixture: Rubric) -> Any:
+def news_rubric_classifier_fixture(rubric_classification_fixture: Rubric) -> Any:
     """Fixture for mocked ReferenceNewsRepository."""
-    rubric_classifier_fixture = MagicMock(spec=RubricClassifier)
-    rubric_classifier_fixture.predict = AsyncMock(return_value=rubric_classification_fixture)
-    return rubric_classifier_fixture
+    news_rubric_classifier_fixture = MagicMock(spec=NewsRubricClassifier)
+    news_rubric_classifier_fixture.predict = AsyncMock(return_value=rubric_classification_fixture)
+    return news_rubric_classifier_fixture
 
 
 @pytest.fixture()
-def summary_generator_fixture() -> SummaryGenerator:
+def completion_model_fixture() -> CompletionModel:
+    """Fixture for a mocked completion model."""
+    completion_model_fixture = MagicMock(spec=CompletionModel)
+    completion_model_fixture.complete_message = AsyncMock(return_value="This is a summary")
+    return completion_model_fixture
+
+
+@pytest.fixture()
+def summary_generator_fixture(
+    completion_model_fixture: CompletionModel,
+    vectorstore_fixture: Vectorstore,
+) -> SummaryGenerator:
     """Fixture for the SummaryGenerator."""
-    summary_generator_fixture = MagicMock(SummaryGenerator)
-    summary_generator_fixture.generate = AsyncMock(return_value="This is a summary")
-    return summary_generator_fixture
+    summary_generator_config = MagicMock()
+    return SummaryGenerator(
+        completion_model_fixture, vectorstore_fixture, summary_generator_config
+    )
 
 
 @pytest.fixture()
 def news_producer_fixture(
     summary_generator_fixture: SummaryGenerator,
-    rubric_classifier_fixture: RubricClassifier,
-    vectorstore_fixture: Vectorstore,
+    news_rubric_classifier_fixture: NewsRubricClassifier,
 ) -> NewsProducer:
     """Fixture for the NewsProducer."""
     news_producer_fixture = NewsProducer(
         summary_generator=summary_generator_fixture,
-        rubric_classifier=rubric_classifier_fixture,
-        vectorstore=vectorstore_fixture,
+        news_rubric_classifier=news_rubric_classifier_fixture,
     )
     return news_producer_fixture
 
 
 @pytest.fixture()
-def news_filterer_fixture() -> NewsFilterer:
-    """Fixture for the NewsFilterer."""
-    rubric_classifier_fixture = MagicMock(spec=NewsFilterer)
-    rubric_classifier_fixture.predict = AsyncMock(return_value=Relevance.PERTINENT)
-    return rubric_classifier_fixture
+def news_relevance_classifier_fixture() -> NewsRelevancyClassifier:
+    """Fixture for the NewsRelevancyClassifier."""
+    news_relevance_classifier_fixture = MagicMock(spec=NewsRelevancyClassifier)
+    news_relevance_classifier_fixture.predict = AsyncMock(return_value=Relevance.PERTINENT)
+    return news_relevance_classifier_fixture

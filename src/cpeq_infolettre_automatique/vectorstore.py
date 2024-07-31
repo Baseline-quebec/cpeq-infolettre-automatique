@@ -4,14 +4,13 @@ import datetime as dt
 import logging
 import uuid
 from collections.abc import Sequence
-from typing import Annotated, Literal, TypedDict
+from typing import TypedDict
 
 import weaviate
 import weaviate.classes as wvc
-from pydantic import BaseModel, ConfigDict, ValidationError
-from pydantic.json_schema import SkipJsonSchema
+from pydantic import ValidationError
 
-from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
+from cpeq_infolettre_automatique.config import Rubric, VectorNames, VectorstoreConfig
 from cpeq_infolettre_automatique.embedding_model import EmbeddingModel
 from cpeq_infolettre_automatique.schemas import News
 
@@ -89,11 +88,7 @@ class Vectorstore:
         Returns:
             The list of similar news.
         """
-        query = (
-            self.create_title_content_query(news)
-            if vector_name == "title_content"
-            else self.create_title_summary_query(news)
-        )
+        query = self.create_query(news, vector_name=vector_name)
         embeddings = await self.embedding_model.embed(query)
         news_retrieved = await self.hybrid_search(query, embeddings, vector_name, ids_to_keep)
         return [news_item for news_item, _ in news_retrieved]
@@ -124,7 +119,7 @@ class Vectorstore:
             alpha=self.hybrid_weight,
             return_metadata=wvc.query.MetadataQuery(score=True),
             return_properties=ReferenceNewsType,
-            target_vector=vector_name,
+            target_vector=vector_name.value,
             filters=wvc.query.Filter.by_id().contains_any(list(ids_to_keep))
             if ids_to_keep
             else None,
@@ -177,8 +172,7 @@ class Vectorstore:
 
         objects = collection.query.fetch_objects(
             limit=min(self.max_nb_items_retrieved, len(collection)),
-            target_vector=vector_name,
-            include_vector=True,
+            include_vector=[vector_name.value],
             return_properties=ReferenceNewsType,
         ).objects
         news_vectors = []
@@ -186,7 +180,7 @@ class Vectorstore:
             try:
                 news_vectors.append((
                     News.model_validate(object_.properties),
-                    object_.vector[vector_name],
+                    object_.vector[vector_name.value],
                 ))
             except ValidationError:
                 logging.exception("Error validating object %s", object_)
@@ -202,7 +196,7 @@ class Vectorstore:
         """
         query = (
             Vectorstore.create_title_summary_query(news)
-            if vector_name == "title_summary"
+            if vector_name == VectorNames.TITLE_SUMMARY
             else Vectorstore.create_title_content_query(news)
         )
         return query

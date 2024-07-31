@@ -59,6 +59,12 @@ class OpenAICompletionModel(CompletionModel):
         Args:
             user_message: The user message to complete.
             system_prompt: The system prompt to use for completion, optional.
+
+        Returns:
+            The completion message.
+
+        Raises:
+            ValueError: If the completion model returns an empty response.
         """
         messages: list[ChatCompletionMessageParam] = []
         if system_prompt is not None:

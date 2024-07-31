@@ -9,10 +9,7 @@ import weaviate
 import weaviate.classes as wvc
 from tqdm import tqdm
 
-from cpeq_infolettre_automatique.config import (
-    EmbeddingModelConfig,
-    VectorstoreConfig,
-)
+from cpeq_infolettre_automatique.config import EmbeddingModelConfig, VectorNames, VectorstoreConfig
 from cpeq_infolettre_automatique.dependencies import (
     get_openai_client,
     get_vectorstore_client,
@@ -141,6 +138,9 @@ async def populate_db(
 
     Returns:
         str: Status of the create operation.
+
+    Raises:
+        ValueError: If the create operation fails.
     """
     uuids_upserted: list[uuid.UUID | str] = []
     with weaviate_collection.client.batch.fixed_size(
@@ -154,17 +154,17 @@ async def populate_db(
             object_id = Vectorstore.create_uuid(reference_news)
             title_summary_vectorized = await embedding_model.embed(
                 text_description=Vectorstore.create_query(
-                    reference_news, vector_name="title_summary"
+                    reference_news, vector_name=VectorNames.TITLE_SUMMARY
                 )
             )
             title_content_vectorized = await embedding_model.embed(
                 text_description=Vectorstore.create_query(
-                    reference_news, vector_name="title_content"
+                    reference_news, vector_name=VectorNames.TITLE_CONTENT
                 )
             )
             vectors = {
-                weaviate_collection.vectorstore_config.title_summary_vector_name: title_summary_vectorized,
-                weaviate_collection.vectorstore_config.title_content_vector_name: title_content_vectorized,
+                VectorNames.TITLE_SUMMARY.value: title_summary_vectorized,
+                VectorNames.TITLE_CONTENT.value: title_content_vectorized,
             }
             uuid_upserted: uuid.UUID | str = batch.add_object(
                 properties=reference_news.model_dump(),
@@ -211,7 +211,7 @@ async def main() -> None:
     embedding_model = OpenAIEmbeddingModel(
         client=openai_client, embedding_model_config=embedding_model_config
     )
-    vectorstore_config = VectorstoreConfig(collection_name="ClassificationEvaluationSummary")
+    vectorstore_config = VectorstoreConfig()
     for weaviate_client in get_vectorstore_client():
         weaviate_collection = WeaviateCollection(weaviate_client, vectorstore_config)
         await bootstrap_vectorstore(

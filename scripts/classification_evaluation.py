@@ -25,9 +25,10 @@ from cpeq_infolettre_automatique.classification_algo import (
     MaxScoreNewsClassifier,
 )
 from cpeq_infolettre_automatique.config import (
-    NewsFiltererConfig,
+    NewsRelevancyClassifierConfig,
     Relevance,
     Rubric,
+    VectorNames,
     VectorstoreConfig,
 )
 from cpeq_infolettre_automatique.dependencies import (
@@ -36,8 +37,8 @@ from cpeq_infolettre_automatique.dependencies import (
     get_vectorstore_client,
 )
 from cpeq_infolettre_automatique.news_classifier import (
-    NewsFilterer,
-    RubricClassifier,
+    NewsRelevancyClassifier,
+    NewsRubricClassifier,
 )
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
@@ -237,9 +238,11 @@ class ClassificationEvaluation:
 
 def leave_one_out_rubric_classification_dataset_generator(
     vectorstore: Vectorstore,
+    *,
+    vector_name: VectorNames,
 ) -> Iterator[tuple[list[tuple[News, str, list[float]]], tuple[News, str, list[float]]]]:
     """Get Dataset."""
-    news_vectors = vectorstore.read_many_with_vectors()
+    news_vectors = vectorstore.read_many_with_vectors(vector_name=vector_name)
     for i in range(len(news_vectors)):
         train_news_vector = news_vectors[:i] + news_vectors[i + 1 :]
         train_news_class_vector = [
@@ -259,9 +262,11 @@ def leave_one_out_rubric_classification_dataset_generator(
 
 def leave_one_out_news_filtering_dataset_generator(
     vectorstore: Vectorstore,
+    *,
+    vector_name: VectorNames,
 ) -> Iterator[tuple[list[tuple[News, str, list[float]]], tuple[News, str, list[float]]]]:
     """Get Dataset."""
-    news_vectors = vectorstore.read_many_with_vectors()
+    news_vectors = vectorstore.read_many_with_vectors(vector_name=vector_name)
     for i in range(len(news_vectors)):
         train_news_vector = news_vectors[:i] + news_vectors[i + 1 :]
         train_news_class_vector = [
@@ -287,8 +292,8 @@ def leave_one_out_news_filtering_dataset_generator(
 
 async def run_classifiers_experiment(  # noqa: PLR0914
     experiment_type: Literal["rubric-classification", "news-filtering"],
-    run_name: str,
-    news_classifiers: list[NewsFilterer | RubricClassifier],
+    run_type: VectorNames,
+    news_classifiers: list[NewsRelevancyClassifier | NewsRubricClassifier],
     vectorstore: Vectorstore,
 ) -> None:
     """Run Experiment."""
@@ -306,13 +311,13 @@ async def run_classifiers_experiment(  # noqa: PLR0914
     else:
         experiment_id = experiment.experiment_id
     parent_run = mlflow.search_runs(
-        experiment_ids=[experiment_id], filter_string=f"run_name='{run_name}'"
+        experiment_ids=[experiment_id], filter_string=f"run_name='{run_type.value}'"
     )
     parent_run_id = None
     if not parent_run.empty:
         parent_run_id = parent_run["run_id"][0]
     with mlflow.start_run(
-        run_id=parent_run_id, run_name=run_name, experiment_id=experiment_id
+        run_id=parent_run_id, run_name=run_type.value, experiment_id=experiment_id
     ) as parent_run:
         for news_classifier in tqdm(news_classifiers):
             with mlflow.start_run(
@@ -328,7 +333,9 @@ async def run_classifiers_experiment(  # noqa: PLR0914
                     if experiment_type == "rubric-classification"
                     else leave_one_out_news_filtering_dataset_generator
                 )
-                for i, dataset in tqdm(enumerate(dataset_generator(vectorstore))):
+                for i, dataset in tqdm(
+                    enumerate(dataset_generator(vectorstore, vector_name=run_type))
+                ):
                     train_news_class_vector, test_news_class_vector = dataset
                     test_news, test_class, test_embedding = test_news_class_vector
                     ids_to_keep = [
@@ -358,7 +365,7 @@ async def run_classifiers_experiment(  # noqa: PLR0914
 
                 run_classification_evaluation(q_rels, results, y_pred, target_names, wrong_preds)
                 mlflow.log_params(news_classifier.model_info)
-                mlflow.log_param("fields", run_name)
+                mlflow.log_param("fields", run_type.value)
 
 
 def run_classification_evaluation(
@@ -406,7 +413,7 @@ def run_classification_evaluation(
 
 async def prepare_news_classifiers_experiment(
     experiment_type: Literal["rubric-classification", "news-filtering"],
-    run_name: VectorNames,
+    run_type: VectorNames,
     collection_name: str,
 ) -> None:
     """Main Function."""
@@ -422,29 +429,31 @@ async def prepare_news_classifiers_experiment(
                 vectorstore_config=vectorstore_config,
             )
             news_classifier_models = [
-                MaxMeanScoresNewsClassifier(vectorstore=vectorstore),
-                KnNewsClassifier(vectorstore=vectorstore),
-                MaxScoreNewsClassifier(vectorstore=vectorstore),
-                MaxPoolingNewsClassifier(vectorstore=vectorstore),
+                MaxMeanScoresNewsClassifier(vectorstore=vectorstore, vector_name=run_type),
+                KnNewsClassifier(vectorstore=vectorstore, vector_name=run_type),
+                MaxScoreNewsClassifier(vectorstore=vectorstore, vector_name=run_type),
+                MaxPoolingNewsClassifier(vectorstore=vectorstore, vector_name=run_type),
             ]
 
-            news_classifiers: list[RubricClassifier | NewsFilterer] = []
+            news_classifiers: list[NewsRubricClassifier | NewsRelevancyClassifier] = []
             if experiment_type == "rubric-classification":
                 news_classifiers.extend([
-                    RubricClassifier(model=model) for model in news_classifier_models
+                    NewsRubricClassifier(model=model) for model in news_classifier_models
                 ])
 
             elif experiment_type == "news-filtering":
                 for news_classifier in news_classifier_models:
                     for threshold in [0.3, 0.45, 0.4, 0.45, 0.5]:
                         news_classifiers.append(  # noqa: PERF401
-                            NewsFilterer(
+                            NewsRelevancyClassifier(
                                 model=news_classifier,
-                                news_filterer_config=NewsFiltererConfig(threshold=threshold),
+                                news_relevancy_classifier_config=NewsRelevancyClassifierConfig(
+                                    threshold=threshold
+                                ),
                             )
                         )
             await run_classifiers_experiment(
-                experiment_type, run_name, news_classifiers, vectorstore
+                experiment_type, run_type, news_classifiers, vectorstore
             )
         finally:
             vectorstore_client.close()
@@ -456,28 +465,28 @@ if __name__ == "__main__":
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="rubric-classification",
-            run_name="title_summary",
+            run_type=VectorNames.TITLE_SUMMARY,
             collection_name="ClassificationEvaluation",
         )
     )
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="rubric-classification",
-            run_name="title_content",
+            run_type=VectorNames.TITLE_CONTENT,
             collection_name="ClassificationEvaluation",
         )
     )
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="news-filtering",
-            run_name="title_summary",
+            run_type=VectorNames.TITLE_SUMMARY,
             collection_name="ClassificationEvaluation",
         )
     )
     asyncio.run(
         prepare_news_classifiers_experiment(
             experiment_type="news-filtering",
-            run_name="title_content",
+            run_type=VectorNames.TITLE_CONTENT,
             collection_name="ClassificationEvaluation",
         )
     )

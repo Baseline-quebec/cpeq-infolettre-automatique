@@ -3,6 +3,7 @@
 from inspect import cleandoc
 
 from cpeq_infolettre_automatique.completion_model import CompletionModel
+from cpeq_infolettre_automatique.config import SummaryGeneratorConfig, VectorNames
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
@@ -10,10 +11,21 @@ from cpeq_infolettre_automatique.vectorstore import Vectorstore
 class SummaryGenerator:
     """Service for summarizing news articles."""
 
-    def __init__(self, completion_model: CompletionModel, vectorstore: Vectorstore) -> None:
+    def __init__(
+        self,
+        completion_model: CompletionModel,
+        vectorstore: Vectorstore,
+        summary_generator_config: SummaryGeneratorConfig,
+    ) -> None:
         """Initialize the summary generator with the completion model."""
         self.completion_model = completion_model
         self.vectorstore = vectorstore
+        self.summary_generator_config = summary_generator_config
+
+    @property
+    def vector_name(self) -> VectorNames:
+        """Return the vector name from the configuration."""
+        return self.summary_generator_config.vector_name
 
     async def generate(self, news_to_summarize: News) -> str:
         """Summarize the given news based on reference news exemples.
@@ -21,9 +33,15 @@ class SummaryGenerator:
         Args:
             news_to_summarize: The news to summarize.
 
-        Returns: The summary of the news.
+        Returns:
+            The summary of the news.
+
+        Raises:
+            ValueError: If all reference news do not have a summary.
         """
-        similar_news = await self.vectorstore.search_similar_news(news_to_summarize)
+        similar_news = await self.vectorstore.search_similar_news(
+            news_to_summarize, vector_name=self.vector_name
+        )
         if any(news.summary is None for news in similar_news):
             error_msg = "All reference news must have a summary as an exemple."
             raise ValueError(error_msg)

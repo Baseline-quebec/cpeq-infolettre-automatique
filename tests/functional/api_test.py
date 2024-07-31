@@ -37,7 +37,11 @@ def client_fixture(service_fixture: Service) -> TestClient:
 
 
 def test_root_status_code() -> None:
-    """Test that reading the root is successful."""
+    """Test that reading the root is successful.
+
+    Raises:
+        AssertionError: If the status code is not successful.
+    """
     if not httpx.codes.is_success(SUCCESS_HTTP_STATUS_CODE):
         error_message = "Status code should indicate success"
         raise AssertionError(error_message)
