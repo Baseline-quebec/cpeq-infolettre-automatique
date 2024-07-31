@@ -63,7 +63,7 @@ resource "time_sleep" "wait_rbac_propagation" {
   create_duration = "1m"
 
   triggers = {
-    rbac = azurerm_role_assignment.acrpull.scope
+    rbac = azurerm_role_assignment.keyvault_secret_read.scope
   }
 }
 
