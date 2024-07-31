@@ -13,12 +13,32 @@ resource "azurerm_container_registry" "acr" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Basic"
-  admin_enabled       = false
+  admin_enabled       = true
 
   tags = {
     environment = var.environment
     project     = "CPEQ"
   }
+}
+
+data "azurerm_client_config" "current" {}
+
+resource "azurerm_key_vault" "keyvault" {
+  name                        = "kvcpeq${var.environment}${var.location}"
+  location                    = azurerm_resource_group.rg.location
+  resource_group_name         = azurerm_resource_group.rg.name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+
+  sku_name = "standard"
+}
+
+resource "azurerm_key_vault_secret" "acr_password" {
+  name         = "ContainerRegistry--AdminPassword"
+  value        = azurerm_container_registry.acr.admin_password
+  key_vault_id = azurerm_key_vault.keyvault.id
 }
 
 resource "azurerm_user_assigned_identity" "identity" {
@@ -32,15 +52,15 @@ resource "azurerm_user_assigned_identity" "identity" {
   }
 }
 
-resource "azurerm_role_assignment" "acrpull" {
-  scope                = azurerm_container_registry.acr.id
+resource "azurerm_role_assignment" "keyvault_secret_read" {
+  scope                = azurerm_key_vault.keyvault.id
   principal_id         = azurerm_user_assigned_identity.identity.principal_id
-  role_definition_name = "AcrPull"
+  role_definition_name = "Key Vault Secrets User"
 }
 
 resource "time_sleep" "wait_rbac_propagation" {
-  depends_on      = [azurerm_role_assignment.acrpull]
-  create_duration = "5m"
+  depends_on      = [azurerm_role_assignment.keyvault_secret_read]
+  create_duration = "1m"
 
   triggers = {
     rbac = azurerm_role_assignment.acrpull.scope
@@ -82,9 +102,16 @@ resource "azurerm_container_app" "app" {
     identity_ids = [azurerm_user_assigned_identity.identity.id]
   }
 
+  secret {
+    name                = "acr_admin_password"
+    identity            = azurerm_user_assigned_identity.identity.id
+    key_vault_secret_id = azurerm_key_vault_secret.acr_password.id
+  }
+
   registry {
-    server   = azurerm_container_registry.acr.login_server
-    identity = azurerm_user_assigned_identity.identity.id
+    server               = azurerm_container_registry.acr.login_server
+    username             = azurerm_container_registry.acr.admin_username
+    password_secret_name = "acr_admin_password"
   }
 
   tags = {
