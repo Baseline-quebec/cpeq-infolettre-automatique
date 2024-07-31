@@ -105,7 +105,7 @@ resource "azurerm_container_app" "app" {
   template {
     container {
       name   = "infolettre-automatique"
-      image  = "cpeq/infolettre-automatique:latest"
+      image  = "${azurerm_container_registry.acr.login_server}/cpeq/infolettre-automatique:latest"
       cpu    = 0.25
       memory = "0.5Gi"
     }
