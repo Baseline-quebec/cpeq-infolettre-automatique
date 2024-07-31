@@ -75,6 +75,11 @@ jobs:
 
           exit $result_code
 
+      - name: "Set Variables"
+        id: vars
+        run: |
+          echo "DOCKER_IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - id: plan
         name: Terraform Plan
         env:
@@ -83,7 +88,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
         run: |
-          terraform plan -no-color -var-file=variables/${{ vars.ENVIRONMENT }}.tfvars -out plan.tfplan 2>&1 >> output.log
+          terraform plan -no-color -var-file=variables/${{ vars.ENVIRONMENT }}.tfvars -var="docker_image_tag=${{ steps.vars.outputs.DOCKER_IMAGE_TAG }}" -out plan.tfplan 2>&1 >> output.log
           result_code=${PIPESTATUS[0]}
 
           {

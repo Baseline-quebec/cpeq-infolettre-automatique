@@ -15,6 +15,7 @@ on:
       - "src/**"
       - "tests/**"
       - "data/**"
+  workflow_dispatch:
 
 env:
   IS_MAIN: ${{ github.ref == 'ref/heads/main' }}

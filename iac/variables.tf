@@ -13,3 +13,8 @@ variable "build_pipeline_object_id" {
   type        = string
   description = "Object ID of the Service Principal used by the Build pipeline to push Docker images to the Container Registry"
 }
+
+variable "docker_image_tag" {
+  type        = string
+  description = "Docker image tag to create the Container App with."
+}
