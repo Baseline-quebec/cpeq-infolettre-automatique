@@ -23,7 +23,7 @@ resource "azurerm_container_registry" "acr" {
 
 resource "azurerm_role_assignment" "build_pipeline" {
   scope                = azurerm_container_registry.acr.id
-  principal_id         = var.build_pipeline_client_id
+  principal_id         = var.build_pipeline_object_id
   role_definition_name = "AcrPush"
 }
 
