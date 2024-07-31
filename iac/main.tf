@@ -64,7 +64,8 @@ resource "time_sleep" "wait_rbac_propagation" {
   create_duration = "1m"
 
   triggers = {
-    rbac = azurerm_role_assignment.keyvault_secret_read.scope
+    container_app = azurerm_role_assignment.keyvault_secret_read.scope
+    terraform     = azurerm_role_assignment.terraform_secrets_admin.scope
   }
 }
 
