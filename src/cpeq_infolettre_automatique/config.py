@@ -110,9 +110,11 @@ class NewsRelevancyClassifierConfig(BaseModel):
     """Configuration for the news relevancy classifier."""
 
     classification_model_name: ClassificationAlgos = config(
-        "NEWS_RELEVANCY_CLASSIFIER_MODEL_NAME", cast=str
+        "NEWS_RELEVANCY_CLASSIFIER_MODEL_NAME", "MaxPoolingNewsClassifier", cast=str
     )
-    vector_name: VectorNames = config("NEWS_RELEVANCY_CLASSIFIER_VECTOR_NAME", cast=VectorNames)
+    vector_name: VectorNames = config(
+        "NEWS_RELEVANCY_CLASSIFIER_VECTOR_NAME", "title_content", cast=VectorNames
+    )
     threshold: float = config("NEWS_RELEVANCY_CLASSIFIER_THRESHOLD", 0.50, cast=float)
 
 
@@ -120,12 +122,16 @@ class NewsRubricClassifierConfig(BaseModel):
     """Configuration for the rubric classifier."""
 
     classification_model_name: ClassificationAlgos = config(
-        "NEWS_RUBRIC_CLASSIFIER_MODEL_NAME", cast=str
+        "NEWS_RUBRIC_CLASSIFIER_MODEL_NAME", "MaxPoolingNewsClassifier", cast=str
     )
-    vector_name: VectorNames = config("NEWS_RUBRIC_CLASSIFIER_VECTOR_NAME", cast=VectorNames)
+    vector_name: VectorNames = config(
+        "NEWS_RUBRIC_CLASSIFIER_VECTOR_NAME", "title_summary", cast=VectorNames
+    )
 
 
 class SummaryGeneratorConfig(BaseModel):
     """Configuration for the summary generator."""
 
-    vector_name: VectorNames = config("SUMMARY_GENERATOR_VECTOR_NAME", cast=VectorNames)
+    vector_name: VectorNames = config(
+        "SUMMARY_GENERATOR_VECTOR_NAME", "title_content", cast=VectorNames
+    )
