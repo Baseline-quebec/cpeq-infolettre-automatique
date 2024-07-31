@@ -94,7 +94,8 @@ resource "azurerm_container_app" "app" {
   ingress {
     target_port = 8000
     traffic_weight {
-      percentage = 100
+      percentage      = 100
+      latest_revision = true
     }
   }
 
