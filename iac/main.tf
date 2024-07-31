@@ -79,8 +79,8 @@ resource "azurerm_container_app" "app" {
     container {
       name   = "infolettre-automatique"
       image  = "${azurerm_container_registry.acr.login_server}/cpeq/infolettre-automatique:latest"
-      cpu    = 0.5
-      memory = "1.0Gi"
+      cpu    = 1
+      memory = "2.0Gi"
     }
     max_replicas = 1
     min_replicas = 0
