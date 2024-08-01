@@ -2,6 +2,8 @@
 
 import csv
 import datetime
+import io
+from io import StringIO
 from pathlib import Path
 
 from O365.drive import File, Folder
@@ -48,28 +50,38 @@ class NewsRepository:
         Args:
             news_list: List of News to save.
         """
+        stream: StringIO = io.StringIO()
+
         file: File | None = get_file_if_exists(self.news_folder, self._news_file_name)
         if file is not None:
-            file.download(name=self._news_file_name)
+            file.download(output=stream)
 
-        with Path(self._news_file_name).open(mode="a", encoding="utf-8", newline="") as csvfile:
-            csvwriter = csv.writer(
-                csvfile,
-                delimiter=",",
-                quotechar="|",
-                quoting=csv.QUOTE_MINIMAL,
-                dialect="excel",
-            )
+        stream.seek(0, io.SEEK_END)  # Set position of stream at end to emulate append mode.
 
-            rows: list[list[str]] = []
-            if file is None:
-                # Add headers row if we are creating the file
-                rows.append([keys.capitalize() for keys in News.model_fields])
-            rows.append(*([str(value) for _, value in news] for news in news_list))
+        csvwriter = csv.writer(
+            csvfile=stream,
+            delimiter=",",
+            quotechar="|",
+            quoting=csv.QUOTE_MINIMAL,
+            dialect="excel",
+        )
 
-            csvwriter.writerows(rows)
+        rows: list[list[str]] = []
+        if file is None:
+            # Add headers row if we are creating the file
+            rows.append([keys.capitalize() for keys in News.model_fields])
+        rows.append(*([str(value) for _, value in news] for news in news_list))
 
-        self.news_folder.upload_file(item=self._news_file_name)
+        csvwriter.writerows(rows)
+
+        stream.seek(
+            0, io.SEEK_END
+        )  # Set position to end of stream to get stream size by calling tell()
+        self.news_folder.upload_file(
+            item=self._news_file_name,  # Required param, but will be ignored as we specify a stream to read from.
+            stream=stream,
+            stream_size=stream.tell(),
+        )
 
     def create_newsletter(self, newsletter: Newsletter) -> None:
         """Save the Newsletter as a Markdown file in the OneDrive folder.
