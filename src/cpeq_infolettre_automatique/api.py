@@ -13,6 +13,7 @@ from fastapi.responses import Response
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
     OneDriveDependency,
+    VectorstoreClientDependency,
     get_service,
 )
 from cpeq_infolettre_automatique.schemas import AddNewsBody
@@ -32,11 +33,13 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
     HttpClientDependency.setup()
     OneDriveDependency.setup()
+    VectorstoreClientDependency.setup()
 
     yield
 
     # Shutdown events.
     await HttpClientDependency.teardown()
+    VectorstoreClientDependency.teardown()
 
 
 app = FastAPI(lifespan=lifespan)

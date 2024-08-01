@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import KNeighborsClassifier
 
-from cpeq_infolettre_automatique.config import ClassificationAlgos, Rubric, VectorNames
+from cpeq_infolettre_automatique.config import Rubric, VectorNames
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
@@ -90,49 +90,6 @@ class NewsClassifier:
         softmax_values = softmax(list(scores.values()))
         softmax_scores = dict(zip(scores.keys(), softmax_values, strict=True))
         return softmax_scores
-
-
-class NewsClassifierFactory:
-    """Factory for NewsClassifier."""
-
-    @staticmethod
-    def create_news_classifier(
-        vectorstore: Vectorstore,
-        vector_name: VectorNames,
-        classifier_type: ClassificationAlgos,
-        train_data: list[tuple[str, list[float]]] | None = None,
-        **kwargs: Any,
-    ) -> NewsClassifier:
-        """Create a NewsClassifier based on the classifier_type.
-
-        Args:
-            vectorstore: The vectorstore to use for classification.
-            vector_name: The name of the vector to use for classification.
-            classifier_type: The type of classifier to create.
-            train_data: The training data to use for classification.
-            **kwargs: The arguments to pass to the classifier.
-
-        Returns:
-            The NewsClassifier.
-
-        Raises:
-            ValueError: If the classifier_type is unknown.
-        """
-        model: NewsClassifier
-        model_dict = {
-            "MaxMeanScoresNewsClassifier": MaxMeanScoresNewsClassifier,
-            "MaxScoreNewsClassifier": MaxScoreNewsClassifier,
-            "MaxPoolingNewsClassifier": MaxPoolingNewsClassifier,
-            "KnNewsClassifier": KnNewsClassifier,
-            "RandomForestNewsClassifier": RandomForestNewsClassifier,
-        }
-        if classifier_type in model_dict:
-            model = model_dict[classifier_type](vectorstore, vector_name=vector_name, **kwargs)
-        else:
-            error_msg = f"Unknown classifier type: {classifier_type}"
-            raise ValueError(error_msg)
-        model.setup(train_data)
-        return model
 
 
 class MaxMeanScoresNewsClassifier(NewsClassifier):
