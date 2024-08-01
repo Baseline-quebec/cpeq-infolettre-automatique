@@ -193,7 +193,7 @@ def get_news_repository(
 
 def get_openai_client() -> AsyncOpenAI:
     """Return an AsyncOpenAI instance with the provided API key."""
-    return AsyncOpenAI(api_key=config("OPENAI_API_KEY"))
+    return AsyncOpenAI(api_key=config("OPENAI_API_KEY"), max_retries=4)
 
 
 def get_embedding_model(
