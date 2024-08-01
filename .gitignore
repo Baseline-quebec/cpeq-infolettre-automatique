@@ -74,3 +74,5 @@ o365_token.txt
 # Remove news and newsletter files
 news.csv
 newsletter.md
+
+mlruns/
