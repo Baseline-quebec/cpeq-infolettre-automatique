@@ -1,7 +1,7 @@
 """App configuration."""
 
 from enum import Enum
-from typing import Literal, TypeAlias
+from typing import Literal
 
 from decouple import config
 from pydantic import BaseModel
@@ -14,7 +14,7 @@ class VectorNames(Enum):
     TITLE_CONTENT = "title_content"
 
 
-ClassificationAlgos: TypeAlias = Literal[  # noqa: UP040
+ClassificationAlgos = Literal[
     "MaxMeanScoresNewsClassifier",
     "MaxScoreNewsClassifier",
     "MaxPoolingNewsClassifier",

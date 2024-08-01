@@ -284,6 +284,13 @@ def create_news_classifier(
         train_data: The training data to use for classification.
         **kwargs: The arguments to pass to the classifier.
 
+    Notes:
+        Current implementation of news classifiers dependency retrains a new model
+        each API Call. It is not scallable nor robust, but as a tradeoff, it offers
+        simplicity and works as is, without external dependencies. (I.E. path pointing to weights and biases)
+
+        # TODO(Olivier Belhumeur): This will require more work when deployed to production.
+
     Returns:
         The NewsClassifier.
 

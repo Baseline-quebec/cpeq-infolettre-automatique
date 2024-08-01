@@ -141,6 +141,7 @@ lint.ignore = [
     "W505", # Doc line too long. Editor autowraps doc, and it's too much work to fix it.
     "W391",
     "CPY001", # Copyright
+    "FURB118"  # reimplemented-operator, it replaces lambda functions with Operator
 ]
 lint.unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
 

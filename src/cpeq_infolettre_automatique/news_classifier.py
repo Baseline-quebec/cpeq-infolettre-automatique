@@ -1,6 +1,5 @@
 """Implement the NewsRubricClassifier and NewsRelevancyClassifier classes."""
 
-import operator
 import uuid
 from collections.abc import Sequence
 from typing import Any
@@ -31,7 +30,10 @@ class NewsRubricClassifier:
         Returns:
             The rubric classes of the news with their associated probabilities. The results are sorted in descending order of the probabilities.
         """
-        return await self.model.predict_probs(news, embedding, ids_to_keep)
+        probs = await self.model.predict_probs(news, embedding, ids_to_keep)
+
+        sorted_probs = dict(sorted(probs.items(), key=lambda item: item[1], reverse=True))
+        return sorted_probs
 
     async def predict(
         self,
@@ -48,7 +50,10 @@ class NewsRubricClassifier:
             The rubric class of the news
         """
         predicted_probs = await self.predict_probs(news, embedding, ids_to_keep)
-        return Rubric(max(predicted_probs.items(), key=operator.itemgetter(1))[0])
+
+        max(predicted_probs, key=lambda x: predicted_probs[x])
+
+        return Rubric(max(predicted_probs, key=lambda x: predicted_probs[x]))
 
     @property
     def model_name(self) -> str:
@@ -124,7 +129,7 @@ class NewsRelevancyClassifier:
             Relevance.PERTINENT.value: relevant_prob,
             Relevance.AUTRE.value: not_relevant_prob,
         }
-        sorted_probs = dict(sorted(probs.items(), key=operator.itemgetter(1), reverse=True))
+        sorted_probs = dict(sorted(probs.items(), key=lambda item: item[1], reverse=True))
         return sorted_probs
 
     @property
