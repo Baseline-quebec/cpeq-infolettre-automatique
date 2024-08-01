@@ -62,8 +62,7 @@ class NewsRepository:
             csvfile=stream,
             delimiter=",",
             quotechar="|",
-            quoting=csv.QUOTE_MINIMAL,
-            dialect="excel",
+            dialect=csv.excel,
         )
 
         rows: list[list[str]] = []
