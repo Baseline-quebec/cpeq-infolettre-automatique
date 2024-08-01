@@ -1,6 +1,7 @@
 """Completion Models implementation."""
 
 from abc import ABC, abstractmethod
+from typing import Literal
 
 from openai import AsyncOpenAI
 from openai.types.chat import (
@@ -21,10 +22,10 @@ class CompletionModel(ABC):
         Args:
             completion_model_config: The completion model configuration.
         """
-        self.completion_model_config: CompletionModelConfig
+        self.completion_model_config = completion_model_config
 
     @property
-    def model(self) -> str:
+    def model(self) -> Literal["gpt-4o", "gpt-4-turbo"]:
         """Get the model ID."""
         return self.completion_model_config.model
 

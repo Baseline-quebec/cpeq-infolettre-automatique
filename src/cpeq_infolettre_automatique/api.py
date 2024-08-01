@@ -1,6 +1,5 @@
 """cpeq-infolettre-automatique REST API."""
 
-import datetime as dt
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -67,13 +66,9 @@ def generate_newsletter_background(
     Note:
         This task is scheduled to return the news from last week's Monday to last week's Sunday.
     """
-    start_date = dt.datetime(2024, 7, 22, tzinfo=dt.UTC)
-    end_date = dt.datetime(2024, 7, 23, tzinfo=dt.UTC)
     background_tasks.add_task(
         service.generate_newsletter,
         delete_scraping_jobs=False,
-        start_date=start_date,
-        end_date=end_date,
     )
     return Response("Newsletter generation started.")
 
@@ -91,5 +86,5 @@ if __name__ == "__main__":
         app,
         host=str(config("DEVLOCAL_HOST", "localhost")),
         port=int(config("DEVLOCAL_PORT", 8000)),
-        log_level="info",
+        log_level="trace",
     )
