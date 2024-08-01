@@ -60,8 +60,8 @@ class NewsRepository:
 
         csvwriter = csv.writer(
             csvfile=stream,
-            delimiter=",",
-            quotechar="|",
+            delimiter="|",
+            quotechar='"',
             dialect=csv.excel,
         )
 
