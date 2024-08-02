@@ -167,12 +167,12 @@ class VectorstoreClientDependency(ApiDependency):
             error_msg = "Vectorstore is not ready"
             raise ConnectionError(error_msg)
 
-    def __call__(self) -> Folder:
-        """Returns the Vectostore Account."""
+    def __call__(self) -> weaviate.WeaviateClient:
+        """Returns the Vectostore client."""
         return self.vectorstore_client
 
     @classmethod
-    def teardown(cls) -> Any:
+    def teardown(cls) -> None:
         """Free resources held by the class."""
         cls.vectorstore_client.close()
 

@@ -48,10 +48,12 @@ def test_root_status_code() -> None:
 
 
 def test_generate_newsletter__when_happy_path__returns_successful_response(
-    client_fixture: TestClient, service_fixture: Service, newsletter_fixture: Newsletter
+    client_fixture: TestClient, service_fixture: Service
 ) -> None:
     """Test generating a newsletter."""
+    expected_message = "Newsletter generation started."
+
     response = client_fixture.get("/generate-newsletter")
     assert response.status_code == SUCCESS_HTTP_STATUS_CODE
-    assert response.text == newsletter_fixture.to_markdown()
+    assert response.text == expected_message
     assert service_fixture.generate_newsletter.called
