@@ -52,7 +52,7 @@ class NewsRepository:
         if file is not None:
             file.download(name=self._news_file_name)
 
-        with Path(self._news_file_name).open(mode="w", encoding="utf-8", newline="") as csvfile:
+        with Path(self._news_file_name).open(mode="a", encoding="utf-8", newline="") as csvfile:
             csvwriter = csv.writer(
                 csvfile,
                 delimiter=",",
