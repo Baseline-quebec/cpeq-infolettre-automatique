@@ -1,7 +1,6 @@
 """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
 import csv
-import datetime
 from pathlib import Path
 
 from O365.drive import File, Folder
@@ -10,6 +9,7 @@ from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.utils import (
     get_file_if_exists,
     get_or_create_subfolder,
+    prepare_dates,
 )
 
 
@@ -29,9 +29,10 @@ class NewsRepository:
 
     def setup(self) -> None:
         """Initializes the Sharepoint subfolder in which to store this week's newsletter and news."""
+        _, end_date = prepare_dates()
         self.news_folder = get_or_create_subfolder(
             parent_folder=self.parent_folder,
-            folder_name=str(datetime.datetime.now(tz=datetime.UTC).date()),
+            folder_name=str(end_date),
         )
 
     def create_news(self, news: News) -> None:
