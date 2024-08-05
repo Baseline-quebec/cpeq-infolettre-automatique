@@ -16,31 +16,6 @@ def get_current_montreal_datetime() -> dt.datetime:
     return dt.datetime.now(tz=timezone)
 
 
-def prepare_dates(
-    start_date: dt.datetime | None = None,
-    end_date: dt.datetime | None = None,
-) -> tuple[dt.datetime, dt.datetime]:
-    """Prepare the start and end dates for the newsletter.
-
-    Notes:
-        If no dates are provided, the newsletter will be generated for the previous whole monday-to-sunday period.
-
-    Args:
-        start_date: The start datetime of the newsletter.
-        end_date: The end datetime of the newsletter.
-
-    Returns: The start and end dates for the newsletter.
-    """
-    if end_date is None:
-        current_date = get_current_montreal_datetime().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-        end_date = current_date - dt.timedelta(days=current_date.weekday())
-    if start_date is None:
-        start_date = end_date - dt.timedelta(days=7)
-    return start_date, end_date
-
-
 def get_or_create_subfolder(parent_folder: Folder, folder_name: str) -> Folder:
     """Returns the subfolder with name $folder_name from the $parent_folder, creating it before if not found."""
     folders = parent_folder.get_child_folders()

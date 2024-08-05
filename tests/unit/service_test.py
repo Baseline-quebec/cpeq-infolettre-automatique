@@ -13,7 +13,6 @@ from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
-from cpeq_infolettre_automatique.utils import prepare_dates
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -34,6 +33,10 @@ def service_fixture(
         vectorstore=vectorstore_fixture,
         summary_generator=summary_generator_fixture,
     )
+    service._prepare_dates = lambda *_: (
+        dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
+        dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
+    )
     return service
 
 
@@ -48,15 +51,10 @@ class TestService:
         rubric_classification_fixture: Rubric,
     ) -> None:
         """Test that the generate_newsletter outputs newsletter with proper content."""
-        with patch("cpeq_infolettre_automatique.utils.prepare_dates") as prepare_dates_mock:
-            prepare_dates_mock.return_value = (
-                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
-                dt.datetime(2024, 1, 8, tzinfo=dt.UTC),
-            )
-            newsletter = await service_fixture.generate_newsletter()
-            newsletter_content = newsletter.to_markdown()
-            assert rubric_classification_fixture.value in newsletter_content
-            assert news_fixture.title in newsletter_content
+        newsletter = await service_fixture.generate_newsletter()
+        newsletter_content = newsletter.to_markdown()
+        assert rubric_classification_fixture.value in newsletter_content
+        assert news_fixture.title in newsletter_content
 
     @staticmethod
     @pytest.mark.asyncio()
@@ -67,30 +65,23 @@ class TestService:
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        with patch("cpeq_infolettre_automatique.utils.prepare_dates") as prepare_dates_mock:
-            prepare_dates_mock.return_value = (
-                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
-                dt.datetime(2024, 1, 8, tzinfo=dt.UTC),
-            )
-            await service_fixture.generate_newsletter()
-            assert service_fixture.webscraper_io_client.get_scraping_jobs.called
-            assert service_fixture.vectorstore.classify_news_rubric.called
-            assert service_fixture.reference_news_repository.read_many_by_rubric.called
-            assert service_fixture.webscraper_io_client.download_scraping_job_data.called
-            assert service_fixture.summary_generator.generate.called
-            assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
-            assert service_fixture.news_repository.create_many_news.called
+        await service_fixture.generate_newsletter()
+        assert service_fixture.webscraper_io_client.get_scraping_jobs.called
+        assert service_fixture.vectorstore.classify_news_rubric.called
+        assert service_fixture.reference_news_repository.read_many_by_rubric.called
+        assert service_fixture.webscraper_io_client.download_scraping_job_data.called
+        assert service_fixture.summary_generator.generate.called
+        assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
+        assert service_fixture.news_repository.create_many_news.called
 
     @staticmethod
     def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:
         """Test that the start and end dates are correctly prepared when no arguments are provided."""
-        with (
-            patch(
-                "cpeq_infolettre_automatique.utils.get_current_montreal_datetime"
-            ) as get_current_datetime_mock,
-        ):
+        with patch(
+            "cpeq_infolettre_automatique.utils.get_current_montreal_datetime"
+        ) as get_current_datetime_mock:
             get_current_datetime_mock.return_value = dt.datetime(2024, 1, 9, tzinfo=dt.UTC)
-            start_date, end_date = prepare_dates()
+            start_date, end_date = Service._prepare_dates()
             first_monday = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
             second_monday = dt.datetime(2024, 1, 8, tzinfo=dt.UTC)
             assert start_date == first_monday

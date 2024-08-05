@@ -9,7 +9,6 @@ from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.utils import (
     get_file_if_exists,
     get_or_create_subfolder,
-    prepare_dates,
 )
 
 
@@ -27,12 +26,11 @@ class NewsRepository:
         """
         self.parent_folder = parent_folder
 
-    def setup(self) -> None:
+    def setup(self, folder_name: str) -> None:
         """Initializes the Sharepoint subfolder in which to store this week's newsletter and news."""
-        _, end_date = prepare_dates()
         self.news_folder = get_or_create_subfolder(
             parent_folder=self.parent_folder,
-            folder_name=str(end_date.date()),
+            folder_name=folder_name,
         )
 
     def create_news(self, news: News) -> None:

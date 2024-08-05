@@ -13,7 +13,7 @@ from cpeq_infolettre_automatique.schemas import (
     Newsletter,
 )
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
-from cpeq_infolettre_automatique.utils import prepare_dates
+from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -41,8 +41,8 @@ class Service:
 
         Returns: The formatted newsletter.
         """
-        self.news_repository.setup()
-        start_date, end_date = prepare_dates()
+        start_date, end_date = self._prepare_dates()
+        self.news_repository.setup(str(end_date.date()))
 
         # For the moment, only the coroutine for scraped news is implemented.
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
@@ -66,8 +66,8 @@ class Service:
 
     async def add_news(self, news: News) -> None:
         """Manually add a new News entry in the News repository."""
-        self.news_repository.setup()
-        start_date, end_date = prepare_dates()
+        start_date, end_date = self._prepare_dates()
+        self.news_repository.setup(str(end_date.date()))
         await self._filter_news(news, start_date, end_date)
         await self._summarize_news(news)
         self.news_repository.create_news(news)
@@ -143,3 +143,28 @@ class Service:
         examples = self.reference_news_repository.read_many_by_rubric(classified_news.rubric)
         classified_news.summary = await self.summary_generator.generate(classified_news, examples)
         return classified_news
+
+    @staticmethod
+    def _prepare_dates(
+        start_date: dt.datetime | None = None,
+        end_date: dt.datetime | None = None,
+    ) -> tuple[dt.datetime, dt.datetime]:
+        """Prepare the start and end dates for the newsletter.
+
+        Notes:
+            If no dates are provided, the newsletter will be generated for the previous whole monday-to-sunday period.
+
+        Args:
+            start_date: The start datetime of the newsletter.
+            end_date: The end datetime of the newsletter.
+
+        Returns: The start and end dates for the newsletter.
+        """
+        if end_date is None:
+            current_date = get_current_montreal_datetime().replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            end_date = current_date - dt.timedelta(days=current_date.weekday())
+        if start_date is None:
+            start_date = end_date - dt.timedelta(days=7)
+        return start_date, end_date
