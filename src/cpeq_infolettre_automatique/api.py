@@ -46,8 +46,10 @@ app = FastAPI(lifespan=lifespan)
 async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
     """Generate a newsletter from scraped news."""
     # TODO(jsleb333): Schedule this task to return immediately
-    newsletter = await service.generate_newsletter(delete_scraping_jobs=False)
-    return Response(content=newsletter.to_markdown())
+    newsletter_folder = await service.generate_newsletter(delete_scraping_jobs=False)
+    return Response(
+        content=f"Génération de l'infolettre en cours. Celle-ci sera sauvegardée sous peu sur Sharepoint dans le dossier {newsletter_folder}."
+    )
 
 
 @app.post("/add-news")

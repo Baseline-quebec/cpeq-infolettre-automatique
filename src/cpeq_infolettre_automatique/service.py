@@ -36,7 +36,7 @@ class Service:
         self.vectorstore = vectorstore
         self.summary_generator = summary_generator
 
-    async def generate_newsletter(self, *, delete_scraping_jobs: bool = True) -> Newsletter:
+    async def generate_newsletter(self, *, delete_scraping_jobs: bool = True) -> str:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
         Returns: The formatted newsletter.
@@ -62,7 +62,7 @@ class Service:
             publication_datetime=end_date,
         )
         self.news_repository.create_newsletter(newsletter)
-        return newsletter
+        return f"{self.news_repository.parent_folder.name}/{self.news_repository.news_folder.name}"
 
     async def add_news(self, news: News) -> None:
         """Manually add a new News entry in the News repository."""
