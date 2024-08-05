@@ -32,7 +32,7 @@ class NewsRepository:
         _, end_date = prepare_dates()
         self.news_folder = get_or_create_subfolder(
             parent_folder=self.parent_folder,
-            folder_name=str(end_date),
+            folder_name=str(end_date.date()),
         )
 
     def create_news(self, news: News) -> None:
@@ -57,8 +57,8 @@ class NewsRepository:
             csvwriter = csv.writer(
                 csvfile,
                 delimiter=",",
-                quotechar="|",
-                quoting=csv.QUOTE_MINIMAL,
+                quotechar='"',
+                quoting=csv.QUOTE_NONNUMERIC,
                 dialect="excel",
             )
 
@@ -66,8 +66,12 @@ class NewsRepository:
             if file is None:
                 # Add headers row if we are creating the file
                 rows.append([keys.capitalize() for keys in News.model_fields])
-            rows.append(*([str(value) for _, value in news] for news in news_list))
-
+            for news in news_list:
+                row: list[str] = []
+                news.content = news.content.rstrip("\n")
+                for _, value in news:
+                    row.append(str(value))
+                rows.append(row)
             csvwriter.writerows(rows)
 
         self.news_folder.upload_file(item=self._news_file_name)
