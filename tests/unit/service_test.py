@@ -1,7 +1,6 @@
 """Tests for service class."""
 
 import datetime as dt
-from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +9,7 @@ from cpeq_infolettre_automatique.config import Rubric
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
 )
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
@@ -23,7 +23,7 @@ def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
     vectorstore_fixture: Vectorstore,
     reference_news_repository_fixture: ReferenceNewsRepository,
-    news_repository_fixture: Any,
+    news_repository_fixture: NewsRepository,
     summary_generator_fixture: SummaryGenerator,
 ) -> Service:
     """Fixture for mocked service."""
@@ -48,10 +48,15 @@ class TestService:
         rubric_classification_fixture: Rubric,
     ) -> None:
         """Test that the generate_newsletter outputs newsletter with proper content."""
-        newsletter = await service_fixture.generate_newsletter()
-        newsletter_content = newsletter.to_markdown()
-        assert rubric_classification_fixture.value in newsletter_content
-        assert news_fixture.title in newsletter_content
+        with patch("cpeq_infolettre_automatique.utils.prepare_dates") as prepare_dates_mock:
+            prepare_dates_mock.return_value = (
+                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
+                dt.datetime(2024, 1, 8, tzinfo=dt.UTC),
+            )
+            newsletter = await service_fixture.generate_newsletter()
+            newsletter_content = newsletter.to_markdown()
+            assert rubric_classification_fixture.value in newsletter_content
+            assert news_fixture.title in newsletter_content
 
     @staticmethod
     @pytest.mark.asyncio()
@@ -65,7 +70,7 @@ class TestService:
         with patch("cpeq_infolettre_automatique.utils.prepare_dates") as prepare_dates_mock:
             prepare_dates_mock.return_value = (
                 dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
-                dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
+                dt.datetime(2024, 1, 8, tzinfo=dt.UTC),
             )
             await service_fixture.generate_newsletter()
             assert service_fixture.webscraper_io_client.get_scraping_jobs.called

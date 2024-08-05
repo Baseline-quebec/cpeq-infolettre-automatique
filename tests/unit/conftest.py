@@ -2,7 +2,6 @@
 
 import datetime as dt
 from collections.abc import Iterator
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -14,6 +13,7 @@ from cpeq_infolettre_automatique.config import Rubric, VectorstoreConfig
 from cpeq_infolettre_automatique.reference_news_repository import (
     ReferenceNewsRepository,
 )
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
@@ -104,7 +104,7 @@ def vectorstore_fixture() -> Vectorstore:
 
 
 @pytest.fixture()
-def news_repository_fixture() -> Any:
+def news_repository_fixture() -> NewsRepository:
     """Fixture for mocked NewsRepository."""
     news_repository_fixture = MagicMock()
     news_repository_fixture.create_news = MagicMock()
@@ -113,7 +113,9 @@ def news_repository_fixture() -> Any:
 
 
 @pytest.fixture()
-def reference_news_repository_fixture(summarized_news_fixture: News) -> Any:
+def reference_news_repository_fixture(
+    summarized_news_fixture: News,
+) -> ReferenceNewsRepository:
     """Fixture for mocked ReferenceNewsRepository."""
     reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
     reference_news_repository_fixture.read_many_by_rubric.return_value = [summarized_news_fixture]
