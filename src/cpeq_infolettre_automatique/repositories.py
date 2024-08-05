@@ -64,7 +64,7 @@ class NewsRepository:
             if file is None:
                 # Add headers row if we are creating the file
                 rows.append([keys.capitalize() for keys in News.model_fields])
-            rows.append(*([str(value).rstrip("\n") for _, value in news] for news in news_list))
+            rows.extend([[str(value).rstrip("\n") for _, value in news] for news in news_list])
             csvwriter.writerows(rows)
 
         self.news_folder.upload_file(item=self._news_file_name)
