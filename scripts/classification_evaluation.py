@@ -1,7 +1,6 @@
 """Implementation of the Classification Evaluation Module."""
 
 import json
-import operator
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
@@ -83,7 +82,7 @@ class ClassificationEvaluation:
             y_score_items = []
             for key, value in y_score.items():
                 y_score_items.append((key, value))
-            y_score_items.sort(key=operator.itemgetter(1), reverse=True)
+            y_score_items.sort(key=lambda rubric_prob: rubric_prob[1], reverse=True)
             y_scores_new.append(y_score_items)
         return y_scores_new
 

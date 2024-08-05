@@ -1,6 +1,5 @@
 """Implementation of NewsClassifier."""
 
-import operator
 import uuid
 from collections.abc import Sequence
 from typing import Any
@@ -58,7 +57,7 @@ class NewsClassifier:
             predicted_scores[Rubric.AUTRE.value] = 1.0
 
         sorted_probs = dict(
-            sorted(predicted_scores.items(), key=operator.itemgetter(1), reverse=True)
+            sorted(predicted_scores.items(), key=lambda rubric_prob: rubric_prob[1], reverse=True)
         )
         normalized_rubric_scores = self.softmax_scores(sorted_probs)
         return normalized_rubric_scores
@@ -85,9 +84,10 @@ class NewsClassifier:
         """Setup the predictor."""
 
     @staticmethod
-    def softmax_scores(scores: dict[str, float]) -> dict[str, float]:
+    def softmax_scores(scores: dict[str, float], temperature: float = 1.0) -> dict[str, float]:
         """Compute the softmax of a list of numbers."""
-        softmax_values = softmax(list(scores.values()))
+        temperature = max(temperature, 1e-3)
+        softmax_values = softmax([value / temperature for value in list(scores.values())])
         softmax_scores = dict(zip(scores.keys(), softmax_values, strict=True))
         return softmax_scores
 

@@ -32,7 +32,9 @@ class NewsRubricClassifier:
         """
         probs = await self.model.predict_probs(news, embedding, ids_to_keep)
 
-        sorted_probs = dict(sorted(probs.items(), key=lambda item: item[1], reverse=True))
+        sorted_probs = dict(
+            sorted(probs.items(), key=lambda rubric_prob: rubric_prob[1], reverse=True)
+        )
         return sorted_probs
 
     async def predict(
@@ -51,9 +53,9 @@ class NewsRubricClassifier:
         """
         predicted_probs = await self.predict_probs(news, embedding, ids_to_keep)
 
-        max(predicted_probs, key=lambda x: predicted_probs[x])
+        max_pred = max(predicted_probs, key=lambda rubric_prob: rubric_prob[1])
 
-        return Rubric(max(predicted_probs, key=lambda x: predicted_probs[x]))
+        return Rubric(max_pred)
 
     @property
     def model_name(self) -> str:
@@ -129,7 +131,9 @@ class NewsRelevancyClassifier:
             Relevance.PERTINENT.value: relevant_prob,
             Relevance.AUTRE.value: not_relevant_prob,
         }
-        sorted_probs = dict(sorted(probs.items(), key=lambda item: item[1], reverse=True))
+        sorted_probs = dict(
+            sorted(probs.items(), key=lambda rubric_prob: rubric_prob[1], reverse=True)
+        )
         return sorted_probs
 
     @property
