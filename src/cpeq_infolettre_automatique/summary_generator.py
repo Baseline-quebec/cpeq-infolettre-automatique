@@ -3,43 +3,69 @@
 from inspect import cleandoc
 
 from cpeq_infolettre_automatique.completion_model import CompletionModel
+from cpeq_infolettre_automatique.config import SummaryGeneratorConfig, VectorNames
 from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
 
 class SummaryGenerator:
     """Service for summarizing news articles."""
 
-    def __init__(self, completion_model: CompletionModel) -> None:
-        """Initialize the SummaryGenerator.
-
-        Args:
-            completion_model: The completion model to use for summarization.
-        """
+    def __init__(
+        self,
+        completion_model: CompletionModel,
+        vectorstore: Vectorstore,
+        summary_generator_config: SummaryGeneratorConfig,
+    ) -> None:
+        """Initialize the summary generator with the completion model."""
         self.completion_model = completion_model
+        self.vectorstore = vectorstore
+        self.summary_generator_config = summary_generator_config
 
-    async def generate(self, classified_news: News, reference_news: list[News]) -> str:
+    @property
+    def vector_name(self) -> VectorNames:
+        """Return the vector name from the configuration."""
+        return self.summary_generator_config.vector_name
+
+    async def generate(self, news_to_summarize: News) -> str:
         """Summarize the given news based on reference news exemples.
 
         Args:
-            classified_news: The news to summarize.
+            news_to_summarize: The news to summarize.
+
+        Returns:
+            The summary of the news.
+
+        Raises:
+            ValueError: If all reference news do not have a summary.
+        """
+        similar_news = await self.vectorstore.search_similar_news(
+            news_to_summarize, vector_name=self.vector_name
+        )
+        if any(news.summary is None for news in similar_news):
+            error_msg = "All reference news must have a summary as an exemple."
+            raise ValueError(error_msg)
+
+        summary = await self.generate_with_similar_news(news_to_summarize, similar_news)
+        return summary
+
+    async def generate_with_similar_news(
+        self, news_to_summarize: News, similar_news: list[News]
+    ) -> str:
+        """Summarize the given news based on reference news exemples.
+
+        Args:
+            news: The news to summarize.
             reference_news: The reference news exemples to use for summarization.
 
         Returns: The summary of the text.
         """
-        if classified_news.rubric is None:
-            error_msg = "The news must be classified to generate a summary."
-            raise ValueError(error_msg)
-
-        if any(news.summary is None for news in reference_news):
-            error_msg = "All reference news must have a summary as an exemple."
-            raise ValueError(error_msg)
-
-        system_prompt = self.format_system_prompt(reference_news)
-        user_message = classified_news.content
-        summarized_news = await self.completion_model.complete_message(
+        system_prompt = self.format_system_prompt(similar_news)
+        user_message = news_to_summarize.content
+        summary = await self.completion_model.complete_message(
             system_prompt=system_prompt, user_message=user_message
         )
-        return summarized_news
+        return summary
 
     @staticmethod
     def format_system_prompt(reference_news: list[News]) -> str:

@@ -2,9 +2,13 @@
 
 import csv
 import datetime
+import json
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 from O365.drive import File, Folder
+from pydantic.json import pydantic_encoder
+from pydantic_core import to_jsonable_python
 
 from cpeq_infolettre_automatique.schemas import News, Newsletter
 from cpeq_infolettre_automatique.utils import (
@@ -13,7 +17,27 @@ from cpeq_infolettre_automatique.utils import (
 )
 
 
-class NewsRepository:
+class NewsRepository(ABC):
+    """Abstract class for a News Repository."""
+
+    @abstractmethod
+    def setup(self) -> None:
+        """Set up the repository."""
+
+    @abstractmethod
+    def create_news(self, news_list: News) -> None:
+        """Save a single news."""
+
+    @abstractmethod
+    def create_many_news(self, news_list: list[News]) -> None:
+        """Save all the news."""
+
+    @abstractmethod
+    def create_newsletter(self, newsletter: Newsletter) -> None:
+        """Save the newsletter."""
+
+
+class OneDriveNewsRepository(NewsRepository):
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
     _news_file_name = "news.csv"
@@ -65,7 +89,7 @@ class NewsRepository:
             if file is None:
                 # Add headers row if we are creating the file
                 rows.append([keys.capitalize() for keys in News.model_fields])
-            rows.append(*([str(value) for _, value in news] for news in news_list))
+            rows.extend([[str(value) for _, value in news] for news in news_list])
 
             csvwriter.writerows(rows)
 
@@ -79,3 +103,45 @@ class NewsRepository:
         """
         Path(self._newsletter_file_name).write_text(newsletter.to_markdown(), encoding="utf-8")
         self.news_folder.upload_file(item=self._newsletter_file_name)
+
+
+class LocalNewsRepository(NewsRepository):
+    """Repository responsible for storing and retrieving News locally."""
+
+    def __init__(self, path: Path) -> None:
+        """Initializes the News repository."""
+        self.path = path
+
+    def setup(self) -> None:
+        """Initializes the local folder in which to store the News."""
+        self.path.mkdir(parents=True, exist_ok=True)
+
+    def create_many_news(self, news_list: list[News]) -> None:
+        """Save the list of News as a json file locally.
+
+        Args:
+            news_list: List of News to save.
+        """
+        file_name = "news.json"
+        file_path = self.path / file_name
+        json_news = [to_jsonable_python(news) for news in news_list]
+        with file_path.open("w", encoding="UTF-8") as target:
+            json.dump(json_news, target, ensure_ascii=False, indent=4, default=pydantic_encoder)
+
+    def create_news(self, news: News) -> None:
+        """Save a single News as a json file locally.
+
+        Args:
+            news_list: List of News to save.
+        """
+        raise NotImplementedError
+
+    def create_newsletter(self, newsletter: Newsletter) -> None:
+        """Save the Newsletter as a Markdown file locally.
+
+        Args:
+            newsletter: The Newsletter to save.
+        """
+        file_name = "newsletter.md"
+        file_path = self.path / file_name
+        file_path.write_text(newsletter.to_markdown(), encoding="utf-8")

@@ -33,6 +33,8 @@ asyncio = "^3.4.3"
 pydantic = "^2.7.4"
 dateparser = "^1.2.0"
 o365 = "^2.0.35"
+scipy = "^1.14.0"
+scikit-learn = "^1.5.1"
 
 [tool.poetry.group.test.dependencies]  # https://python-poetry.org/docs/master/managing-dependencies/
 commitizen = ">=3.21.3"
@@ -54,6 +56,14 @@ ipykernel = ">=6.29.4"
 ipywidgets = ">=8.1.2"
 pdoc = ">=14.4.0"
 types-dateparser = "^1.2.0.20240420"
+
+[tool.poetry.group.eval]
+optional = true
+
+[tool.poetry.group.eval.dependencies]
+mlflow = "^2.14.3"
+scikit-learn = "^1.5.1"
+beir = "^2.0.0"
 
 [tool.coverage.report]  # https://coverage.readthedocs.io/en/latest/config.html#report
 fail_under = 30
@@ -131,18 +141,19 @@ lint.ignore = [
     "W505", # Doc line too long. Editor autowraps doc, and it's too much work to fix it.
     "W391",
     "CPY001", # Copyright
+    "FURB118"  # reimplemented-operator, it replaces lambda functions with Operator
 ]
 lint.unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = true
+mark-parentheses = true
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
 [tool.ruff.lint.flake8-unused-arguments]
 ignore-variadic-names = true
-
-[tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = true
-mark-parentheses = true
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2
@@ -180,10 +191,10 @@ max-args = 8
       gunicorn \
         --access-logfile - \
         --bind $host:$port \
-        --graceful-timeout 10 \
-        --keep-alive 10 \
+        --graceful-timeout 60 \
+        --keep-alive 60 \
         --log-file - \
-        --timeout 30 \
+        --timeout 60 \
         --worker-class uvicorn.workers.UvicornWorker \
         --worker-tmp-dir /dev/shm \
         --workers 2 \

@@ -1,18 +1,16 @@
 """Tests for service class."""
 
 import datetime as dt
-from typing import Any
 from unittest.mock import patch
 
 import pytest
 
 from cpeq_infolettre_automatique.config import Rubric
-from cpeq_infolettre_automatique.reference_news_repository import (
-    ReferenceNewsRepository,
-)
+from cpeq_infolettre_automatique.news_classifier import NewsRelevancyClassifier
+from cpeq_infolettre_automatique.news_producer import NewsProducer
+from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
-from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -21,21 +19,17 @@ from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
     vectorstore_fixture: Vectorstore,
-    reference_news_repository_fixture: ReferenceNewsRepository,
-    news_repository_fixture: Any,
-    summary_generator_fixture: SummaryGenerator,
+    news_repository_fixture: NewsRepository,
+    news_producer_fixture: NewsProducer,
+    news_relevance_classifier_fixture: NewsRelevancyClassifier,
 ) -> Service:
     """Fixture for mocked service."""
     service = Service(
         webscraper_io_client=webscraper_io_client_fixture,
         news_repository=news_repository_fixture,
-        reference_news_repository=reference_news_repository_fixture,
         vectorstore=vectorstore_fixture,
-        summary_generator=summary_generator_fixture,
-    )
-    service._prepare_dates = lambda *_: (
-        dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
-        dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
+        news_producer=news_producer_fixture,
+        news_relevancy_classifier=news_relevance_classifier_fixture,
     )
     return service
 
@@ -51,7 +45,12 @@ class TestService:
         rubric_classification_fixture: Rubric,
     ) -> None:
         """Test that the generate_newsletter outputs newsletter with proper content."""
-        newsletter = await service_fixture.generate_newsletter()
+        with patch.object(Service, "_prepare_dates") as prepare_dates_mock:
+            prepare_dates_mock.return_value = (
+                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
+                dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
+            )
+            newsletter = await service_fixture.generate_newsletter()
         newsletter_content = newsletter.to_markdown()
         assert rubric_classification_fixture.value in newsletter_content
         assert news_fixture.title in newsletter_content
@@ -65,12 +64,18 @@ class TestService:
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        await service_fixture.generate_newsletter()
+        with patch.object(Service, "_prepare_dates") as prepare_dates_mock:
+            prepare_dates_mock.return_value = (
+                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
+                dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
+            )
+            await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
-        assert service_fixture.vectorstore.classify_news_rubric.called
-        assert service_fixture.reference_news_repository.read_many_by_rubric.called
+        assert service_fixture.vectorstore.search_similar_news.called
+        assert service_fixture.news_relevancy_classifier.predict.called
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
-        assert service_fixture.summary_generator.generate.called
+        assert service_fixture.news_producer.summary_generator.completion_model.complete_message.called
+        assert service_fixture.news_producer.news_rubric_classifier.predict.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
         assert service_fixture.news_repository.create_many_news.called
 

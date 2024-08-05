@@ -11,23 +11,38 @@ from O365.account import Account
 from O365.drive import Folder
 from openai import AsyncOpenAI
 
+from cpeq_infolettre_automatique.classification_algo import (
+    KnNewsClassifier,
+    MaxMeanScoresNewsClassifier,
+    MaxPoolingNewsClassifier,
+    MaxScoreNewsClassifier,
+    NewsClassifier,
+    RandomForestNewsClassifier,
+)
 from cpeq_infolettre_automatique.completion_model import (
     CompletionModel,
     OpenAICompletionModel,
 )
 from cpeq_infolettre_automatique.config import (
+    ClassificationAlgos,
     CompletionModelConfig,
     EmbeddingModelConfig,
+    NewsRelevancyClassifierConfig,
+    NewsRubricClassifierConfig,
+    SummaryGeneratorConfig,
+    VectorNames,
     VectorstoreConfig,
 )
 from cpeq_infolettre_automatique.embedding_model import (
     EmbeddingModel,
     OpenAIEmbeddingModel,
 )
-from cpeq_infolettre_automatique.reference_news_repository import (
-    ReferenceNewsRepository,
+from cpeq_infolettre_automatique.news_classifier import (
+    NewsRelevancyClassifier,
+    NewsRubricClassifier,
 )
-from cpeq_infolettre_automatique.repositories import NewsRepository
+from cpeq_infolettre_automatique.news_producer import NewsProducer
+from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.utils import get_or_create_subfolder
@@ -86,7 +101,13 @@ class OneDriveDependency(ApiDependency):
 
     @classmethod
     def setup(cls) -> None:
-        """Setup dependency."""
+        """Setup dependency.
+
+        Raises:
+        RuntimeError: If the authentication with Office365 fails.
+        RuntimeError: If the requested Sharepoint Site was not found.
+        RuntimeError: If the requested OneDrive instance was not found.
+        """
         credentials = (
             "99536437-db80-4ece-8bd5-0f4e4b1cba22",
             "zfv8Q~U.AUmeoEDQpuEqTHsBvEnrw2TUXbqo5aLn",
@@ -124,6 +145,38 @@ class OneDriveDependency(ApiDependency):
         return self.news_folder
 
 
+class VectorstoreClientDependency(ApiDependency):
+    """Dependency class for the Singleton Vectorstore client."""
+
+    vectorstore_client: weaviate.WeaviateClient
+
+    @classmethod
+    def setup(cls) -> None:
+        """Setup dependency.
+
+        Raises:
+            ConnectionError: If the Vectorstore is not ready.
+        """
+        cls.vectorstore_client = weaviate.connect_to_embedded(
+            version=config("WEAVIATE_VERSION", cast=str),
+            persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH", cast=str),
+            port=config("WEAVIATE_HTTP_PORT", cast=int),
+            grpc_port=config("WEAVIATE_GRPC_PORT", cast=int),
+        )
+        if not cls.vectorstore_client.is_ready():
+            error_msg = "Vectorstore is not ready"
+            raise ConnectionError(error_msg)
+
+    def __call__(self) -> weaviate.WeaviateClient:
+        """Returns the Vectostore client."""
+        return self.vectorstore_client
+
+    @classmethod
+    def teardown(cls) -> None:
+        """Free resources held by the class."""
+        cls.vectorstore_client.close()
+
+
 def get_webscraperio_client(
     http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())],
 ) -> WebscraperIoClient:
@@ -135,20 +188,22 @@ def get_news_repository(
     news_folder: Annotated[Folder, Depends(OneDriveDependency())],
 ) -> NewsRepository:
     """Returns a configured News Repository."""
-    return NewsRepository(news_folder)
+    return OneDriveNewsRepository(news_folder)
 
 
 def get_openai_client() -> AsyncOpenAI:
     """Return an AsyncOpenAI instance with the provided API key."""
-    return AsyncOpenAI(api_key=config("OPENAI_API_KEY"))
+    return AsyncOpenAI(api_key=config("OPENAI_API_KEY"), max_retries=4)
 
 
 def get_embedding_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
 ) -> EmbeddingModel:
     """Return an EmbeddingModel instance with the provided API key."""
-    embedding_config = EmbeddingModelConfig()
-    return OpenAIEmbeddingModel(client=openai_client, embedding_config=embedding_config)
+    embedding_model_config = EmbeddingModelConfig()
+    return OpenAIEmbeddingModel(
+        client=openai_client, embedding_model_config=embedding_model_config
+    )
 
 
 def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
@@ -156,38 +211,35 @@ def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
 
     Returns:
         weaviate.WeaviateClient: The vectorstore client.
+
+    Raises:
+        ValueError: If the vectorstore is not ready.
     """
-    client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
-        version=config("WEAVIATE_VERSION"),
-        persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH"),
-    )
-    if not client.is_ready():
-        error_msg = "Vectorstore is not ready"
-        raise ValueError(error_msg)
-    yield client
-    client.close()
+    try:
+        client: weaviate.WeaviateClient = weaviate.connect_to_embedded(
+            version=config("WEAVIATE_VERSION", cast=str),
+            persistence_data_path=config("WEAVIATE_PERSISTENCE_DATA_PATH", cast=str),
+            port=config("WEAVIATE_HTTP_PORT", cast=int),
+            grpc_port=config("WEAVIATE_GRPC_PORT", cast=int),
+        )
+        if not client.is_ready():
+            error_msg = "Vectorstore is not ready"
+            raise ValueError(error_msg)
+        yield client
+    finally:
+        client.close()
 
 
 def get_vectorstore(
-    vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
+    vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(VectorstoreClientDependency())],
     embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
 ) -> Vectorstore:
     """Return a Vectorstore instance with the provided dependencies."""
     vectorstore_config = VectorstoreConfig()
     return Vectorstore(
-        client=vectorstore_client,
+        vectorstore_client=vectorstore_client,
         embedding_model=embedding_model,
         vectorstore_config=vectorstore_config,
-    )
-
-
-def get_reference_news_repository(
-    vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(get_vectorstore_client)],
-) -> ReferenceNewsRepository:
-    """Return a ReferenceNewsRepository instance."""
-    vectorstore_config = VectorstoreConfig()
-    return ReferenceNewsRepository(
-        client=vectorstore_client, vectorstore_config=vectorstore_config
     )
 
 
@@ -205,27 +257,117 @@ def get_completion_model(
 
 def get_summary_generator(
     completion_model: Annotated[CompletionModel, Depends(get_completion_model)],
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> SummaryGenerator:
     """Return a SummaryGenerator instance."""
+    summary_generator_config = SummaryGeneratorConfig()
     return SummaryGenerator(
         completion_model=completion_model,
+        vectorstore=vectorstore,
+        summary_generator_config=summary_generator_config,
+    )
+
+
+def create_news_classifier(
+    vectorstore: Vectorstore,
+    vector_name: VectorNames,
+    classifier_type: ClassificationAlgos,
+    train_data: list[tuple[str, list[float]]] | None = None,
+    **kwargs: Any,
+) -> NewsClassifier:
+    """Create a NewsClassifier based on the classifier_type.
+
+    Args:
+        vectorstore: The vectorstore to use for classification.
+        vector_name: The name of the vector to use for classification.
+        classifier_type: The type of classifier to create.
+        train_data: The training data to use for classification.
+        **kwargs: The arguments to pass to the classifier.
+
+    Notes:
+        Current implementation of news classifiers dependency retrains a new model
+        each API Call. It is not scallable nor robust, but as a tradeoff, it offers
+        simplicity and works as is, without external dependencies. (I.E. path pointing to weights and biases)
+
+        # TODO(Olivier Belhumeur): This will require more work when deployed to production.
+
+    Returns:
+        The NewsClassifier.
+
+    Raises:
+        ValueError: If the classifier_type is unknown.
+    """
+    model: NewsClassifier
+    model_dict = {
+        "MaxMeanScoresNewsClassifier": MaxMeanScoresNewsClassifier,
+        "MaxScoreNewsClassifier": MaxScoreNewsClassifier,
+        "MaxPoolingNewsClassifier": MaxPoolingNewsClassifier,
+        "KnNewsClassifier": KnNewsClassifier,
+        "RandomForestNewsClassifier": RandomForestNewsClassifier,
+    }
+    if classifier_type in model_dict:
+        model = model_dict[classifier_type](vectorstore, vector_name=vector_name, **kwargs)
+    else:
+        error_msg = f"Unknown classifier type: {classifier_type}"
+        raise ValueError(error_msg)
+    model.setup(train_data)
+    return model
+
+
+def get_news_rubric_classifier(
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
+) -> NewsRubricClassifier:
+    """Return a NewsRubricClassifier instance."""
+    news_rubric_classifier_config = NewsRubricClassifierConfig()
+    news_classifier_model = create_news_classifier(
+        vectorstore=vectorstore,
+        classifier_type=news_rubric_classifier_config.classification_model_name,
+        vector_name=news_rubric_classifier_config.vector_name,
+    )
+    return NewsRubricClassifier(model=news_classifier_model)
+
+
+def get_news_relevancy_classifier(
+    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
+) -> NewsRelevancyClassifier:
+    """Return a NewsRelevancyClassifierConfig instance."""
+    news_relevancy_classifier_config = NewsRelevancyClassifierConfig()
+    news_classifier_model = create_news_classifier(
+        vectorstore=vectorstore,
+        classifier_type=news_relevancy_classifier_config.classification_model_name,
+        vector_name=news_relevancy_classifier_config.vector_name,
+    )
+    return NewsRelevancyClassifier(
+        model=news_classifier_model,
+        news_relevancy_classifier_config=news_relevancy_classifier_config,
+    )
+
+
+def get_news_producer(
+    summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
+    news_rubric_classifier: Annotated[NewsRubricClassifier, Depends(get_news_rubric_classifier)],
+) -> NewsProducer:
+    """Return a NewsProducer instance."""
+    return NewsProducer(
+        summary_generator=summary_generator,
+        news_rubric_classifier=news_rubric_classifier,
     )
 
 
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
-    summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
-    reference_news_repository: Annotated[
-        ReferenceNewsRepository, Depends(get_reference_news_repository)
+    news_relevancy_classifier: Annotated[
+        NewsRelevancyClassifier, Depends(get_news_relevancy_classifier)
     ],
+    news_producer: Annotated[NewsProducer, Depends(get_news_producer)],
 ) -> Service:
     """Return a Service instance with the provided dependencies."""
     return Service(
         webscraper_io_client=webscraper_io_client,
         news_repository=news_repository,
-        reference_news_repository=reference_news_repository,
         vectorstore=vectorstore,
-        summary_generator=summary_generator,
+        news_relevancy_classifier=news_relevancy_classifier,
+        news_producer=news_producer,
     )

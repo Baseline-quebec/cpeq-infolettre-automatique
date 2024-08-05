@@ -17,7 +17,17 @@ def get_current_montreal_datetime() -> dt.datetime:
 
 
 def get_or_create_subfolder(parent_folder: Folder, folder_name: str) -> Folder:
-    """Returns the subfolder with name $folder_name from the $parent_folder, creating it before if not found."""
+    """Returns the subfolder with name $folder_name from the $parent_folder, creating it before if not found.
+
+    Args:
+        parent_folder: The parent folder.
+        folder_name: The name of the subfolder.
+
+    Returns: The subfolder with the name $folder_name.
+
+    Raises:
+        RuntimeError: If more than one folder with the name $folder_name exist in the requested parent folder.
+    """
     folders = parent_folder.get_child_folders()
     filtered_folders = tuple(filter(lambda x: x.name == folder_name, folders))
     if len(filtered_folders) == 1:
@@ -29,7 +39,14 @@ def get_or_create_subfolder(parent_folder: Folder, folder_name: str) -> Folder:
 
 
 def get_file_if_exists(folder: Folder, file_name: str) -> File | None:
-    """Gets the specified file from the specified folder. Returns None if no such file exists in the folder."""
+    """Gets the specified file from the specified folder. Returns None if no such file exists in the folder.
+
+    Args:
+        folder: The folder to search for the file.
+        file_name: The name of the file to search for.
+
+    Returns: The file if found, None otherwise.
+    """
     items = folder.get_items()
     filtered_items = tuple(filter(lambda item: item.name == file_name, items))
     if len(filtered_items) == 0:

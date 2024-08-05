@@ -1,20 +1,15 @@
 """Script to populate the vectorstore with the reference news."""
 
-import datetime as dt
 import json
 import logging
 import uuid
 from pathlib import Path
 
-import dateparser
 import weaviate
 import weaviate.classes as wvc
 from tqdm import tqdm
 
-from cpeq_infolettre_automatique.config import (
-    EmbeddingModelConfig,
-    VectorstoreConfig,
-)
+from cpeq_infolettre_automatique.config import EmbeddingModelConfig, VectorNames, VectorstoreConfig
 from cpeq_infolettre_automatique.dependencies import (
     get_openai_client,
     get_vectorstore_client,
@@ -50,9 +45,22 @@ class WeaviateCollection:
             embedding_model: The embedding model.
         """
         self.client = client
-        self.collection_name = vectorstore_config.collection_name
-        self.batch_size = vectorstore_config.batch_size
-        self.concurrent_requests = vectorstore_config.concurrent_requests
+        self.vectorstore_config = vectorstore_config
+
+    @property
+    def collection_name(self) -> str:
+        """Get the collection name."""
+        return self.vectorstore_config.collection_name
+
+    @property
+    def batch_size(self) -> int:
+        """Get the batch size."""
+        return self.vectorstore_config.batch_size
+
+    @property
+    def concurrent_requests(self) -> int:
+        """Get the concurrent requests."""
+        return self.vectorstore_config.concurrent_requests
 
     def create(self) -> None:
         """Create the collection in Weaviate according to Cpeq News schema. See #TODO for the schema details."""
@@ -114,19 +122,7 @@ def get_reference_news(data_path: Path) -> list[News]:
     with Path.open(data_path) as f:
         data = json.load(f)
 
-    references_news = []
-    for rubric_group in data:
-        for news_item in rubric_group["examples"]:
-            parsed_datetime = dateparser.parse(news_item["date"])
-            parsed_datetime = (
-                parsed_datetime.astimezone(dt.UTC) if parsed_datetime is not None else None
-            )
-            news_item["datetime"] = parsed_datetime
-            news_item["rubric"] = rubric_group["rubric"]
-            news_item["link"] = news_item["urls"][0]["url1"]
-            reference_news = News(**news_item)
-            references_news.append(reference_news)
-
+    references_news = [News.model_validate(news_item) for news_item in data]
     return references_news
 
 
@@ -142,6 +138,9 @@ async def populate_db(
 
     Returns:
         str: Status of the create operation.
+
+    Raises:
+        ValueError: If the create operation fails.
     """
     uuids_upserted: list[uuid.UUID | str] = []
     with weaviate_collection.client.batch.fixed_size(
@@ -152,14 +151,26 @@ async def populate_db(
             if reference_news.rubric is None:
                 logger.warning("Reference News with title %s had no rubric.", reference_news.title)
                 continue
-            text_to_embed = Vectorstore.create_query(reference_news)
             object_id = Vectorstore.create_uuid(reference_news)
-            vectorized_item = await embedding_model.embed(text_description=text_to_embed)
+            title_summary_vectorized = await embedding_model.embed(
+                text_description=Vectorstore.create_query(
+                    reference_news, vector_name=VectorNames.TITLE_SUMMARY
+                )
+            )
+            title_content_vectorized = await embedding_model.embed(
+                text_description=Vectorstore.create_query(
+                    reference_news, vector_name=VectorNames.TITLE_CONTENT
+                )
+            )
+            vectors = {
+                VectorNames.TITLE_SUMMARY.value: title_summary_vectorized,
+                VectorNames.TITLE_CONTENT.value: title_content_vectorized,
+            }
             uuid_upserted: uuid.UUID | str = batch.add_object(
                 properties=reference_news.model_dump(),
                 collection=weaviate_collection.collection_name,
                 uuid=object_id,
-                vector=vectorized_item,
+                vector=vectors,
             )
             uuids_upserted.append(uuid_upserted)
             if batch.number_errors > 0:
@@ -193,11 +204,13 @@ async def bootstrap_vectorstore(
 
 async def main() -> None:
     """Populate the vectorstore with the reference news."""
-    data_path = Path("data", "reference_news.json")
+    data_path = Path("data", "reference_news", "reference_news_combined.json")
     reference_news = get_reference_news(data_path)
     openai_client = get_openai_client()
     embedding_model_config = EmbeddingModelConfig()
-    embedding_model = OpenAIEmbeddingModel(openai_client, embedding_model_config)
+    embedding_model = OpenAIEmbeddingModel(
+        client=openai_client, embedding_model_config=embedding_model_config
+    )
     vectorstore_config = VectorstoreConfig()
     for weaviate_client in get_vectorstore_client():
         weaviate_collection = WeaviateCollection(weaviate_client, vectorstore_config)
