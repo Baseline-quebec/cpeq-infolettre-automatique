@@ -14,9 +14,6 @@ from cpeq_infolettre_automatique.config import (
     SummaryGeneratorConfig,
     VectorstoreConfig,
 )
-from cpeq_infolettre_automatique.reference_news_repository import (
-    ReferenceNewsRepository,
-)
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
