@@ -7,12 +7,14 @@ from typing import Annotated
 
 import coloredlogs
 from decouple import config
-from fastapi import Depends, FastAPI
+from fastapi import BackgroundTasks, Depends, FastAPI
 from fastapi.responses import Response
+from O365.drive import Folder
 
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
     OneDriveDependency,
+    VectorstoreClientDependency,
     get_service,
 )
 from cpeq_infolettre_automatique.schemas import AddNewsBody
@@ -32,23 +34,42 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
     HttpClientDependency.setup()
     OneDriveDependency.setup()
+    VectorstoreClientDependency.setup()
+    # TODO(Olivier Belhumeur): Add News Classifier setup here when deploying to production.
 
     yield
 
     # Shutdown events.
     await HttpClientDependency.teardown()
+    VectorstoreClientDependency.teardown()
 
 
 app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/generate-newsletter")
-async def generate_newsletter(service: Annotated[Service, Depends(get_service)]) -> Response:
-    """Generate a newsletter from scraped news."""
-    # TODO(jsleb333): Schedule this task to return immediately
-    newsletter_folder = await service.generate_newsletter(delete_scraping_jobs=False)
+def generate_newsletter_background(
+    service: Annotated[Service, Depends(get_service)],
+    folders: Annotated[tuple[Folder, Folder], Depends(OneDriveDependency())],
+    background_tasks: BackgroundTasks,
+) -> Response:
+    """Generate a newsletter from scraped news.
+
+    Returns:
+        A message indicating where the generated Newsletter will be saved.
+
+    Note:
+        This task is scheduled to return the news from last week's Monday to last week's Sunday.
+
+        It might take a while to complete.
+    """
+    background_tasks.add_task(
+        service.generate_newsletter,
+        delete_scraping_jobs=False,
+    )
+    (news_folder, week_folder) = folders
     return Response(
-        content=f"Génération de l'infolettre en cours. Celle-ci sera sauvegardée sous peu sur Sharepoint dans le dossier {newsletter_folder}."
+        content=f"Génération de l'infolettre en cours. Celle-ci sera sauvegardée sous peu sur Sharepoint dans le dossier {news_folder.name}/{week_folder.name}."
     )
 
 
@@ -65,5 +86,5 @@ if __name__ == "__main__":
         app,
         host=str(config("DEVLOCAL_HOST", "localhost")),
         port=int(config("DEVLOCAL_PORT", 8000)),
-        log_level="info",
+        log_level="trace",
     )

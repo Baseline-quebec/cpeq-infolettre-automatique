@@ -2,18 +2,17 @@
 
 import asyncio
 import datetime as dt
+import logging
 from collections.abc import AsyncIterator, Awaitable, Iterable
 
-from cpeq_infolettre_automatique.reference_news_repository import (
-    ReferenceNewsRepository,
-)
+from cpeq_infolettre_automatique.config import Relevance
+from cpeq_infolettre_automatique.news_classifier import NewsRelevancyClassifier
+from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import (
     News,
     Newsletter,
 )
-from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
-from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -23,53 +22,63 @@ class Service:
 
     def __init__(
         self,
+        start_date: dt.datetime,
+        end_date: dt.datetime,
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
-        reference_news_repository: ReferenceNewsRepository,
         vectorstore: Vectorstore,
-        summary_generator: SummaryGenerator,
+        news_producer: NewsProducer,
+        news_relevancy_classifier: NewsRelevancyClassifier,
     ) -> None:
         """Initialize the service with the repository and the generator."""
+        self.start_date = start_date
+        self.end_date = end_date
         self.webscraper_io_client = webscraper_io_client
-        self.reference_news_repository = reference_news_repository
         self.news_repository = news_repository
         self.vectorstore = vectorstore
-        self.summary_generator = summary_generator
+        self.news_producer = news_producer
+        self.news_relevancy_classifier = news_relevancy_classifier
 
-    async def generate_newsletter(self, *, delete_scraping_jobs: bool = False) -> str:
+    async def generate_newsletter(
+        self,
+        *,
+        delete_scraping_jobs: bool = True,
+    ) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
-        Returns: The formatted newsletter.
+        Returns:
+            The formatted newsletter.
         """
-        start_date, end_date = self._prepare_dates()
-        self.news_repository.setup(str(end_date.date()))
-
         # For the moment, only the coroutine for scraped news is implemented.
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
+        logging.info("Nb Scraping jobs: %s", len(job_ids))
         scraped_news_coroutines = self._prepare_scraped_news_summarization_coroutines(
-            start_date, end_date, job_ids
+            self.start_date, self.end_date, job_ids
         )
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
         flattened_news = [news for news_list in summarized_news for news in news_list]
+
         self.news_repository.create_many_news(flattened_news)
         if delete_scraping_jobs:
             await self.webscraper_io_client.delete_scraping_jobs()
 
         newsletter = Newsletter(
             news=flattened_news,
-            news_datetime_range=(start_date, end_date),
-            publication_datetime=end_date,
+            news_datetime_range=(self.start_date, self.end_date),
+            publication_datetime=self.end_date,
         )
         self.news_repository.create_newsletter(newsletter)
-        return f"{self.news_repository.parent_folder.name}/{self.news_repository.news_folder.name}"
+        return newsletter
 
     async def add_news(self, news: News) -> None:
         """Manually add a new News entry in the News repository."""
-        start_date, end_date = self._prepare_dates()
-        self.news_repository.setup(str(end_date.date()))
-        await self._filter_news(news, start_date, end_date)
-        await self._summarize_news(news)
+        if not self._news_in_date_range(news, self.start_date, self.end_date):
+            msg = f"The News with title {news.title} was not published in the given time period."
+            logging.warning(msg)
+            return
+
+        news = await self.news_producer.produce_news(news)
         self.news_repository.create_news(news)
 
     def _prepare_scraped_news_summarization_coroutines(
@@ -82,7 +91,8 @@ class Service:
             end_date: The end datetime of the newsletter.
             job_ids: The IDs of the scraping jobs.
 
-        Returns: An iterable of summary generation coroutines to be run.
+        Returns:
+            An iterable of summary generation coroutines to be run.
         """
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
@@ -90,7 +100,7 @@ class Service:
             filtered_news = self._filter_all_news(
                 all_news, start_date=start_date, end_date=end_date
             )
-            coroutines = [self._summarize_news(news) async for news in filtered_news]
+            coroutines = [self.news_producer.produce_news(news) async for news in filtered_news]
             summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
@@ -109,62 +119,44 @@ class Service:
         Returns: The filtered news data.
         """
         for news in all_news:
-            try:
-                yield await self._filter_news(news, start_date, end_date)
-            except ValueError:
-                continue
-
-    async def _filter_news(
-        self, news: News, start_date: dt.datetime, end_date: dt.datetime
-    ) -> News:
-        if news.datetime is None:
-            msg = f"The News with title {news.title} has no date."
-            raise ValueError(msg)
-        if not start_date <= news.datetime < end_date:
-            msg = f"The News with title {news.title} was not published in the given time period."
-            raise ValueError(msg)
-        rubric_classification = await self.vectorstore.classify_news_rubric(news)
-        if rubric_classification is not None:
-            news.rubric = rubric_classification
-        return news
-
-    async def _summarize_news(self, classified_news: News) -> News:
-        """Generate summaries for the news data.
-
-        Args:
-            classified_news: The classified news data to summarize.
-
-        Returns: The news data with the summary.
-        """
-        if classified_news.rubric is None:
-            error_msg = "The news must be classified before summarization"
-            raise ValueError(error_msg)
-
-        examples = self.reference_news_repository.read_many_by_rubric(classified_news.rubric)
-        classified_news.summary = await self.summary_generator.generate(classified_news, examples)
-        return classified_news
+            if self._news_in_date_range(news, start_date, end_date):  # noqa: SIM102
+                if await self._news_is_relevant(news):
+                    yield news
 
     @staticmethod
-    def _prepare_dates(
-        start_date: dt.datetime | None = None,
-        end_date: dt.datetime | None = None,
-    ) -> tuple[dt.datetime, dt.datetime]:
-        """Prepare the start and end dates for the newsletter.
-
-        Notes:
-            If no dates are provided, the newsletter will be generated for the previous whole monday-to-sunday period.
+    def _news_in_date_range(news: News, start_date: dt.datetime, end_date: dt.datetime) -> bool:
+        """Check if the news is in the given date range.
 
         Args:
-            start_date: The start datetime of the newsletter.
-            end_date: The end datetime of the newsletter.
+            news: The news data to check.
+            start_date: The start datetime of the date range.
+            end_date: The end datetime of the date range.
 
-        Returns: The start and end dates for the newsletter.
+        Returns:
+            True if the news is in the date range, False otherwise.
         """
-        if end_date is None:
-            current_date = get_current_montreal_datetime().replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
-            end_date = current_date - dt.timedelta(days=current_date.weekday())
-        if start_date is None:
-            start_date = end_date - dt.timedelta(days=7)
-        return start_date, end_date
+        if news.datetime is None:
+            msg = f"The News with title {news.title} has no date."
+            logging.warning(msg)
+            return False
+        if not start_date <= news.datetime < end_date:
+            msg = f"The News with title {news.title} was not published in the given time period."
+            logging.warning(msg)
+            return False
+        return True
+
+    async def _news_is_relevant(self, news: News) -> bool:
+        """Check if the news is relevant.
+
+        Args:
+            news: The news data to check.
+
+        Returns:
+            True if the news is relevant, False otherwise.
+        """
+        relevance = await self.news_relevancy_classifier.predict(news)
+        if relevance == Relevance.AUTRE:
+            msg = f"The News with title {news.title} is not relevant."
+            logging.warning(msg)
+            return False
+        return True

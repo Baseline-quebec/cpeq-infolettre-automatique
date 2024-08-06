@@ -27,8 +27,6 @@ from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
 class News(BaseModel):
     """Schema for the news data."""
 
-    model_config = ConfigDict(use_enum_values=False, extra="ignore")
-
     title: str
     content: str
     link: Annotated[Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)] = Field(
@@ -40,10 +38,16 @@ class News(BaseModel):
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
 
+    model_config = ConfigDict(use_enum_values=False, extra="ignore")
+
     @field_validator("link")
     @classmethod
     def valide_link(cls, value: str) -> Url:
-        """Validate the link field."""
+        """Validate the link field.
+
+        Raises:
+            ValueError: If the link is not a valid URL.
+        """
         try:
             return Url(url=value)
         except ValidationError as e:
@@ -78,7 +82,11 @@ class News(BaseModel):
     @field_validator("title", "content")
     @classmethod
     def validate_mandatory_texts(cls, value: str) -> str:
-        """Validate that the mandatory text fields are not empty."""
+        """Validate that the mandatory text fields are not empty.
+
+        Raises:
+            ValueError: If the title or content fields are empty.
+        """
         if not value.strip() or value is None:
             error_msg = "The title and content fields must not be empty."
             raise ValueError(error_msg)
@@ -95,7 +103,11 @@ class News(BaseModel):
         return cleaned_value
 
     def to_markdown(self) -> str:
-        """Convert the news to markdown."""
+        """Convert the news to markdown.
+
+        Raises:
+        ValueError: If the news does not have a summary or a title.
+        """
         if self.summary is None or self.title is None:
             error_msg = "The news must have a summary and a title to be converted to markdown."
             raise ValueError(error_msg)
@@ -105,7 +117,7 @@ class News(BaseModel):
 class Newsletter(BaseModel):
     """Schema for the newsletter."""
 
-    news: list[News]
+    news: list[News] = Field(..., min_length=1)
     news_datetime_range: tuple[dt.datetime, dt.datetime]
     publication_datetime: dt.datetime = Field(default_factory=get_current_montreal_datetime)
 
@@ -157,7 +169,11 @@ class AddNewsBody(BaseModel):
     @field_validator("link")
     @classmethod
     def valide_link(cls, value: str) -> Url:
-        """Validate the link field."""
+        """Validate the link field.
+
+        Raises:
+            ValueError: If the link is not a valid URL.
+        """
         try:
             return Url(url=value)
         except ValidationError as e:
@@ -192,7 +208,11 @@ class AddNewsBody(BaseModel):
     @field_validator("title", "content")
     @classmethod
     def validate_mandatory_texts(cls, value: str) -> str:
-        """Validate that the mandatory text fields are not empty."""
+        """Validate that the mandatory text fields are not empty.
+
+        Raises:
+            ValueError: If the title or content fields are empty.
+        """
         if not value.strip() or value is None:
             error_msg = "The title and content fields must not be empty."
             raise ValueError(error_msg)

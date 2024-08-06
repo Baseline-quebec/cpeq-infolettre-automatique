@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from types import MappingProxyType
 
 import httpx
+from httpx import HTTPStatusError
 from pydantic import ValidationError
 
 from cpeq_infolettre_automatique.schemas import News
@@ -132,10 +133,23 @@ class WebscraperIoClient:
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
-            logger.exception(
-                "HTTP code %s while getting all scraping jobs.",
-                e.response.status_code,
-            )
+            if e.response.status_code == RATELIMIT_ERROR_CODE:
+                timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
+                if timestamp is not None:
+                    datetime_reset = dt.datetime.fromtimestamp(int(timestamp), tz=dt.UTC)
+                    seconds_to_reset = (
+                        datetime_reset - dt.datetime.now(tz=dt.UTC)
+                    ).total_seconds() + 1
+                else:
+                    seconds_to_reset = LIMIT_MAX_SECONDS
+                logger.warning(
+                    "Scraping job limit reached, retrying get_scraping_jobs  in %s seconds.",
+                    seconds_to_reset,
+                )
+                warninng_msg = "WebScraper.io rate limit reached, retrying in %s seconds."
+                logging.warning(warninng_msg, seconds_to_reset)
+                await asyncio.sleep(seconds_to_reset)
+                return await self.get_scraping_jobs()
         except httpx.RequestError:
             logger.exception("Error issuing GET request at URL %s.", url)
         else:
@@ -157,11 +171,11 @@ class WebscraperIoClient:
         response = await self._client.get(url, params={"api_token": self._api_token})
         try:
             response.raise_for_status()
-        except httpx.HTTPStatusError as e:
+        except HTTPStatusError as e:
             if e.response.status_code == RATELIMIT_ERROR_CODE:
                 timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
                 if timestamp is not None:
-                    datetime_reset = dt.datetime.fromtimestamp(timestamp, tz=dt.UTC)
+                    datetime_reset = dt.datetime.fromtimestamp(int(timestamp), tz=dt.UTC)
                     seconds_to_reset = (
                         datetime_reset - dt.datetime.now(tz=dt.UTC)
                     ).total_seconds() + 1
@@ -172,6 +186,8 @@ class WebscraperIoClient:
                     job_id,
                     seconds_to_reset,
                 )
+                warninng_msg = "WebScraper.io rate limit reached, retrying in %s seconds."
+                logging.warning(warninng_msg, seconds_to_reset)
                 await asyncio.sleep(seconds_to_reset)
                 return await self.download_scraping_job_data(job_id)
             logger.exception(
