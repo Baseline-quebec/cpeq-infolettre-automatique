@@ -49,6 +49,9 @@ class OneDriveNewsRepository(NewsRepository):
         """
         self.week_folder = week_folder
 
+    def setup(self) -> None:
+        """Setup the repository."""
+
     def create_news(self, news: News) -> None:
         """Adds a News to the repository, appending it to the CSV file if it exists, or creating the file of not.
 
@@ -125,7 +128,7 @@ class LocalNewsRepository(NewsRepository):
                 default=pydantic_encoder,
             )
 
-    def create_news(self, _: News) -> None:
+    def create_news(self, news: News) -> None:
         """Save a single News as a json file locally.
 
         Args:
