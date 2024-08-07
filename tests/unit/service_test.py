@@ -69,7 +69,7 @@ class TestService:
                 dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
                 dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
             )
-            await service_fixture.generate_newsletter()
+            await service_fixture.generate_newsletter(delete_scraping_jobs=True)
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
         assert service_fixture.vectorstore.search_similar_news.called
         assert service_fixture.news_relevancy_classifier.predict.called
