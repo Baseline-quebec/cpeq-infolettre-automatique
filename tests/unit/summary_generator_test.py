@@ -25,7 +25,7 @@ class TestSummaryGenerator:
         summary = await summary_generator_fixture.generate_with_similar_news(
             classified_news_fixture, reference_news
         )
-        assert isinstance(summary, str)
+        assert summary == "Some completion"
 
     @staticmethod
     def test__format_system_prompt__when_references_news__return_valid_system_prompt(
@@ -40,4 +40,5 @@ class TestSummaryGenerator:
             summarized_news_fixture_copy,
         ]
         prompt = SummaryGenerator.format_system_prompt(reference_news)
-        assert isinstance(prompt, str)
+        assert "## Exemple 1\n\n### Contenu:" in prompt
+        assert "### Résumé:" in prompt

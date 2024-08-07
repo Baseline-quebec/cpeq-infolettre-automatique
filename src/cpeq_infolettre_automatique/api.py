@@ -9,7 +9,6 @@ import coloredlogs
 from decouple import config
 from fastapi import BackgroundTasks, Depends, FastAPI
 from fastapi.responses import Response
-from O365.drive import Folder
 
 from cpeq_infolettre_automatique.dependencies import (
     HttpClientDependency,
@@ -22,7 +21,7 @@ from cpeq_infolettre_automatique.service import Service
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
     """Handle FastAPI startup and shutdown events."""
     # Startup events:
     # - Remove all handlers associated with the root logger object.
@@ -48,9 +47,9 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/generate-newsletter")
-def generate_newsletter_background(
+def generate_newsletter(
     service: Annotated[Service, Depends(get_service)],
-    folders: Annotated[tuple[Folder, Folder], Depends(OneDriveDependency())],
+    folder_name: Annotated[str, Depends(OneDriveDependency.get_folder_name)],
     background_tasks: BackgroundTasks,
 ) -> Response:
     """Generate a newsletter from scraped news.
@@ -67,9 +66,8 @@ def generate_newsletter_background(
         service.generate_newsletter,
         delete_scraping_jobs=False,
     )
-    (news_folder, week_folder) = folders
     return Response(
-        content=f"Génération de l'infolettre en cours. Celle-ci sera sauvegardée sous peu sur Sharepoint dans le dossier {news_folder.name}/{week_folder.name}."
+        content=f"Génération de l'infolettre en cours. Celle-ci sera sauvegardée sous peu sur Sharepoint dans le dossier {folder_name}."
     )
 
 

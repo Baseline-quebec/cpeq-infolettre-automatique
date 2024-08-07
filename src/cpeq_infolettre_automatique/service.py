@@ -13,7 +13,6 @@ from cpeq_infolettre_automatique.schemas import (
     News,
     Newsletter,
 )
-from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
@@ -26,7 +25,6 @@ class Service:
         end_date: dt.datetime,
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
-        vectorstore: Vectorstore,
         news_producer: NewsProducer,
         news_relevancy_classifier: NewsRelevancyClassifier,
     ) -> None:
@@ -35,7 +33,6 @@ class Service:
         self.end_date = end_date
         self.webscraper_io_client = webscraper_io_client
         self.news_repository = news_repository
-        self.vectorstore = vectorstore
         self.news_producer = news_producer
         self.news_relevancy_classifier = news_relevancy_classifier
 

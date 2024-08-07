@@ -42,10 +42,7 @@ from cpeq_infolettre_automatique.news_classifier import (
     NewsRubricClassifier,
 )
 from cpeq_infolettre_automatique.news_producer import NewsProducer
-from cpeq_infolettre_automatique.repositories import (
-    NewsRepository,
-    OneDriveNewsRepository,
-)
+from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
 from cpeq_infolettre_automatique.utils import get_or_create_subfolder, prepare_dates
@@ -160,6 +157,15 @@ class OneDriveDependency(ApiDependency):
             A tuple container both the news and the week folder.
         """
         return (self.news_folder, self.week_folder)
+
+    @classmethod
+    def get_folder_name(cls) -> str:
+        """The name of the folder containing the news and the newsletter.
+
+        Returns:
+            The folder name.
+        """
+        return f"{cls.news_folder.name}/{cls.week_folder.name}"
 
 
 class VectorstoreClientDependency(ApiDependency):
@@ -416,7 +422,6 @@ def get_news_producer(
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
-    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
     news_relevancy_classifier: Annotated[
         NewsRelevancyClassifier, Depends(get_news_relevancy_classifier)
     ],
@@ -433,7 +438,6 @@ def get_service(
         end_date=end_date,
         webscraper_io_client=webscraper_io_client,
         news_repository=news_repository,
-        vectorstore=vectorstore,
         news_relevancy_classifier=news_relevancy_classifier,
         news_producer=news_producer,
     )

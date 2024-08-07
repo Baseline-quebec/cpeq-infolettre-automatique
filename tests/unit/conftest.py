@@ -150,17 +150,28 @@ def news_repository_fixture() -> NewsRepository:
 
 
 @pytest.fixture()
+def completion_model_fixture() -> CompletionModel:
+    """Fixture for the CompletionModel.
+
+    Returns:
+        The mocked CompletionModel.
+    """
+    completion_model_fixture = MagicMock(spec=CompletionModel)
+    completion_model_fixture.complete_message = AsyncMock(return_value="Some completion")
+    return completion_model_fixture
+
+
+@pytest.fixture()
 def summary_generator_fixture(
-    completion_model_mock: CompletionModel, vectorstore_fixture: Vectorstore
+    vectorstore_fixture: Vectorstore, completion_model_fixture: CompletionModel
 ) -> SummaryGenerator:
     """Fixture for the SummaryGenerator.
 
     Returns:
         The mocked SummaryGenerator.
     """
-    completion_model_mock = MagicMock(spec=CompletionModel)
     summary_generator_fixture = SummaryGenerator(
-        completion_model=completion_model_mock,
+        completion_model=completion_model_fixture,
         vectorstore=vectorstore_fixture,
         summary_generator_config=MagicMock(spec=SummaryGeneratorConfig),
     )

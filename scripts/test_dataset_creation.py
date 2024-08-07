@@ -49,7 +49,6 @@ async def main() -> None:
             end_date=end_date,
             webscraper_io_client=webscraper_io_client,
             news_repository=local_news_repository,
-            vectorstore=vectorstore,
             news_producer=news_producer,
             news_relevancy_classifier=news_relevancy_classifier,
         )

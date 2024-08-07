@@ -1,23 +1,18 @@
 """Test cpeq-infolettre-automatique REST API."""
 
-from collections.abc import AsyncIterator, Generator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from O365.drive import Folder
-from typeguard import suppress_type_checks
 
 from cpeq_infolettre_automatique.api import app
 from cpeq_infolettre_automatique.dependencies import (
     OneDriveDependency,
     get_service,
-    get_vectorstore,
-    get_webscraperio_client,
 )
 from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
@@ -35,54 +30,22 @@ def service_fixture(newsletter_fixture: Newsletter) -> Service:
 
 
 @pytest.fixture(scope="session")
-def onedrive_fixture() -> OneDriveDependency:
-    """Fixture for OneDrive."""
-    onedrive_fixture = MagicMock(spec=OneDriveDependency)
-    onedrive_fixture.__call__ = MagicMock(
-        return_value=(
-            MagicMock(spec=Folder),
-            MagicMock(spec=Folder),
-        )
+def client_fixture(service_fixture: Service) -> Iterator[TestClient]:
+    """Create a test client for the FastAPI app."""
+    app.dependency_overrides[get_service] = lambda: service_fixture
+    app.dependency_overrides[OneDriveDependency.get_folder_name] = (
+        lambda: "news_folder/week_folder"
     )
-    return onedrive_fixture
-
-
-@pytest.fixture(scope="session")
-def client_fixture(
-    service_fixture: Service, onedrive_fixture: OneDriveDependency
-) -> Generator[TestClient, None, None]:
-    """Create a TestClient instance with a mock Bot and ChatHistoryDB instances."""
-
-    class DependencyPatch:
-        """Patch dependencies to return mocked dependencies."""
-
-        def get(self, key: Any, default: Any) -> Any:  # noqa: PLR6301
-            """Return mocked dependencies when needed.
-
-            Both 'key' and 'default' refers to the same function used in Depends.
-            See fastapi.dependencies.utils.py in the function 'solve_dependencies' for the call to 'get'.
-            """
-            if key == get_vectorstore:
-                return AsyncMock()
-            if key == get_webscraperio_client:
-                return AsyncMock()
-            if key == get_service:
-                return service_fixture
-            if isinstance(key, OneDriveDependency):
-                return lambda *_: onedrive_fixture
-            return default
-
-    app.dependency_overrides = DependencyPatch()  # type: ignore[assignment]
-
     # Patch lifespan context
+
     @asynccontextmanager
-    async def _lifespan(_: FastAPI) -> AsyncIterator[None]:  # noqa: RUF029
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: RUF029, ARG001
         yield
 
     app.router.lifespan_context = _lifespan
 
     # Create TestClient instance, suppressing Typeguard's type check because the dependency overrides change the type of the dependencies
-    with suppress_type_checks(), TestClient(app) as client:
+    with TestClient(app) as client:
         yield client
         app.dependency_overrides = {}
 
@@ -102,9 +65,9 @@ def test_generate_newsletter__when_happy_path__returns_successful_response(
     client_fixture: TestClient, service_fixture: Service
 ) -> None:
     """Test generating a newsletter."""
-    expected_message = "Newsletter generation started."
+    expected_folder_name = "news_folder/week_folder."
 
     response = client_fixture.get("/generate-newsletter")
     assert response.status_code == SUCCESS_HTTP_STATUS_CODE
-    assert response.text == expected_message
+    assert expected_folder_name in response.text
     assert service_fixture.generate_newsletter.called

@@ -1,7 +1,6 @@
 """Tests for service class."""
 
 import datetime as dt
-from unittest.mock import patch
 
 import pytest
 
@@ -11,14 +10,12 @@ from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository
 from cpeq_infolettre_automatique.schemas import News
 from cpeq_infolettre_automatique.service import Service
-from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
 @pytest.fixture()
 def service_fixture(
     webscraper_io_client_fixture: WebscraperIoClient,
-    vectorstore_fixture: Vectorstore,
     news_repository_fixture: NewsRepository,
     news_producer_fixture: NewsProducer,
     news_relevance_classifier_fixture: NewsRelevancyClassifier,
@@ -33,7 +30,6 @@ def service_fixture(
         end_date=dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
         webscraper_io_client=webscraper_io_client_fixture,
         news_repository=news_repository_fixture,
-        vectorstore=vectorstore_fixture,
         news_producer=news_producer_fixture,
         news_relevancy_classifier=news_relevance_classifier_fixture,
     )
@@ -65,30 +61,10 @@ class TestService:
 
         TODO(jsleb333): Remove called assertions with specific tests.
         """
-        with patch.object(Service, "_prepare_dates") as prepare_dates_mock:
-            prepare_dates_mock.return_value = (
-                dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
-                dt.datetime(2024, 1, 7, tzinfo=dt.UTC),
-            )
-            await service_fixture.generate_newsletter()
+        await service_fixture.generate_newsletter()
         assert service_fixture.webscraper_io_client.get_scraping_jobs.called
-        assert service_fixture.vectorstore.search_similar_news.called
         assert service_fixture.news_relevancy_classifier.predict.called
         assert service_fixture.webscraper_io_client.download_scraping_job_data.called
-        assert service_fixture.news_producer.summary_generator.completion_model.complete_message.called
-        assert service_fixture.news_producer.news_rubric_classifier.predict.called
+        assert service_fixture.news_producer.produce_news.called
         assert service_fixture.webscraper_io_client.delete_scraping_jobs.called
         assert service_fixture.news_repository.create_many_news.called
-
-    @staticmethod
-    def test_prepare_dates__when_default_args__returns_closest_monday_to_monday_period() -> None:
-        """Test that the start and end dates are correctly prepared when no arguments are provided."""
-        with patch(
-            "cpeq_infolettre_automatique.service.get_current_montreal_datetime"
-        ) as get_current_datetime_mock:
-            get_current_datetime_mock.return_value = dt.datetime(2024, 1, 9, tzinfo=dt.UTC)
-            start_date, end_date = Service._prepare_dates()
-            first_monday = dt.datetime(2024, 1, 1, tzinfo=dt.UTC)
-            second_monday = dt.datetime(2024, 1, 8, tzinfo=dt.UTC)
-            assert start_date == first_monday
-            assert end_date == second_monday
