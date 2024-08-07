@@ -1,11 +1,16 @@
 """Test cpeq-infolettre-automatique REST API."""
 
+from collections.abc import AsyncIterator, Generator
+from contextlib import asynccontextmanager
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from O365.drive import Folder
+from typeguard import suppress_type_checks
 
 from cpeq_infolettre_automatique.api import app
 from cpeq_infolettre_automatique.dependencies import (
@@ -38,14 +43,44 @@ def onedrive_fixture() -> OneDriveDependency:
     return onedrive_fixture
 
 
-@pytest.fixture(scope="session")
-def client_fixture(service_fixture: Service, onedrive_fixture: OneDriveDependency) -> TestClient:
-    """Create a test client for the FastAPI app."""
-    app.dependency_overrides[get_vectorstore] = AsyncMock()
-    app.dependency_overrides[get_webscraperio_client] = AsyncMock()
-    app.dependency_overrides[get_service] = lambda: service_fixture
-    app.dependency_overrides[OneDriveDependency()] = onedrive_fixture
-    return TestClient(app)
+@pytest.fixture(scope="session", name="client")
+def client_fixture(
+    service_fixture: Service, onedrive_fixture: OneDriveDependency
+) -> Generator[TestClient, None, None]:
+    """Create a TestClient instance with a mock Bot and ChatHistoryDB instances."""
+
+    class DependencyPatch:
+        """Patch dependencies to return mocked dependencies."""
+
+        def get(self, key: Any, default: Any) -> Any:  # noqa: PLR6301
+            """Return mocked dependencies when needed.
+
+            Both 'key' and 'default' refers to the same function used in Depends.
+            See fastapi.dependencies.utils.py in the function 'solve_dependencies' for the call to 'get'.
+            """
+            if key == get_vectorstore:
+                return AsyncMock()
+            if key == get_webscraperio_client:
+                return AsyncMock()
+            if key == get_service:
+                return service_fixture
+            if isinstance(key, OneDriveDependency):
+                return onedrive_fixture
+            return default
+
+    app.dependency_overrides = DependencyPatch()  # type: ignore[assignment]
+
+    # Patch lifespan context
+    @asynccontextmanager
+    async def _lifespan(_: FastAPI) -> AsyncIterator[None]:  # noqa: RUF029
+        yield
+
+    app.router.lifespan_context = _lifespan
+
+    # Create TestClient instance, suppressing Typeguard's type check because the dependency overrides change the type of the dependencies
+    with suppress_type_checks(), TestClient(app) as client:
+        yield client
+        app.dependency_overrides = {}
 
 
 def test_root_status_code() -> None:
