@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from types import MappingProxyType
 
 import httpx
-from httpx import HTTPStatusError
+from httpx import HTTPStatusError, Response
 from pydantic import ValidationError
 
 from cpeq_infolettre_automatique.schemas import News, ScrapingProblem
@@ -111,6 +111,9 @@ class WebscraperIoClient:
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
+            if e.response.status_code == RATELIMIT_ERROR_CODE:
+                await self._handle_throttling(response)
+                return await self.delete_scraping_job(job_id=job_id)
             logger.exception(
                 "HTTP Code %s while deleting scraping job with ID %s.",
                 e.response.status_code,
@@ -134,21 +137,7 @@ class WebscraperIoClient:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == RATELIMIT_ERROR_CODE:
-                timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
-                if timestamp is not None:
-                    datetime_reset = dt.datetime.fromtimestamp(int(timestamp), tz=dt.UTC)
-                    seconds_to_reset = (
-                        datetime_reset - dt.datetime.now(tz=dt.UTC)
-                    ).total_seconds() + 1
-                else:
-                    seconds_to_reset = LIMIT_MAX_SECONDS
-                logger.warning(
-                    "Scraping job limit reached, retrying get_scraping_jobs  in %s seconds.",
-                    seconds_to_reset,
-                )
-                warninng_msg = "WebScraper.io rate limit reached, retrying in %s seconds."
-                logging.warning(warninng_msg, seconds_to_reset)
-                await asyncio.sleep(seconds_to_reset)
+                await self._handle_throttling(response)
                 return await self.get_scraping_jobs()
         except httpx.RequestError:
             logger.exception("Error issuing GET request at URL %s.", url)
@@ -170,7 +159,7 @@ class WebscraperIoClient:
         ]
         return site_problems
 
-    async def get_scraping_job_problems(self, job_id: str) -> list[ScrapingProblem]:
+    async def get_scraping_job_problems(self, job_id: str) -> Iterable[ScrapingProblem]:
         """Returns a dictionary of scraping problems who arose for a given scraping job."""
         url = f"{self._base_url}/scraping-job/{job_id}/problematic-urls"
         data: list[ScrapingProblem] = []
@@ -179,6 +168,9 @@ class WebscraperIoClient:
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
+            if e.response.status_code == RATELIMIT_ERROR_CODE:
+                await self._handle_throttling(response)
+                return await self.get_scraping_job_problems(job_id)
             logger.exception(
                 "HTTP code %s while getting scraping job problems with job ID %s.",
                 e.response.status_code,
@@ -210,34 +202,18 @@ class WebscraperIoClient:
             response.raise_for_status()
         except HTTPStatusError as e:
             if e.response.status_code == RATELIMIT_ERROR_CODE:
-                timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
-                if timestamp is not None:
-                    datetime_reset = dt.datetime.fromtimestamp(int(timestamp), tz=dt.UTC)
-                    seconds_to_reset = (
-                        datetime_reset - dt.datetime.now(tz=dt.UTC)
-                    ).total_seconds() + 1
-                else:
-                    seconds_to_reset = LIMIT_MAX_SECONDS
-                logger.warning(
-                    "Scraping job limit reached, retrying job %s in %s seconds.",
-                    job_id,
-                    seconds_to_reset,
-                )
-                warninng_msg = "WebScraper.io rate limit reached, retrying in %s seconds."
-                logging.warning(warninng_msg, seconds_to_reset)
-                await asyncio.sleep(seconds_to_reset)
+                await self._handle_throttling(response)
                 return await self.download_scraping_job_data(job_id)
             logger.exception(
                 "HTTP Code %s while downloading scraping job data on Sitemap ID %s.",
                 e.response.status_code,
                 job_id,
             )
-            raise
         except httpx.RequestError:
             logger.exception("Error issuing GET request at URL %s.", url)
-            raise
         else:
             job_data = self.process_raw_response(response.text)
+
         news = []
         for data in job_data:
             try:
@@ -260,6 +236,9 @@ class WebscraperIoClient:
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
+            if e.response.status_code == RATELIMIT_ERROR_CODE:
+                await self._handle_throttling(response)
+                return await self.get_sitemaps()
             logger.exception(
                 "HTTP code %s while getting all sitemaps.",
                 e.response.status_code,
@@ -283,3 +262,16 @@ class WebscraperIoClient:
         if not raw_response:
             return []
         return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
+
+    @staticmethod
+    async def _handle_throttling(response: Response) -> None:
+        """Handles HTTP 429 Too Many Requests."""
+        timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
+        if timestamp is not None:
+            datetime_reset = dt.datetime.fromtimestamp(int(timestamp), tz=dt.UTC)
+            seconds_to_reset = (datetime_reset - dt.datetime.now(tz=dt.UTC)).total_seconds() + 1
+        else:
+            seconds_to_reset = LIMIT_MAX_SECONDS
+            warning_msg = "Webscraper.io rate limit reached, retrying in %s seconds."
+            logging.warning(warning_msg, seconds_to_reset)
+            await asyncio.sleep(seconds_to_reset)

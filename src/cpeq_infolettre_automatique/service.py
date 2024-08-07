@@ -41,7 +41,7 @@ class Service:
         *,
         start_date: dt.datetime | None = None,
         end_date: dt.datetime | None = None,
-        delete_scraping_jobs: bool = True,
+        delete_scraping_jobs: bool = False,
     ) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
