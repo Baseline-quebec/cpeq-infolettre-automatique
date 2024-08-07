@@ -9,7 +9,7 @@ from types import MappingProxyType
 
 import httpx
 from httpx import HTTPStatusError
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from cpeq_infolettre_automatique.schemas import News
 
@@ -20,6 +20,13 @@ RATELIMIT_RESET_HEADER = "x-ratelimit-reset"
 RATELIMIT_ERROR_CODE = 429
 SECONDS_IN_MINUTE = 60
 LIMIT_MAX_SECONDS = 15 * SECONDS_IN_MINUTE
+
+
+class ScrapingProblem(BaseModel):
+    """Schema representing a scraping job problem."""
+
+    url: str
+    type: str
 
 
 class WebscraperIoClient:
@@ -155,6 +162,40 @@ class WebscraperIoClient:
         else:
             job_ids = [str(job["id"]) for job in response.json().get("data", [])]
         return job_ids
+
+    async def get_all_scraping_problems(self) -> list[ScrapingProblem]:
+        """Returns a dictionary of all the problems who arose for each scraping job."""
+        job_ids: list[str] = await self.get_scraping_jobs()
+        coroutines = [self.get_scraping_job_problems(job_id) for job_id in job_ids]
+        site_problems: list[ScrapingProblem] = [
+            problem
+            for job_problems in await asyncio.gather(*coroutines)
+            for problem in job_problems
+        ]
+        return site_problems
+
+    async def get_scraping_job_problems(self, job_id: str) -> list[ScrapingProblem]:
+        """Returns a dictionary of scraping problems who arose for a given scraping job."""
+        url = f"{self._base_url}/scraping-job/{job_id}/problematic-urls"
+        data: list[ScrapingProblem] = []
+        response = await self._client.get(url, params={"api_token": self._api_token})
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.exception(
+                "HTTP code %s while getting scraping job problems with job ID %s.",
+                e.response.status_code,
+                job_id,
+            )
+        except httpx.RequestError:
+            logger.exception("Error issuing GET request at URL %s.", url)
+        else:
+            data = [
+                ScrapingProblem(url=site_problem.url, type=site_problem.type)
+                for site_problem in response.json().get("data", [])
+            ]
+        return data
 
     async def download_scraping_job_data(self, job_id: str) -> Iterable[News]:
         """Fetches raw JSON data for a scraping job and processes it into a structured format.
