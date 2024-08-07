@@ -227,3 +227,10 @@ class AddNewsBody(BaseModel):
             datetime=self.datetime,
             content=self.content,
         )
+
+
+class ScrapingProblem(BaseModel):
+    """Schema representing a scraping job problem."""
+
+    url: str
+    type: str

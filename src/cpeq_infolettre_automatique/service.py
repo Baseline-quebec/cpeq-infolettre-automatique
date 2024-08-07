@@ -61,6 +61,12 @@ class Service:
         flattened_news = [news for news_list in summarized_news for news in news_list]
 
         self.news_repository.create_many_news(flattened_news)
+
+        scraping_problems = await self.webscraper_io_client.get_all_scraping_problems(
+            job_ids=job_ids
+        )
+        self.news_repository.create_scraping_problems(scraping_problems)
+
         if delete_scraping_jobs:
             await self.webscraper_io_client.delete_scraping_jobs()
 

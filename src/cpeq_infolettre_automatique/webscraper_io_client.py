@@ -9,9 +9,9 @@ from types import MappingProxyType
 
 import httpx
 from httpx import HTTPStatusError
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
-from cpeq_infolettre_automatique.schemas import News
+from cpeq_infolettre_automatique.schemas import News, ScrapingProblem
 
 
 logger = logging.getLogger(__name__)
@@ -20,13 +20,6 @@ RATELIMIT_RESET_HEADER = "x-ratelimit-reset"
 RATELIMIT_ERROR_CODE = 429
 SECONDS_IN_MINUTE = 60
 LIMIT_MAX_SECONDS = 15 * SECONDS_IN_MINUTE
-
-
-class ScrapingProblem(BaseModel):
-    """Schema representing a scraping job problem."""
-
-    url: str
-    type: str
 
 
 class WebscraperIoClient:
@@ -163,9 +156,12 @@ class WebscraperIoClient:
             job_ids = [str(job["id"]) for job in response.json().get("data", [])]
         return job_ids
 
-    async def get_all_scraping_problems(self) -> list[ScrapingProblem]:
+    async def get_all_scraping_problems(
+        self, job_ids: list[str] | None = None
+    ) -> list[ScrapingProblem]:
         """Returns a dictionary of all the problems who arose for each scraping job."""
-        job_ids: list[str] = await self.get_scraping_jobs()
+        if job_ids is None:
+            job_ids = await self.get_scraping_jobs()
         coroutines = [self.get_scraping_job_problems(job_id) for job_id in job_ids]
         site_problems: list[ScrapingProblem] = [
             problem
