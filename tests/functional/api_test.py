@@ -44,7 +44,7 @@ def client_fixture(service_fixture: Service, onedrive_fixture: OneDriveDependenc
     app.dependency_overrides[get_vectorstore] = AsyncMock()
     app.dependency_overrides[get_webscraperio_client] = AsyncMock()
     app.dependency_overrides[get_service] = lambda: service_fixture
-    app.dependency_overrides[OneDriveDependency] = onedrive_fixture
+    app.dependency_overrides[OneDriveDependency()] = onedrive_fixture
     return TestClient(app)
 
 
