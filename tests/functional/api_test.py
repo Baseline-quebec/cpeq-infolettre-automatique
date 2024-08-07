@@ -43,7 +43,7 @@ def onedrive_fixture() -> OneDriveDependency:
     return onedrive_fixture
 
 
-@pytest.fixture(scope="session", name="client")
+@pytest.fixture(scope="session")
 def client_fixture(
     service_fixture: Service, onedrive_fixture: OneDriveDependency
 ) -> Generator[TestClient, None, None]:
