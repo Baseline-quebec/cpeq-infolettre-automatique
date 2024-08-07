@@ -150,20 +150,6 @@ def news_repository_fixture() -> NewsRepository:
 
 
 @pytest.fixture()
-def reference_news_repository_fixture(
-    summarized_news_fixture: News,
-) -> ReferenceNewsRepository:
-    """Fixture for mocked ReferenceNewsRepository.
-
-    Returns:
-        The mocked ReferenceNewsRepository.
-    """
-    reference_news_repository_fixture = MagicMock(spec=ReferenceNewsRepository)
-    reference_news_repository_fixture.read_many_by_rubric.return_value = [summarized_news_fixture]
-    return reference_news_repository_fixture
-
-
-@pytest.fixture()
 def summary_generator_fixture(
     completion_model_mock: CompletionModel, vectorstore_fixture: Vectorstore
 ) -> SummaryGenerator:
