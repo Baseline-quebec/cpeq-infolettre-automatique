@@ -272,6 +272,7 @@ class WebscraperIoClient:
             seconds_to_reset = (datetime_reset - dt.datetime.now(tz=dt.UTC)).total_seconds() + 1
         else:
             seconds_to_reset = LIMIT_MAX_SECONDS
-            warning_msg = "Webscraper.io rate limit reached, retrying in %s seconds."
-            logging.warning(warning_msg, seconds_to_reset)
-            await asyncio.sleep(seconds_to_reset)
+
+        warning_msg = "Webscraper.io rate limit reached, retrying in %s seconds."
+        logging.warning(warning_msg, seconds_to_reset)
+        await asyncio.sleep(seconds_to_reset)
