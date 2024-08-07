@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from O365.drive import Folder
 
 from cpeq_infolettre_automatique.api import app
 from cpeq_infolettre_automatique.dependencies import (
@@ -29,12 +30,21 @@ def service_fixture(newsletter_fixture: Newsletter) -> Service:
 
 
 @pytest.fixture(scope="session")
-def client_fixture(service_fixture: Service) -> TestClient:
+def onedrive_fixture() -> OneDriveDependency:
+    """Fixture for OneDrive."""
+    onedrive_fixture = MagicMock(spec=OneDriveDependency)
+    onedrive_fixture.news_folder = MagicMock(spec=Folder)
+    onedrive_fixture.week_folder = MagicMock(spec=Folder)
+    return onedrive_fixture
+
+
+@pytest.fixture(scope="session")
+def client_fixture(service_fixture: Service, onedrive_fixture: OneDriveDependency) -> TestClient:
     """Create a test client for the FastAPI app."""
     app.dependency_overrides[get_vectorstore] = AsyncMock()
     app.dependency_overrides[get_webscraperio_client] = AsyncMock()
     app.dependency_overrides[get_service] = lambda: service_fixture
-    app.dependency_overrides[OneDriveDependency] = MagicMock()
+    app.dependency_overrides[OneDriveDependency] = onedrive_fixture
     return TestClient(app)
 
 
