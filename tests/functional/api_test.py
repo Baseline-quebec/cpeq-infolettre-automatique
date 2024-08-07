@@ -38,8 +38,12 @@ def service_fixture(newsletter_fixture: Newsletter) -> Service:
 def onedrive_fixture() -> OneDriveDependency:
     """Fixture for OneDrive."""
     onedrive_fixture = MagicMock(spec=OneDriveDependency)
-    onedrive_fixture.news_folder = MagicMock(spec=Folder)
-    onedrive_fixture.week_folder = MagicMock(spec=Folder)
+    onedrive_fixture.__call__ = MagicMock(
+        return_value=(
+            MagicMock(spec=Folder),
+            MagicMock(spec=Folder),
+        )
+    )
     return onedrive_fixture
 
 
@@ -65,7 +69,7 @@ def client_fixture(
             if key == get_service:
                 return service_fixture
             if isinstance(key, OneDriveDependency):
-                return onedrive_fixture
+                return lambda *_: onedrive_fixture
             return default
 
     app.dependency_overrides = DependencyPatch()  # type: ignore[assignment]
