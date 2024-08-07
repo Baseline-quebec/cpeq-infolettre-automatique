@@ -1,6 +1,6 @@
 """Test cpeq-infolettre-automatique REST API."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from cpeq_infolettre_automatique.api import app
 from cpeq_infolettre_automatique.dependencies import (
+    OneDriveDependency,
     get_service,
     get_vectorstore,
     get_webscraperio_client,
@@ -33,6 +34,7 @@ def client_fixture(service_fixture: Service) -> TestClient:
     app.dependency_overrides[get_vectorstore] = AsyncMock()
     app.dependency_overrides[get_webscraperio_client] = AsyncMock()
     app.dependency_overrides[get_service] = lambda: service_fixture
+    app.dependency_overrides[OneDriveDependency] = MagicMock()
     return TestClient(app)
 
 
