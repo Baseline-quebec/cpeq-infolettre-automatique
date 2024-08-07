@@ -68,12 +68,12 @@ class Rubric(Enum):
 class OneDriveConfig(BaseModel):
     """Configuration for the OneDrive client."""
 
-    client_id: ClassVar[str] = config("ONEDRIVE_CLIENT_ID", cast=str)
-    client_secret: ClassVar[str] = config("ONEDRIVE_CLIENT_SECRET", cast=str)
-    tenant_id: ClassVar[str] = config("ONEDRIVE_TENANT_ID", cast=str)
-    drive_id: ClassVar[str] = config("ONEDRIVE_DRIVE_ID", cast=str)
-    site_url: ClassVar[str] = config("ONEDRIVE_SITE_URL", cast=str)
-    folder_name: ClassVar[str] = config("ONEDRIVE_FOLDER_NAME", cast=str)
+    client_id: ClassVar[str] = config("ONEDRIVE_CLIENT_ID", "", cast=str)
+    client_secret: ClassVar[str] = config("ONEDRIVE_CLIENT_SECRET", "", cast=str)
+    tenant_id: ClassVar[str] = config("ONEDRIVE_TENANT_ID", "", cast=str)
+    drive_id: ClassVar[str] = config("ONEDRIVE_DRIVE_ID", "", cast=str)
+    site_url: ClassVar[str] = config("ONEDRIVE_SITE_URL", "", cast=str)
+    folder_name: ClassVar[str] = config("ONEDRIVE_FOLDER_NAME", "", cast=str)
 
 
 class EmbeddingModelConfig(BaseModel):
