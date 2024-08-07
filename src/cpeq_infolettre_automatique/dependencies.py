@@ -29,6 +29,7 @@ from cpeq_infolettre_automatique.config import (
     EmbeddingModelConfig,
     NewsRelevancyClassifierConfig,
     NewsRubricClassifierConfig,
+    OneDriveConfig,
     SummaryGeneratorConfig,
     VectorNames,
     VectorstoreConfig,
@@ -72,6 +73,10 @@ class ApiDependency:
     def teardown(cls) -> Any:
         """Clean up the global resources of the dependency. Call this method at app takedown in `lifespan`."""
 
+    def __hash__(self) -> int:
+        """Return a hash of the dependency type. Used to get dependency in app.dependency_overrides."""
+        return hash(type(self))
+
 
 class HttpClientDependency(ApiDependency):
     """Dependency class for the Singleton HTTP Client."""
@@ -113,26 +118,22 @@ class OneDriveDependency(ApiDependency):
         RuntimeError: If the requested Sharepoint Site was not found.
         RuntimeError: If the requested OneDrive instance was not found.
         """
-        credentials = (
-            "99536437-db80-4ece-8bd5-0f4e4b1cba22",
-            "zfv8Q~U.AUmeoEDQpuEqTHsBvEnrw2TUXbqo5aLn",
-        )
         account = Account(
-            credentials,
+            (OneDriveConfig.client_id, OneDriveConfig.client_secret),
             auth_flow_type="credentials",
-            tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
+            tenant_id=OneDriveConfig.tenant_id,
         )
         if not account.authenticate():
             msg = "Authentication with Office365 failed."
             raise RuntimeError(msg)
 
-        site_url = "baselinequebec.sharepoint.com"
+        site_url = OneDriveConfig.site_url
         site = account.sharepoint().get_site(site_url)
         if site is None:
             msg = f"The requested Sharepoint Site {site_url} was not found."
             raise RuntimeError(msg)
 
-        drive_id = "b!fslahRMOAUCsW5P8nXZ3cYwDnL6MT35NpJyHzlyxCgXt0TeRJiWPSb3gQmzCo3t2"
+        drive_id = OneDriveConfig.drive_id
         drive = site.site_storage.get_drive(drive_id)
         if drive is None:
             msg = f"The requested OneDrive instance with id {drive_id} was not found."
@@ -140,7 +141,7 @@ class OneDriveDependency(ApiDependency):
 
         root_folder: Folder = cast(Folder, drive.get_root_folder())
         news_folder: Folder = get_or_create_subfolder(
-            parent_folder=root_folder, folder_name="infolettre_automatique"
+            parent_folder=root_folder, folder_name=OneDriveConfig.folder_name
         )
         _, end_date = prepare_dates()
         week_folder: Folder = get_or_create_subfolder(
