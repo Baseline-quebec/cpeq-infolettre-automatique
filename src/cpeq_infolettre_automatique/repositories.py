@@ -185,3 +185,7 @@ class LocalNewsRepository(NewsRepository):
         file_name = "newsletter.md"
         file_path = self.path / file_name
         file_path.write_text(newsletter.to_markdown(), encoding="utf-8")
+
+    def create_scraping_problems(self, problems: list[ScrapingProblem]) -> None:
+        """Save the Scraping Problems."""
+        raise NotImplementedError
