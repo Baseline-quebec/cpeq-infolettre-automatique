@@ -1,7 +1,7 @@
 """App configuration."""
 
 from enum import Enum
-from typing import Literal
+from typing import ClassVar, Literal
 
 from decouple import config
 from pydantic import BaseModel
@@ -63,6 +63,17 @@ class Rubric(Enum):
     SUBSTANCES_CHIMIQUES = "Substances chimiques"
     TECHNOLOGIES_PROPRES = "Technologies propres"
     TRANSPORT_ET_MOBILITE_DURABLE = "Transport et mobilité durable"
+
+
+class OneDriveConfig(BaseModel):
+    """Configuration for the OneDrive client."""
+
+    client_id: ClassVar[str] = config("ONEDRIVE_CLIENT_ID", "", cast=str)
+    client_secret: ClassVar[str] = config("ONEDRIVE_CLIENT_SECRET", "", cast=str)
+    tenant_id: ClassVar[str] = config("ONEDRIVE_TENANT_ID", "", cast=str)
+    drive_id: ClassVar[str] = config("ONEDRIVE_DRIVE_ID", "", cast=str)
+    site_url: ClassVar[str] = config("ONEDRIVE_SITE_URL", "", cast=str)
+    folder_name: ClassVar[str] = config("ONEDRIVE_FOLDER_NAME", "", cast=str)
 
 
 class EmbeddingModelConfig(BaseModel):

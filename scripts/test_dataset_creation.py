@@ -17,6 +17,7 @@ from cpeq_infolettre_automatique.dependencies import (
 )
 from cpeq_infolettre_automatique.repositories import LocalNewsRepository
 from cpeq_infolettre_automatique.service import Service
+from cpeq_infolettre_automatique.utils import prepare_dates
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 
 
@@ -42,10 +43,12 @@ async def main() -> None:
         )
         news_relevancy_classifier = get_news_relevancy_classifier(vectorstore)
         local_news_repository = LocalNewsRepository(path=Path("data", "test"))
+        start_date, end_date = prepare_dates()
         service = Service(
+            start_date=start_date,
+            end_date=end_date,
             webscraper_io_client=webscraper_io_client,
             news_repository=local_news_repository,
-            vectorstore=vectorstore,
             news_producer=news_producer,
             news_relevancy_classifier=news_relevancy_classifier,
         )

@@ -1,16 +1,18 @@
 """Test cpeq-infolettre-automatique REST API."""
 
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock
 
 import httpx
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from cpeq_infolettre_automatique.api import app
 from cpeq_infolettre_automatique.dependencies import (
+    OneDriveDependency,
     get_service,
-    get_vectorstore,
-    get_webscraperio_client,
 )
 from cpeq_infolettre_automatique.schemas import Newsletter
 from cpeq_infolettre_automatique.service import Service
@@ -28,12 +30,24 @@ def service_fixture(newsletter_fixture: Newsletter) -> Service:
 
 
 @pytest.fixture(scope="session")
-def client_fixture(service_fixture: Service) -> TestClient:
+def client_fixture(service_fixture: Service) -> Iterator[TestClient]:
     """Create a test client for the FastAPI app."""
-    app.dependency_overrides[get_vectorstore] = AsyncMock()
-    app.dependency_overrides[get_webscraperio_client] = AsyncMock()
     app.dependency_overrides[get_service] = lambda: service_fixture
-    return TestClient(app)
+    app.dependency_overrides[OneDriveDependency.get_folder_name] = (
+        lambda: "news_folder/week_folder"
+    )
+    # Patch lifespan context
+
+    @asynccontextmanager
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: RUF029, ARG001
+        yield
+
+    app.router.lifespan_context = _lifespan
+
+    # Create TestClient instance, suppressing Typeguard's type check because the dependency overrides change the type of the dependencies
+    with TestClient(app) as client:
+        yield client
+        app.dependency_overrides = {}
 
 
 def test_root_status_code() -> None:
@@ -51,9 +65,9 @@ def test_generate_newsletter__when_happy_path__returns_successful_response(
     client_fixture: TestClient, service_fixture: Service
 ) -> None:
     """Test generating a newsletter."""
-    expected_message = "Newsletter generation started."
+    expected_folder_name = "news_folder/week_folder."
 
     response = client_fixture.get("/generate-newsletter")
     assert response.status_code == SUCCESS_HTTP_STATUS_CODE
-    assert response.text == expected_message
+    assert expected_folder_name in response.text
     assert service_fixture.generate_newsletter.called

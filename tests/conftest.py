@@ -319,6 +319,7 @@ def news_producer_fixture(
         summary_generator=summary_generator_fixture,
         news_rubric_classifier=news_rubric_classifier_fixture,
     )
+    news_producer_fixture.produce_news = AsyncMock(side_effect=news_producer_fixture.produce_news)
     return news_producer_fixture
 
 
