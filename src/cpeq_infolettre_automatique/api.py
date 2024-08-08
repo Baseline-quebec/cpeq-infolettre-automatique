@@ -21,7 +21,7 @@ from cpeq_infolettre_automatique.service import Service
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
     """Handle FastAPI startup and shutdown events."""
     # Startup events:
     # - Remove all handlers associated with the root logger object.
@@ -47,23 +47,28 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/generate-newsletter")
-def generate_newsletter_background(
-    service: Annotated[Service, Depends(get_service)], background_tasks: BackgroundTasks
+def generate_newsletter(
+    service: Annotated[Service, Depends(get_service)],
+    folder_name: Annotated[str, Depends(OneDriveDependency.get_folder_name)],
+    background_tasks: BackgroundTasks,
 ) -> Response:
     """Generate a newsletter from scraped news.
+
+    Returns:
+        A message indicating where the generated Newsletter will be saved.
 
     Note:
         This task is scheduled to return the news from last week's Monday to last week's Sunday.
 
         It might take a while to complete.
-
-    # TODO(jsleb333, olivier belhumeur): Implement logic to return the location where the Newsletter will be stored.
     """
     background_tasks.add_task(
         service.generate_newsletter,
         delete_scraping_jobs=False,
     )
-    return Response("Newsletter generation started.")
+    return Response(
+        content=f"Génération de l'infolettre en cours. Celle-ci sera sauvegardée sous peu sur Sharepoint dans le dossier {folder_name}."
+    )
 
 
 @app.post("/add-news")

@@ -29,6 +29,7 @@ from cpeq_infolettre_automatique.config import (
     EmbeddingModelConfig,
     NewsRelevancyClassifierConfig,
     NewsRubricClassifierConfig,
+    OneDriveConfig,
     SummaryGeneratorConfig,
     VectorNames,
     VectorstoreConfig,
@@ -45,7 +46,7 @@ from cpeq_infolettre_automatique.news_producer import NewsProducer
 from cpeq_infolettre_automatique.repositories import NewsRepository, OneDriveNewsRepository
 from cpeq_infolettre_automatique.service import Service
 from cpeq_infolettre_automatique.summary_generator import SummaryGenerator
-from cpeq_infolettre_automatique.utils import get_or_create_subfolder
+from cpeq_infolettre_automatique.utils import get_or_create_subfolder, prepare_dates
 from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
@@ -72,6 +73,10 @@ class ApiDependency:
     def teardown(cls) -> Any:
         """Clean up the global resources of the dependency. Call this method at app takedown in `lifespan`."""
 
+    def __hash__(self) -> int:
+        """Return a hash of the dependency type. Used to get dependency in app.dependency_overrides."""
+        return hash(type(self))
+
 
 class HttpClientDependency(ApiDependency):
     """Dependency class for the Singleton HTTP Client."""
@@ -85,7 +90,11 @@ class HttpClientDependency(ApiDependency):
         cls.client = httpx.AsyncClient(http2=True, timeout=timeout)
 
     def __call__(self) -> httpx.AsyncClient:
-        """Returns the HTTP Client instance."""
+        """Returns the HTTP Client instance.
+
+        Returns:
+            The HTTP Client.
+        """
         return self.client
 
     @classmethod
@@ -98,6 +107,7 @@ class OneDriveDependency(ApiDependency):
     """Dependency class for the Singleton O365 Account client."""
 
     news_folder: Folder
+    week_folder: Folder
 
     @classmethod
     def setup(cls) -> None:
@@ -108,26 +118,22 @@ class OneDriveDependency(ApiDependency):
         RuntimeError: If the requested Sharepoint Site was not found.
         RuntimeError: If the requested OneDrive instance was not found.
         """
-        credentials = (
-            "99536437-db80-4ece-8bd5-0f4e4b1cba22",
-            "zfv8Q~U.AUmeoEDQpuEqTHsBvEnrw2TUXbqo5aLn",
-        )
         account = Account(
-            credentials,
+            (OneDriveConfig.client_id, OneDriveConfig.client_secret),
             auth_flow_type="credentials",
-            tenant_id="0e86b3e2-6171-44c5-82da-e974b48c0c3a",
+            tenant_id=OneDriveConfig.tenant_id,
         )
         if not account.authenticate():
             msg = "Authentication with Office365 failed."
             raise RuntimeError(msg)
 
-        site_url = "baselinequebec.sharepoint.com"
+        site_url = OneDriveConfig.site_url
         site = account.sharepoint().get_site(site_url)
         if site is None:
             msg = f"The requested Sharepoint Site {site_url} was not found."
             raise RuntimeError(msg)
 
-        drive_id = "b!fslahRMOAUCsW5P8nXZ3cYwDnL6MT35NpJyHzlyxCgXt0TeRJiWPSb3gQmzCo3t2"
+        drive_id = OneDriveConfig.drive_id
         drive = site.site_storage.get_drive(drive_id)
         if drive is None:
             msg = f"The requested OneDrive instance with id {drive_id} was not found."
@@ -135,14 +141,32 @@ class OneDriveDependency(ApiDependency):
 
         root_folder: Folder = cast(Folder, drive.get_root_folder())
         news_folder: Folder = get_or_create_subfolder(
-            parent_folder=root_folder, folder_name="infolettre_automatique"
+            parent_folder=root_folder, folder_name=OneDriveConfig.folder_name
+        )
+        _, end_date = prepare_dates()
+        week_folder: Folder = get_or_create_subfolder(
+            parent_folder=news_folder, folder_name=str(end_date.date())
         )
 
         cls.news_folder = news_folder
+        cls.week_folder = week_folder
 
-    def __call__(self) -> Folder:
-        """Returns the 0365 Account."""
-        return self.news_folder
+    def __call__(self) -> tuple[Folder, Folder]:
+        """Calls the dependency.
+
+        Returns:
+            A tuple container both the news and the week folder.
+        """
+        return (self.news_folder, self.week_folder)
+
+    @classmethod
+    def get_folder_name(cls) -> str:
+        """The name of the folder containing the news and the newsletter.
+
+        Returns:
+            The folder name.
+        """
+        return f"{cls.news_folder.name}/{cls.week_folder.name}"
 
 
 class VectorstoreClientDependency(ApiDependency):
@@ -168,7 +192,11 @@ class VectorstoreClientDependency(ApiDependency):
             raise ConnectionError(error_msg)
 
     def __call__(self) -> weaviate.WeaviateClient:
-        """Returns the Vectostore client."""
+        """Calls the dependency.
+
+        Returns:
+            The Vectorstore client.
+        """
         return self.vectorstore_client
 
     @classmethod
@@ -180,26 +208,43 @@ class VectorstoreClientDependency(ApiDependency):
 def get_webscraperio_client(
     http_client: Annotated[httpx.AsyncClient, Depends(HttpClientDependency())],
 ) -> WebscraperIoClient:
-    """Returns a configured WebscraperIO Client."""
+    """Gets a WebscraperIClient instance.
+
+    Returns:
+        A configured WebscraperIoClient instance.
+    """
     return WebscraperIoClient(http_client=http_client, api_token=config("WEBSCRAPER_IO_API_KEY"))
 
 
 def get_news_repository(
-    news_folder: Annotated[Folder, Depends(OneDriveDependency())],
+    folders: Annotated[tuple[Folder, Folder], Depends(OneDriveDependency())],
 ) -> NewsRepository:
-    """Returns a configured News Repository."""
-    return OneDriveNewsRepository(news_folder)
+    """Gets a NewsRepository instance.
+
+    Returns:
+        A configured NewsRepository instance.
+    """
+    (_, week_folder) = folders
+    return OneDriveNewsRepository(week_folder)
 
 
 def get_openai_client() -> AsyncOpenAI:
-    """Return an AsyncOpenAI instance with the provided API key."""
+    """Gets the OpenAI client.
+
+    Returns:
+        An AsyncOpenAI instance with the provided API key.
+    """
     return AsyncOpenAI(api_key=config("OPENAI_API_KEY"), max_retries=4)
 
 
 def get_embedding_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
 ) -> EmbeddingModel:
-    """Return an EmbeddingModel instance with the provided API key."""
+    """Gets an EmbeddingModel instance.
+
+    Returns:
+        An EmbeddingModel instance with the provided API key.
+    """
     embedding_model_config = EmbeddingModelConfig()
     return OpenAIEmbeddingModel(
         client=openai_client, embedding_model_config=embedding_model_config
@@ -208,9 +253,6 @@ def get_embedding_model(
 
 def get_vectorstore_client() -> Iterator[weaviate.WeaviateClient]:
     """Get the vectorstore client.
-
-    Returns:
-        weaviate.WeaviateClient: The vectorstore client.
 
     Raises:
         ValueError: If the vectorstore is not ready.
@@ -234,7 +276,11 @@ def get_vectorstore(
     vectorstore_client: Annotated[weaviate.WeaviateClient, Depends(VectorstoreClientDependency())],
     embedding_model: Annotated[EmbeddingModel, Depends(get_embedding_model)],
 ) -> Vectorstore:
-    """Return a Vectorstore instance with the provided dependencies."""
+    """Gets a Vectorstore instance.
+
+    Returns:
+        A Vectorstore instance with the provided dependencies.
+    """
     vectorstore_config = VectorstoreConfig()
     return Vectorstore(
         vectorstore_client=vectorstore_client,
@@ -246,7 +292,11 @@ def get_vectorstore(
 def get_completion_model(
     openai_client: Annotated[AsyncOpenAI, Depends(get_openai_client)],
 ) -> CompletionModel:
-    """Return a CompletionModel instance."""
+    """Gets a CompletionModel instance.
+
+    Returns:
+        A CompletionModel instance.
+    """
     completion_model_config = CompletionModelConfig()
 
     return OpenAICompletionModel(
@@ -259,7 +309,11 @@ def get_summary_generator(
     completion_model: Annotated[CompletionModel, Depends(get_completion_model)],
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> SummaryGenerator:
-    """Return a SummaryGenerator instance."""
+    """Gets a SummaryGenerator instance.
+
+    Returns:
+        A CompletionModel instance.
+    """
     summary_generator_config = SummaryGeneratorConfig()
     return SummaryGenerator(
         completion_model=completion_model,
@@ -317,7 +371,11 @@ def create_news_classifier(
 def get_news_rubric_classifier(
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> NewsRubricClassifier:
-    """Return a NewsRubricClassifier instance."""
+    """Gets a NewsRubricClassifier instance.
+
+    Returns:
+        A NewsRubricClassifier instance.
+    """
     news_rubric_classifier_config = NewsRubricClassifierConfig()
     news_classifier_model = create_news_classifier(
         vectorstore=vectorstore,
@@ -330,7 +388,11 @@ def get_news_rubric_classifier(
 def get_news_relevancy_classifier(
     vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
 ) -> NewsRelevancyClassifier:
-    """Return a NewsRelevancyClassifierConfig instance."""
+    """Gets a NewsRelevancyClassifierConfig instance.
+
+    Returns:
+        A NewsRelevancyClassifierConfig instance.
+    """
     news_relevancy_classifier_config = NewsRelevancyClassifierConfig()
     news_classifier_model = create_news_classifier(
         vectorstore=vectorstore,
@@ -347,7 +409,11 @@ def get_news_producer(
     summary_generator: Annotated[SummaryGenerator, Depends(get_summary_generator)],
     news_rubric_classifier: Annotated[NewsRubricClassifier, Depends(get_news_rubric_classifier)],
 ) -> NewsProducer:
-    """Return a NewsProducer instance."""
+    """Gets a NewsProducer instance.
+
+    Returns:
+        A NewsProducer instance.
+    """
     return NewsProducer(
         summary_generator=summary_generator,
         news_rubric_classifier=news_rubric_classifier,
@@ -357,17 +423,22 @@ def get_news_producer(
 def get_service(
     webscraper_io_client: Annotated[WebscraperIoClient, Depends(get_webscraperio_client)],
     news_repository: Annotated[NewsRepository, Depends(get_news_repository)],
-    vectorstore: Annotated[Vectorstore, Depends(get_vectorstore)],
     news_relevancy_classifier: Annotated[
         NewsRelevancyClassifier, Depends(get_news_relevancy_classifier)
     ],
     news_producer: Annotated[NewsProducer, Depends(get_news_producer)],
 ) -> Service:
-    """Return a Service instance with the provided dependencies."""
+    """Gets the Service instance.
+
+    Returns:
+        A Service instance with the provided dependencies.
+    """
+    start_date, end_date = prepare_dates()
     return Service(
+        start_date=start_date,
+        end_date=end_date,
         webscraper_io_client=webscraper_io_client,
         news_repository=news_repository,
-        vectorstore=vectorstore,
         news_relevancy_classifier=news_relevancy_classifier,
         news_producer=news_producer,
     )

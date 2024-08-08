@@ -13,8 +13,6 @@ from cpeq_infolettre_automatique.schemas import (
     News,
     Newsletter,
 )
-from cpeq_infolettre_automatique.utils import get_current_montreal_datetime
-from cpeq_infolettre_automatique.vectorstore import Vectorstore
 from cpeq_infolettre_automatique.webscraper_io_client import WebscraperIoClient
 
 
@@ -23,38 +21,36 @@ class Service:
 
     def __init__(
         self,
+        start_date: dt.datetime,
+        end_date: dt.datetime,
         webscraper_io_client: WebscraperIoClient,
         news_repository: NewsRepository,
-        vectorstore: Vectorstore,
         news_producer: NewsProducer,
         news_relevancy_classifier: NewsRelevancyClassifier,
     ) -> None:
         """Initialize the service with the repository and the generator."""
+        self.start_date = start_date
+        self.end_date = end_date
         self.webscraper_io_client = webscraper_io_client
         self.news_repository = news_repository
-        self.vectorstore = vectorstore
         self.news_producer = news_producer
         self.news_relevancy_classifier = news_relevancy_classifier
 
     async def generate_newsletter(
         self,
         *,
-        start_date: dt.datetime | None = None,
-        end_date: dt.datetime | None = None,
         delete_scraping_jobs: bool = True,
     ) -> Newsletter:
         """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
 
-        Returns: The formatted newsletter.
+        Returns:
+            The formatted newsletter.
         """
-        self.news_repository.setup()
-        start_date, end_date = self._prepare_dates(start_date=start_date, end_date=end_date)
-
         # For the moment, only the coroutine for scraped news is implemented.
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
         logging.info("Nb Scraping jobs: %s", len(job_ids))
         scraped_news_coroutines = self._prepare_scraped_news_summarization_coroutines(
-            start_date, end_date, job_ids
+            self.start_date, self.end_date, job_ids
         )
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
@@ -66,48 +62,21 @@ class Service:
 
         newsletter = Newsletter(
             news=flattened_news,
-            news_datetime_range=(start_date, end_date),
-            publication_datetime=end_date,
+            news_datetime_range=(self.start_date, self.end_date),
+            publication_datetime=self.end_date,
         )
         self.news_repository.create_newsletter(newsletter)
         return newsletter
 
     async def add_news(self, news: News) -> None:
         """Manually add a new News entry in the News repository."""
-        self.news_repository.setup()
-        start_date, end_date = self._prepare_dates()
-        if not self._news_in_date_range(news, start_date, end_date):
+        if not self._news_in_date_range(news, self.start_date, self.end_date):
             msg = f"The News with title {news.title} was not published in the given time period."
             logging.warning(msg)
             return
 
         news = await self.news_producer.produce_news(news)
         self.news_repository.create_news(news)
-
-    @staticmethod
-    def _prepare_dates(
-        start_date: dt.datetime | None = None,
-        end_date: dt.datetime | None = None,
-    ) -> tuple[dt.datetime, dt.datetime]:
-        """Prepare the start and end dates for the newsletter.
-
-        Notes:
-            If no dates are provided, the newsletter will be generated for the previous whole monday-to-sunday period.
-
-        Args:
-            start_date: The start datetime of the newsletter.
-            end_date: The end datetime of the newsletter.
-
-        Returns: The start and end dates for the newsletter.
-        """
-        if end_date is None:
-            current_date = get_current_montreal_datetime().replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
-            end_date = current_date - dt.timedelta(days=current_date.weekday())
-        if start_date is None:
-            start_date = end_date - dt.timedelta(days=7)
-        return start_date, end_date
 
     def _prepare_scraped_news_summarization_coroutines(
         self, start_date: dt.datetime, end_date: dt.datetime, job_ids: list[str]
@@ -119,7 +88,8 @@ class Service:
             end_date: The end datetime of the newsletter.
             job_ids: The IDs of the scraping jobs.
 
-        Returns: An iterable of summary generation coroutines to be run.
+        Returns:
+            An iterable of summary generation coroutines to be run.
         """
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
@@ -159,7 +129,8 @@ class Service:
             start_date: The start datetime of the date range.
             end_date: The end datetime of the date range.
 
-        Returns: True if the news is in the date range, False otherwise.
+        Returns:
+            True if the news is in the date range, False otherwise.
         """
         if news.datetime is None:
             msg = f"The News with title {news.title} has no date."
@@ -177,7 +148,8 @@ class Service:
         Args:
             news: The news data to check.
 
-        Returns: True if the news is relevant, False otherwise.
+        Returns:
+            True if the news is relevant, False otherwise.
         """
         relevance = await self.news_relevancy_classifier.predict(news)
         if relevance == Relevance.AUTRE:
