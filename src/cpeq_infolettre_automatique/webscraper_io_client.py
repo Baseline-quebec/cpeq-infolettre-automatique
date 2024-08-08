@@ -265,11 +265,7 @@ class WebscraperIoClient:
         """
         if not raw_response:
             return []
-        return [
-            json.loads(line)
-            for line in raw_response.strip().split("\n")
-            if line.strip()
-        ]
+        return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
 
     @staticmethod
     async def _handle_throttling(response: Response) -> None:
@@ -281,9 +277,7 @@ class WebscraperIoClient:
         timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
         if timestamp is not None:
             datetime_reset = dt.datetime.fromtimestamp(int(timestamp), tz=dt.UTC)
-            seconds_to_reset = (
-                datetime_reset - dt.datetime.now(tz=dt.UTC)
-            ).total_seconds() + 1
+            seconds_to_reset = (datetime_reset - dt.datetime.now(tz=dt.UTC)).total_seconds() + 1
         else:
             seconds_to_reset = LIMIT_MAX_SECONDS
 
