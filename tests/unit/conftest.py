@@ -35,6 +35,7 @@ def news_fixture() -> News:
         datetime=dt.datetime(2024, 1, 2, tzinfo=dt.UTC),
         rubric=None,
         summary=None,
+        job_id="job_id_1",
     )
 
 

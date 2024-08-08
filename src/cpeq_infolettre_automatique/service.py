@@ -41,39 +41,64 @@ class Service:
         *,
         delete_scraping_jobs: bool = True,
     ) -> Newsletter:
-        """Generate the newsletter for the previous whole monday-to-sunday period. Summarization is done concurrently inside 'coroutines'.
+        """Generate the newsletter for the date range specified at Service initialization. Summarization is done concurrently inside 'coroutines'.
+
+        The steps are:
+            1. Get stored news from OneDrive
+            2. Get scraped news from Webscraper.io that are not in the stored news
+            3. Filter out irrelevant news from scraped news
+            4. Summarize all news without summaries
+            5. Store the summarized news in the OneDrive
+            6. Generate the newsletter
+
+        Stored news and scraped news are processed differently in order to process them concurrently.
+
+        Args:
+            delete_scraping_jobs: Whether to delete the scraping jobs after processing
 
         Returns:
             The formatted newsletter.
         """
-        # For the moment, only the coroutine for scraped news is implemented.
-        job_ids = await self.webscraper_io_client.get_scraping_jobs()
-        logging.info("Nb Scraping jobs: %s", len(job_ids))
+        stored_news = self.news_repository.get_all_news()
+        already_scraped_jobs = {news.job_id for news in stored_news}
+
+        scraping_job_ids = await self.webscraper_io_client.get_scraping_jobs()
+        unscraped_job_ids = [
+            job_id for job_id in scraping_job_ids if job_id not in already_scraped_jobs
+        ]
+        logging.info(
+            "Number of scraping jobs to process: %s (%s was already done)",
+            len(unscraped_job_ids),
+            len(already_scraped_jobs),
+        )
+
         scraped_news_coroutines = self._prepare_scraped_news_summarization_coroutines(
-            self.start_date, self.end_date, job_ids
+            self.start_date, self.end_date, unscraped_job_ids
         )
 
         summarized_news = await asyncio.gather(*scraped_news_coroutines)
-        flattened_news = [news for news_list in summarized_news for news in news_list]
+        all_news = [news for news_list in summarized_news for news in news_list] + stored_news
 
-        self.news_repository.create_many_news(flattened_news)
+        self.news_repository.create_many_news(all_news)
+
         if delete_scraping_jobs:
             await self.webscraper_io_client.delete_scraping_jobs()
 
         newsletter = Newsletter(
-            news=flattened_news,
+            news=all_news,
             news_datetime_range=(self.start_date, self.end_date),
             publication_datetime=self.end_date,
         )
         self.news_repository.create_newsletter(newsletter)
+
         return newsletter
 
     async def add_news(self, news: News) -> None:
         """Manually add a new News entry in the News repository."""
         if not self._news_in_date_range(news, self.start_date, self.end_date):
+            # The user could want to exceptionally add an old news to the newsletter. Just log a warning.
             msg = f"The News with title {news.title} was not published in the given time period."
             logging.warning(msg)
-            return
 
         news = await self.news_producer.produce_news(news)
         self.news_repository.create_news(news)

@@ -37,6 +37,7 @@ class News(BaseModel):
     datetime: dt.datetime | None = Field(validation_alias=AliasChoices("datetime", "date"))
     rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
+    job_id: str | None = None
 
     model_config = ConfigDict(use_enum_values=False, extra="ignore")
 
