@@ -75,9 +75,7 @@ class OneDriveNewsRepository(NewsRepository):
         if file is not None:
             file.download(name=self._news_file_name)
 
-        with Path(self._news_file_name).open(
-            mode="a", encoding="utf-8", newline=""
-        ) as csvfile:
+        with Path(self._news_file_name).open(mode="a", encoding="utf-8", newline="") as csvfile:
             csvwriter = csv.writer(
                 csvfile,
                 delimiter=",",
@@ -90,9 +88,7 @@ class OneDriveNewsRepository(NewsRepository):
             if file is None:
                 # Add headers row if we are creating the file
                 rows.append([keys.capitalize() for keys in News.model_fields])
-            rows.extend(
-                [[str(value).rstrip("\n") for _, value in news] for news in news_list]
-            )
+            rows.extend([[str(value).rstrip("\n") for _, value in news] for news in news_list])
 
             csvwriter.writerows(rows)
 
@@ -104,9 +100,7 @@ class OneDriveNewsRepository(NewsRepository):
         Args:
             newsletter: The Newsletter to save.
         """
-        Path(self._newsletter_file_name).write_text(
-            newsletter.to_markdown(), encoding="utf-8"
-        )
+        Path(self._newsletter_file_name).write_text(newsletter.to_markdown(), encoding="utf-8")
         self.week_folder.upload_file(item=self._newsletter_file_name)
 
     def create_scraping_problems(self, problems: list[ScrapingProblem]) -> None:
@@ -115,15 +109,11 @@ class OneDriveNewsRepository(NewsRepository):
         Args:
             problems: List of Scraping Problems to save.
         """
-        file: File | None = get_file_if_exists(
-            self.week_folder, self._scraping_problems_file_name
-        )
+        file: File | None = get_file_if_exists(self.week_folder, self._scraping_problems_file_name)
         if file is not None:
             file.download(name=self._news_file_name)
 
-        with Path(self._news_file_name).open(
-            mode="a", encoding="utf-8", newline=""
-        ) as csvfile:
+        with Path(self._news_file_name).open(mode="a", encoding="utf-8", newline="") as csvfile:
             csvwriter = csv.writer(
                 csvfile,
                 delimiter=",",
@@ -135,9 +125,7 @@ class OneDriveNewsRepository(NewsRepository):
             rows: list[list[str]] = []
             if file is None:
                 # Add headers row if we are creating the file
-                rows.append(
-                    [keys.capitalize() for keys in ScrapingProblem.model_fields]
-                )
+                rows.append([keys.capitalize() for keys in ScrapingProblem.model_fields])
             rows.extend([[str(value) for _, value in news] for news in problems])
 
             csvwriter.writerows(rows)

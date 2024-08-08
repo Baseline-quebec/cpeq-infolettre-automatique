@@ -132,8 +132,6 @@ lint.ignore = [
     "ARG002", # Unused argument. Sometimes it's useful to keep the argument for future use, for retrocompatibility or to abide by an interface.
     "COM812", # Missing trailing comma in a single-line list. Already handled by ruff formater
     "D417", # Missing argument descriptions in the docstring. Not always needed.
-    "DOC201",  # Missing return value doc in docstring
-    "DOC202",  # Docstring documents a return value but there is no return statement. Not working for abstract methods. TODO: Check if it's fixed in later versions of ruff.
     "E501", # Line too long. Already handled by ruff formater
     "E731", # Do not assign a lambda expression. Do not agree with this rule, it improves readability as it is self-documenting the lambda function.
     "FIX002", # Fix TODO before release. Not useful in our workflow.
