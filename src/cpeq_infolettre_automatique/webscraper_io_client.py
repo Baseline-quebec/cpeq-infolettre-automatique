@@ -152,20 +152,19 @@ class WebscraperIoClient:
     async def get_all_scraping_problems(
         self, job_ids: list[str] | None = None
     ) -> list[ScrapingProblem]:
-        """Returns a dictionary of all the problems who arose for each scraping job."""
+        """Returns a dictionary of all the problems that arose for each scraping job."""
         if job_ids is None:
             job_ids = await self.get_scraping_jobs()
+
         coroutines = [self.get_scraping_job_problems(job_id) for job_id in job_ids]
         results = await asyncio.gather(*coroutines)
-        logger.info("Received results, begin flattening.")
         flattened_results: list[ScrapingProblem] = [
             problem for job_problems in results for problem in job_problems
         ]
-        logger.info("Finished flattening results.")
         return flattened_results
 
     async def get_scraping_job_problems(self, job_id: str) -> Iterable[ScrapingProblem]:
-        """Returns a dictionary of scraping problems who arose for a given scraping job."""
+        """Returns a dictionary of scraping problems that arose for a given scraping job."""
         url = f"{self._base_url}/scraping-job/{job_id}/problematic-urls"
         data: list[ScrapingProblem] = []
         response = await self._client.get(url, params={"api_token": self._api_token})
@@ -185,7 +184,7 @@ class WebscraperIoClient:
             logger.exception("Error issuing GET request at URL %s.", url)
         else:
             data = [
-                ScrapingProblem(url=site_problem["url"], type=site_problem["type"])
+                ScrapingProblem.model_validate(site_problem)
                 for site_problem in response.json().get("data", [])
             ]
         return data
@@ -266,15 +265,25 @@ class WebscraperIoClient:
         """
         if not raw_response:
             return []
-        return [json.loads(line) for line in raw_response.strip().split("\n") if line.strip()]
+        return [
+            json.loads(line)
+            for line in raw_response.strip().split("\n")
+            if line.strip()
+        ]
 
     @staticmethod
     async def _handle_throttling(response: Response) -> None:
-        """Handles HTTP 429 Too Many Requests."""
+        """Handles HTTP 429 Too Many Requests responses from Webscraper.io.
+
+        This method waits until the provided timestamp is reached,
+        or for a max of 15 minutes if no timestamp is given.
+        """
         timestamp = response.headers.get(RATELIMIT_RESET_HEADER)
         if timestamp is not None:
             datetime_reset = dt.datetime.fromtimestamp(int(timestamp), tz=dt.UTC)
-            seconds_to_reset = (datetime_reset - dt.datetime.now(tz=dt.UTC)).total_seconds() + 1
+            seconds_to_reset = (
+                datetime_reset - dt.datetime.now(tz=dt.UTC)
+            ).total_seconds() + 1
         else:
             seconds_to_reset = LIMIT_MAX_SECONDS
 

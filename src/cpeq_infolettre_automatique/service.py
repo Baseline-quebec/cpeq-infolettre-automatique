@@ -100,11 +100,15 @@ class Service:
         """
 
         async def scraped_news_coroutine(job_id: str) -> list[News]:
-            all_news = await self.webscraper_io_client.download_scraping_job_data(job_id)
+            all_news = await self.webscraper_io_client.download_scraping_job_data(
+                job_id
+            )
             filtered_news = self._filter_all_news(
                 all_news, start_date=start_date, end_date=end_date
             )
-            coroutines = [self.news_producer.produce_news(news) async for news in filtered_news]
+            coroutines = [
+                self.news_producer.produce_news(news) async for news in filtered_news
+            ]
             summarized_news = await asyncio.gather(*coroutines)
             return summarized_news
 
@@ -128,7 +132,9 @@ class Service:
                     yield news
 
     @staticmethod
-    def _news_in_date_range(news: News, start_date: dt.datetime, end_date: dt.datetime) -> bool:
+    def _news_in_date_range(
+        news: News, start_date: dt.datetime, end_date: dt.datetime
+    ) -> bool:
         """Check if the news is in the given date range.
 
         Args:
