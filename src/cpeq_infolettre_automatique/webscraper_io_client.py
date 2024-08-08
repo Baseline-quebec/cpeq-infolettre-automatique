@@ -139,6 +139,10 @@ class WebscraperIoClient:
             if e.response.status_code == RATELIMIT_ERROR_CODE:
                 await self._handle_throttling(response)
                 return await self.get_scraping_jobs()
+            logger.exception(
+                "HTTP Code %s while getting scraping jobs",
+                e.response.status_code,
+            )
         except httpx.RequestError:
             logger.exception("Error issuing GET request at URL %s.", url)
         else:
@@ -152,12 +156,13 @@ class WebscraperIoClient:
         if job_ids is None:
             job_ids = await self.get_scraping_jobs()
         coroutines = [self.get_scraping_job_problems(job_id) for job_id in job_ids]
-        site_problems: list[ScrapingProblem] = [
-            problem
-            for job_problems in await asyncio.gather(*coroutines)
-            for problem in job_problems
+        results = await asyncio.gather(*coroutines)
+        logger.info("Received results, begin flattening.")
+        flattened_results: list[ScrapingProblem] = [
+            problem for job_problems in results for problem in job_problems
         ]
-        return site_problems
+        logger.info("Finished flattening results.")
+        return flattened_results
 
     async def get_scraping_job_problems(self, job_id: str) -> Iterable[ScrapingProblem]:
         """Returns a dictionary of scraping problems who arose for a given scraping job."""
@@ -180,7 +185,7 @@ class WebscraperIoClient:
             logger.exception("Error issuing GET request at URL %s.", url)
         else:
             data = [
-                ScrapingProblem(url=site_problem.url, type=site_problem.type)
+                ScrapingProblem(url=site_problem["url"], type=site_problem["type"])
                 for site_problem in response.json().get("data", [])
             ]
         return data

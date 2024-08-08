@@ -52,6 +52,7 @@ class Service:
 
         # For the moment, only the coroutine for scraped news is implemented.
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
+
         logging.info("Nb Scraping jobs: %s", len(job_ids))
         scraped_news_coroutines = self._prepare_scraped_news_summarization_coroutines(
             start_date, end_date, job_ids
