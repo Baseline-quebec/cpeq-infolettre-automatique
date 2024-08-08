@@ -89,7 +89,7 @@ class OneDriveNewsRepository(NewsRepository):
             rows: list[list[str]] = []
             if file is None:
                 # Add headers row if we are creating the file
-                rows.append([keys for keys in News.model_fields])
+                rows.append(list(News.model_fields.keys()))
             rows.extend(
                 [[str(value).rstrip("\n") for _, value in news] for news in news_list]
             )
@@ -135,7 +135,7 @@ class OneDriveNewsRepository(NewsRepository):
             rows: list[list[str]] = []
             if file is None:
                 # Add headers row if we are creating the file
-                rows.append([keys for keys in ScrapingProblem.model_fields])
+                rows.append(list(ScrapingProblem.model_fields.keys()))
             rows.extend([[str(value) for _, value in news] for news in problems])
 
             csvwriter.writerows(rows)
