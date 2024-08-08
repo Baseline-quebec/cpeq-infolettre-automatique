@@ -232,7 +232,6 @@ class AddNewsBody(BaseModel):
 class ScrapingProblem(BaseModel):
     """Schema representing a scraping job problem."""
 
-    job_id: str
     url: str
     problem_type: Literal["empty", "failed", "no_value"] = Field(
         validation_alias=AliasChoices("type", "problem_type")
