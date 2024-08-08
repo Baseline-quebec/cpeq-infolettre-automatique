@@ -21,8 +21,6 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_role_assignment" "build_pipeline" {
   scope                = azurerm_container_registry.acr.id
   principal_id         = var.build_pipeline_object_id

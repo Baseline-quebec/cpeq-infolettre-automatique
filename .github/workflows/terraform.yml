@@ -82,6 +82,11 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.TERRAFORM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.TERRAFORM_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.TERRAFORM_SUBSCRIPTION_ID }}
+          TF_VAR_onedrive_client_id: ${{ secrets.ONEDRIVE_CLIENT_ID }}
+          TF_VAR_onedrive_client_secret: ${{ secrets.ONEDRIVE_CLIENT_SECRET }}
+          TF_VAR_onedrive_tenant_id: ${{ secrets.ONEDRIVE_TENANT_ID }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_webscraper_io_api_key: ${{ secrets.WEBSCRAPER_IO_API_KEY }}
         run: |
           terraform plan -no-color -var-file=variables/${{ vars.ENVIRONMENT }}.tfvars -out plan.tfplan 2>&1 >> output.log
           result_code=${PIPESTATUS[0]}
