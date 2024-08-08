@@ -4,7 +4,7 @@ import datetime as dt
 import unicodedata
 from collections import defaultdict
 from inspect import cleandoc
-from typing import Annotated
+from typing import Annotated, Literal
 
 from dateparser.search import search_dates
 from pydantic import (
@@ -29,19 +29,13 @@ class News(BaseModel):
 
     title: str
     content: str
-    link: Annotated[
-        Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)
-    ] = Field(
+    link: Annotated[Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)] = Field(
         validation_alias=AliasChoices(
             "link", "articleLink-href", "article-link-href", "article_link-href"
         )
     )
-    datetime: dt.datetime | None = Field(
-        validation_alias=AliasChoices("datetime", "date")
-    )
-    rubric: Annotated[
-        Rubric | None, PlainSerializer(lambda x: x.value if x else None)
-    ] = None
+    datetime: dt.datetime | None = Field(validation_alias=AliasChoices("datetime", "date"))
+    rubric: Annotated[Rubric | None, PlainSerializer(lambda x: x.value if x else None)] = None
     summary: str | None = None
 
     model_config = ConfigDict(use_enum_values=False, extra="ignore")
@@ -115,9 +109,7 @@ class News(BaseModel):
         ValueError: If the news does not have a summary or a title.
         """
         if self.summary is None or self.title is None:
-            error_msg = (
-                "The news must have a summary and a title to be converted to markdown."
-            )
+            error_msg = "The news must have a summary and a title to be converted to markdown."
             raise ValueError(error_msg)
         return f"### {self.title}\n\n{self.summary}\n\nPour en connaître davantage, nous vous invitons à consulter cet [hyperlien]({self.link})."
 
@@ -127,9 +119,7 @@ class Newsletter(BaseModel):
 
     news: list[News] = Field(..., min_length=1)
     news_datetime_range: tuple[dt.datetime, dt.datetime]
-    publication_datetime: dt.datetime = Field(
-        default_factory=get_current_montreal_datetime
-    )
+    publication_datetime: dt.datetime = Field(default_factory=get_current_montreal_datetime)
 
     @property
     def header(self) -> str:
@@ -170,9 +160,9 @@ class AddNewsBody(BaseModel):
     """Represents the body of the /add-news route."""
 
     title: str
-    link: Annotated[
-        Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)
-    ] = Field(validation_alias=AliasChoices("link", "articleLink-href"))
+    link: Annotated[Url, UrlConstraints(allowed_schemes=["https"]), PlainSerializer(str)] = Field(
+        validation_alias=AliasChoices("link", "articleLink-href")
+    )
     datetime: dt.datetime = Field(validation_alias=AliasChoices("datetime", "date"))
     content: str
 
@@ -242,5 +232,8 @@ class AddNewsBody(BaseModel):
 class ScrapingProblem(BaseModel):
     """Schema representing a scraping job problem."""
 
+    job_id: str
     url: str
-    problem_type: str = Field(validation_alias=AliasChoices("type", "problem_type"))
+    problem_type: Literal["empty", "failed", "no_value"] = Field(
+        validation_alias=AliasChoices("type", "problem_type")
+    )
