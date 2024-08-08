@@ -4,7 +4,7 @@ import datetime as dt
 import unicodedata
 from collections import defaultdict
 from inspect import cleandoc
-from typing import Annotated
+from typing import Annotated, Literal
 
 from dateparser.search import search_dates
 from pydantic import (
@@ -227,3 +227,18 @@ class AddNewsBody(BaseModel):
             datetime=self.datetime,
             content=self.content,
         )
+
+
+class ScrapingProblem(BaseModel):
+    """Schema representing a scraping job problem."""
+
+    url: str
+    """Problem Types (see "Progress Monitoring" at https://webscraper.io/documentation/web-scraper-cloud)
+
+    empty: Pages that loaded successfully but selectors didn't extract any data.
+    failed: Pages that loaded successfully with 4xx or 5xx response code or didn't load at all.
+    no_value: Not documented
+    """
+    problem_type: Literal["empty", "failed", "no_value"] = Field(
+        validation_alias=AliasChoices("type", "problem_type")
+    )

@@ -48,6 +48,7 @@ class Service:
         """
         # For the moment, only the coroutine for scraped news is implemented.
         job_ids = await self.webscraper_io_client.get_scraping_jobs()
+
         logging.info("Nb Scraping jobs: %s", len(job_ids))
         scraped_news_coroutines = self._prepare_scraped_news_summarization_coroutines(
             self.start_date, self.end_date, job_ids
@@ -57,6 +58,12 @@ class Service:
         flattened_news = [news for news_list in summarized_news for news in news_list]
 
         self.news_repository.create_many_news(flattened_news)
+
+        scraping_problems = await self.webscraper_io_client.get_all_scraping_problems(
+            job_ids=job_ids
+        )
+        self.news_repository.create_scraping_problems(scraping_problems)
+
         if delete_scraping_jobs:
             await self.webscraper_io_client.delete_scraping_jobs()
 
