@@ -2,11 +2,11 @@
 
 import csv
 import json
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
+from typing import Any, ClassVar
 
-from O365.drive import File, Folder
-from pydantic.json import pydantic_encoder
+from O365.drive import Folder
 from pydantic_core import to_jsonable_python
 
 from cpeq_infolettre_automatique.schemas import News, Newsletter
@@ -15,10 +15,9 @@ from cpeq_infolettre_automatique.utils import (
 )
 
 
-class NewsRepository(ABC):
+class NewsRepository:
     """Abstract class for a News Repository."""
 
-    @abstractmethod
     def setup(self) -> None:
         """Set up the repository."""
 
@@ -34,12 +33,23 @@ class NewsRepository(ABC):
     def create_newsletter(self, newsletter: Newsletter) -> None:
         """Save the newsletter."""
 
+    @abstractmethod
+    def get_all_news(self) -> list[News]:
+        """Get all the news."""
+
 
 class OneDriveNewsRepository(NewsRepository):
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
     _news_file_name = "news.csv"
     _newsletter_file_name = "newsletter.md"
+
+    csv_file_params: ClassVar[dict[str, Any]] = {
+        "delimiter": ",",
+        "quotechar": '"',
+        "quoting": csv.QUOTE_NONNUMERIC,
+        "dialect": "excel",
+    }
 
     def __init__(self, week_folder: Folder) -> None:
         """Initializes the News repository.
@@ -48,9 +58,6 @@ class OneDriveNewsRepository(NewsRepository):
             news_folder: The O365 OneDrive Folder in which to store the News.
         """
         self.week_folder = week_folder
-
-    def setup(self) -> None:
-        """Setup the repository."""
 
     def create_news(self, news: News) -> None:
         """Adds a News to the repository, appending it to the CSV file if it exists, or creating the file of not.
@@ -66,23 +73,16 @@ class OneDriveNewsRepository(NewsRepository):
         Args:
             news_list: List of News to save.
         """
-        file: File | None = get_file_if_exists(self.week_folder, self._news_file_name)
-        if file is not None:
+        if (file := get_file_if_exists(self.week_folder, self._news_file_name)) is not None:
             file.download(name=self._news_file_name)
 
-        with Path(self._news_file_name).open(mode="a", encoding="utf-8", newline="") as csvfile:
-            csvwriter = csv.writer(
-                csvfile,
-                delimiter=",",
-                quotechar='"',
-                quoting=csv.QUOTE_NONNUMERIC,
-                dialect="excel",
-            )
+        with Path(self._news_file_name).open("a", encoding="utf-8", newline="") as csvfile:
+            csvwriter = csv.writer(csvfile, **self.csv_file_params)
 
             rows: list[list[str]] = []
             if file is None:
                 # Add headers row if we are creating the file
-                rows.append([keys.capitalize() for keys in News.model_fields])
+                rows.append(list(News.model_fields))
             rows.extend([[str(value).rstrip("\n") for _, value in news] for news in news_list])
 
             csvwriter.writerows(rows)
@@ -98,6 +98,21 @@ class OneDriveNewsRepository(NewsRepository):
         Path(self._newsletter_file_name).write_text(newsletter.to_markdown(), encoding="utf-8")
         self.week_folder.upload_file(item=self._newsletter_file_name)
 
+    def get_all_news(self) -> list[News]:
+        """Get all the news from the repository.
+
+        Returns:
+            The list of News.
+        """
+        if (file := get_file_if_exists(self.week_folder, self._news_file_name)) is None:
+            return []
+
+        file.download(name=self._news_file_name)
+
+        with Path(self._news_file_name).open("r", encoding="utf-8", newline="") as csvfile:
+            csvreader = csv.DictReader(csvfile, **self.csv_file_params)
+            return [News.model_validate(row) for row in csvreader]
+
 
 class LocalNewsRepository(NewsRepository):
     """Repository responsible for storing and retrieving News locally."""
@@ -105,9 +120,6 @@ class LocalNewsRepository(NewsRepository):
     def __init__(self, path: Path) -> None:
         """Initializes the News repository."""
         self.path = path
-
-    def setup(self) -> None:
-        """Initializes the local folder in which to store the News."""
         self.path.mkdir(parents=True, exist_ok=True)
 
     def create_many_news(self, news_list: list[News]) -> None:
@@ -125,16 +137,7 @@ class LocalNewsRepository(NewsRepository):
                 target,
                 ensure_ascii=False,
                 indent=4,
-                default=pydantic_encoder,
             )
-
-    def create_news(self, news: News) -> None:
-        """Save a single News as a json file locally.
-
-        Args:
-            news_list: List of News to save.
-        """
-        raise NotImplementedError
 
     def create_newsletter(self, newsletter: Newsletter) -> None:
         """Save the Newsletter as a Markdown file locally.
