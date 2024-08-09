@@ -6,10 +6,10 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, ClassVar
 
-from O365.drive import Folder
+from O365.drive import File, Folder
 from pydantic_core import to_jsonable_python
 
-from cpeq_infolettre_automatique.schemas import News, Newsletter
+from cpeq_infolettre_automatique.schemas import News, Newsletter, ScrapingProblem
 from cpeq_infolettre_automatique.utils import (
     get_file_if_exists,
 )
@@ -37,12 +37,17 @@ class NewsRepository:
     def get_all_news(self) -> list[News]:
         """Get all the news."""
 
+    @abstractmethod
+    def create_scraping_problems(self, problems: list[ScrapingProblem]) -> None:
+        """Save the Scraping Problems."""
+
 
 class OneDriveNewsRepository(NewsRepository):
     """Repository responsible for storing and retrieving News from a OneDrive instance."""
 
     _news_file_name = "news.csv"
     _newsletter_file_name = "newsletter.md"
+    _scraping_problems_file_name = "scraping_problems.csv"
 
     csv_file_params: ClassVar[dict[str, Any]] = {
         "delimiter": ",",
@@ -113,6 +118,37 @@ class OneDriveNewsRepository(NewsRepository):
             csvreader = csv.DictReader(csvfile, **self.csv_file_params)
             return [News.model_validate(row) for row in csvreader]
 
+    def create_scraping_problems(self, problems: list[ScrapingProblem]) -> None:
+        """Save the Scraping Problems in a CSV file.
+
+        Args:
+            problems: List of Scraping Problems to save.
+        """
+        file: File | None = get_file_if_exists(self.week_folder, self._scraping_problems_file_name)
+        if file is not None:
+            file.download(name=self._scraping_problems_file_name)
+
+        with Path(self._scraping_problems_file_name).open(
+            mode="a", encoding="utf-8", newline=""
+        ) as csvfile:
+            csvwriter = csv.writer(
+                csvfile,
+                delimiter=",",
+                quotechar='"',
+                quoting=csv.QUOTE_NONNUMERIC,
+                dialect="excel",
+            )
+
+            rows: list[list[str]] = []
+            if file is None:
+                # Add headers row if we are creating the file
+                rows.append(list(ScrapingProblem.model_fields.keys()))
+            rows.extend([[str(value) for _, value in news] for news in problems])
+
+            csvwriter.writerows(rows)
+
+        self.week_folder.upload_file(item=self._scraping_problems_file_name)
+
 
 class LocalNewsRepository(NewsRepository):
     """Repository responsible for storing and retrieving News locally."""
@@ -148,3 +184,7 @@ class LocalNewsRepository(NewsRepository):
         file_name = "newsletter.md"
         file_path = self.path / file_name
         file_path.write_text(newsletter.to_markdown(), encoding="utf-8")
+
+    def create_scraping_problems(self, problems: list[ScrapingProblem]) -> None:
+        """Save the Scraping Problems."""
+        raise NotImplementedError
